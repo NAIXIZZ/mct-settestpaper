@@ -1,4 +1,4 @@
-//话题大纲
+//注册
 <template>
   <div>
   </div>
@@ -13,6 +13,11 @@ export default {
     return {
     };
   },
+  watch: {},
+  computed: {},
+  methods: {},
+  created() {},
+  mounted() {}
 };
 </script>
 <style scoped>

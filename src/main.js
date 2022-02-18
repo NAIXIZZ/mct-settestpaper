@@ -5,8 +5,8 @@ import ElementUI from 'element-ui';
 import 'element-ui/lib/theme-chalk/index.css';
 import App from './App.vue'
 
-var BaaS = require('minapp-sdk')
-BaaS.init("395062a19e209a770059")
+// var BaaS = require('minapp-sdk')
+// BaaS.init("395062a19e209a770059")
 
 Vue.config.productionTip = false
 Vue.use(VueRouter)
