@@ -5,12 +5,14 @@ import Router from 'vue-router'
 // import home from '@/components/home.vue'
 import login from '@/components/login.vue'
 import outline from '@/components/outline/outline.vue'
-import doc_doc from '@/components/outline/topic/doc_doc.vue'
-import doc_nur from '@/components/outline/topic/doc_nur.vue'
-import doc_pat from '@/components/outline/topic/doc_pat.vue'
-import pat_nur from '@/components/outline/topic/pat_nur.vue'
-import knowledge from '@/components/outline/topic/knowledge.vue'
+import doc_doc from '@/views/outline/topic/doc_doc.vue'
+import doc_nur from '@/views/outline/topic/doc_nur.vue'
+import doc_pat from '@/views/outline/topic/doc_pat.vue'
+import pat_nur from '@/views/outline/topic/pat_nur.vue'
+import knowledge from '@/views/outline/topic/knowledge.vue'
 import handout from '@/components/hand_out/hand_out.vue'
+import checkQuesP from '@/components/hand_out/checkQuesP.vue'
+import checkMaterial from '@/views/hand_out/material/checkMaterial.vue'
 
 Vue.use(VueRouter)
 export default new Router({
@@ -69,6 +71,16 @@ export default new Router({
             path: '/handout',
             name: 'handout',
             component: handout
+        },
+        {
+            path: '/checkQuesP',
+            name: 'checkQuesP',
+            component: checkQuesP
+        },
+        {
+            path: '/checkMaterial',
+            name: 'checkMaterial',
+            component: checkMaterial
         }
     ]
 })

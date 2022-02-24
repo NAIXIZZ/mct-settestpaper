@@ -21,10 +21,10 @@
 <script>
 import Cookies from "js-cookie";
 import Cookie from "js-cookie";
-import grade_standard from "./grade_standard.vue";
-import topic_outline from "./topic/topic_outline.vue";
-import task_outline from "./task_outline.vue";
-import medical_vocabulary from "./medical_vocabulary.vue";
+import grade_standard from "@/views/outline/grade_standard.vue";
+import topic_outline from "./topic_outline.vue";
+import task_outline from "@/views/outline/task_outline.vue";
+import medical_vocabulary from "@/views/outline/medical_vocabulary.vue";
 export default {
   name: "",
   components: {
