@@ -12,6 +12,7 @@
     "element-ui": "^2.15.6",
     "js-cookie": "^3.0.1",
     "minapp-sdk": "^3.22.0",
+    "minapp-sdk-typings": "^3.22.0",
     "vue": "^2.6.11",
     "vue-router": "^3.2.0"
   },

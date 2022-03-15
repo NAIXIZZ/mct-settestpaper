@@ -1,8 +1,8 @@
 //登录
 <template>
-  <div>
+  <div class="log_reg">
     <div class="login">
-      <h1>MCT智能出卷系统</h1>
+      <h1 class="log_title">MCT智能出卷系统</h1>
       <el-form
         :model="ruleForm"
         status-icon
@@ -12,10 +12,7 @@
         class="demo-ruleForm"
       >
         <el-form-item label="邮箱" prop="email">
-          <el-input
-            v-model="ruleForm.email"
-            autocomplete="off"
-          ></el-input>
+          <el-input v-model="ruleForm.email" autocomplete="off"></el-input>
         </el-form-item>
         <el-form-item label="密码" prop="password">
           <el-input
@@ -25,135 +22,35 @@
           ></el-input>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="submitForm('ruleForm')"
+          <el-button type="primary" @click="login('ruleForm')" v-if="log_button"
             >登录</el-button
           >
-          <el-button @click="resetForm('ruleForm')">重置</el-button>
+          <el-button
+            type="primary"
+            @click="register('ruleForm')"
+            v-if="reg_button"
+            >注册</el-button
+          >
+          <!-- <el-button @click="resetForm('ruleForm')">用手机号登录</el-button> -->
+          <!-- <el-button @click="resetForm('ruleForm')">重置</el-button> -->
+        </el-form-item>
+        <el-form-item class="a">
+          <el-button type="text" @click="handleRegister" v-if="log_button"
+            >去注册</el-button
+          >
+          <el-button type="text" @click="handleLogin" v-if="reg_button"
+            >去登录</el-button
+          >
+          <el-button type="text" @click="forgetPass" v-if="log_button"
+            >忘记密码</el-button
+          >
         </el-form-item>
       </el-form>
     </div>
-    <!-- <div
-      class="modal fade"
-      id="loginModal"
-      tabindex="-1"
-      role="dialog"
-      aria-labelledby="exampleModalLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">登录</h5>
-            <button
-              type="button"
-              class="close"
-              data-dismiss="modal"
-              aria-label="Close"
-            >
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-          <div class="modal-body">
-            <div class="form-group">
-              <input
-                v-model="loginForm.email"
-                type="email"
-                class="form-control"
-                aria-describedby="emailHelp"
-                placeholder="请输入邮箱"
-              />
-            </div>
-            <div class="form-group">
-              <input
-                v-model="loginForm.password"
-                type="password"
-                class="form-control"
-                placeholder="请输入密码"
-              />
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              @click="openRegisterModal"
-              data-dismiss="modal"
-            >
-              去注册
-            </button>
-            <button type="button" class="btn btn-primary" @click="handleLogin">
-              登录
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-    注册模态框
-    <div
-      class="modal fade"
-      id="registerModal"
-      tabindex="-1"
-      role="dialog"
-      aria-labelledby="exampleModalLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">注册</h5>
-            <button
-              type="button"
-              class="close"
-              data-dismiss="modal"
-              aria-label="Close"
-            >
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-          <div class="modal-body">
-            <div class="form-group">
-              <input
-                v-model="registerForm.email"
-                type="email"
-                class="form-control"
-                aria-describedby="emailHelp"
-                placeholder="Enter email"
-              />
-            </div>
-            <div class="form-group">
-              <input
-                v-model="registerForm.password"
-                type="password"
-                class="form-control"
-                placeholder="Password"
-              />
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              @click="openLoginModal"
-              data-dismiss="modal"
-            >
-              去登录
-            </button>
-            <button
-              type="button"
-              class="btn btn-primary"
-              @click="handleRegister"
-            >
-              注册
-            </button>
-          </div>
-        </div>
-      </div>
-    </div> -->
   </div>
 </template>
-<script src="https://dl.ifanr.cn/hydrogen/sdk/sdk-web-latest.js"></script>
-<script src="index.js"></script>
 
+<script src="https://dl.ifanr.cn/hydrogen/sdk/sdk-web-latest.js"></script>
 <script>
 export default {
   name: "",
@@ -163,106 +60,223 @@ export default {
     var validatePass = (rule, value, callback) => {
       if (value === "") {
         callback(new Error("请输入密码"));
-      } 
+      }
       callback();
-      // else {
-      //   if (this.ruleForm.pass !== "") {
-      //     this.$refs.ruleForm.validateField("pass");
-      //   }
-      //   callback();
-      // }
+    };
+    var validateEmail = (rule, value, callback) => {
+      if (value === "") {
+        callback(new Error("请输入邮箱"));
+      } else if (
+        !/^[a-zA-Z0-9_.-]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.[a-zA-Z0-9]{2,6}$/.test(
+          value
+        )
+      ) {
+        callback(new Error("请输入正确的邮箱"));
+      }
+      callback();
     };
     return {
-      // loginForm: {
-      //   email: "",
-      //   password: "",
-      // },
-      // registerForm: {
-      //   email: "",
-      //   password: "",
-      // },
+      log_button: true,
+      reg_button: false,
       ruleForm: {
         email: "",
         password: "",
       },
       rules: {
+        email: [{ validator: validateEmail, trigger: "blur" }],
         password: [{ validator: validatePass, trigger: "blur" }],
       },
     };
   },
   methods: {
-    submitForm(formName) {
+    init() {
+      var BaaS = require("minapp-sdk");
+      let clientID = "395062a19e209a770059";
+      BaaS.init(clientID);
+      BaaS.auth
+        .getCurrentUser()
+        .then((user) => {
+          console.log(user);
+          if (user._email_verified) {
+            this.$router.push("/outline");
+          } else {
+            BaaS.auth
+              .getCurrentUser()
+              .then((user) => {
+                return user.requestEmailVerification();
+              })
+              .then((res) => {
+                console.log(res);
+              })
+              .catch((err) => {
+                // HError
+                alert(err);
+              });
+          }
+        })
+        .catch((err) => {
+          if (err.code === 604) {
+            console.log("用户未登录");
+          }
+        });
+    },
+    login(formName) {
+      var BaaS = require("minapp-sdk");
+      let clientID = "395062a19e209a770059";
+      BaaS.init(clientID);
       this.$refs[formName].validate((valid) => {
         if (valid) {
-          // let BaaS = window.BaaS;
-console.log(this.ruleForm)
-      window.BaaS.auth.login(this.ruleForm).then(() => {
-        // $("#loginModal").modal("hide");
-        // this.init();
-        this.$router.push("/");
-      });
-          alert("submit!");
+          console.log(this.ruleForm);
+          BaaS.auth
+            .login(this.ruleForm)
+            .then((user) => {
+              console.log(user);
+              if (user._email_verified) {
+                this.$message({
+                  message: "登录成功",
+                  type: "success",
+                });
+                this.$router.push("/outline");
+              } else {
+                BaaS.auth
+                  .getCurrentUser()
+                  .then((user) => {
+                    return user.requestEmailVerification();
+                  })
+                  .then((res) => {
+                    console.log(res);
+                  })
+                  .catch((err) => {
+                    // HError
+                    alert(err);
+                  });
+              }
+            })
+            .catch((err) => {
+              console.log(err);
+              if (err == "Error: 400: Invalid username/email or password.") {
+                this.$message("邮箱或密码错误");
+              }
+            });
         } else {
           console.log("error submit!!");
           return false;
         }
       });
-      
     },
-    resetForm(formName) {
-      this.$refs[formName].resetFields();
+    handleRegister() {
+      this.log_button = false;
+      this.reg_button = true;
     },
-    // openLoginModal() {
-    //   $("#loginModal").modal();
-    // },
-    // openRegisterModal() {
-    //   $("#registerModal").modal();
-    // },
-    // handleLogin() {
-    //   // let BaaS = window.BaaS;
-
-    //   window.BaaS.auth.login(this.loginForm).then(() => {
-    //     $("#loginModal").modal("hide");
-    //     this.init();
-    //   });
-    // },
-    // handleRegister() {
-    //   // let BaaS = window.BaaS;
-
-    //   window.BaaS.auth.register(this.registerForm).then(() => {
-    //     $("#registerModal").modal("hide");
-    //     this.init();
-    //   });
-    // },
+    handleLogin() {
+      this.log_button = true;
+      this.reg_button = false;
+    },
+    register(formName) {
+      var BaaS = require("minapp-sdk");
+      let clientID = "395062a19e209a770059";
+      BaaS.init(clientID);
+      this.$refs[formName].validate((valid) => {
+        if (valid) {
+          console.log(this.ruleForm);
+          BaaS.auth
+            .register(this.ruleForm)
+            .then((user) => {
+              BaaS.auth
+                .getCurrentUser()
+                .then((user) => {
+                  return user.requestEmailVerification();
+                })
+                .then((res) => {
+                  console.log(res);
+                  if (user._email_verified) {
+                    this.$message({
+                      message: "注册成功",
+                      type: "success",
+                    });
+                    this.$router.push("/outline");
+                  }
+                })
+                .catch((err) => {
+                  // HError
+                  alert(err);
+                });
+            })
+            .catch((err) => {
+              console.log(err);
+              if (err == "Error: 400: 'Email'lready exists.") {
+                this.$message("邮箱已注册过");
+              }
+            });
+        } else {
+          console.log("error submit!!");
+          return false;
+        }
+      });
+    },
+    forgetPass() {
+      var BaaS = require("minapp-sdk");
+      let clientID = "395062a19e209a770059";
+      BaaS.init(clientID);
+      if (this.ruleForm.email == "") {
+        this.$message("请先填写邮箱");
+      }
+      if (this.ruleForm.email != "") {
+        this.$message("正在为您发送邮件");
+        BaaS.auth
+          .requestPasswordReset(this.ruleForm)
+          .then((res) => {
+            console.log(res);
+          })
+          .catch((err) => {
+            console.log(err);
+            if (err == "Error: 404: unknown error") {
+              this.$message("邮箱未注册，请先注册");
+            }
+          });
+      }
+    },
   },
   mounted() {
-    var BaaS = require('minapp-sdk')
-    let clientID = '395062a19e209a770059'
-    BaaS.init(clientID)
-    // let BaaS = window.BaaS;
-    // let cacheKey = "ifanrx_clientID";
-    // if (!localStorage.getItem(cacheKey)) {
-    //   while (true) {
-    //     let clientID = window.prompt("请输入 clientID"); // 从 BaaS 后台获取 ClientID
-    //     if (clientID && clientID.match(/\w{20}/)) {
-    //       localStorage.setItem(cacheKey, clientID); // 若输入了错误的 clientID，可以清空 localStorage
-    //       break;
-    //     }
-    //   }
-    // }
-    // BaaS.init(localStorage.getItem(cacheKey));
-    BaaS.auth
-      .getCurrentUser()
-      .then(() => {
-        // this.init();
-        this.$router.push("/");
-      })
-      .catch((e) => {
-        // this.openLoginModal();
-        console.log("ccc")
-      });
+    this.init();
   },
 };
 </script>
 <style>
+.log_reg {
+  display: flex;
+  justify-content: center;
+  padding: 172px;
+}
+.login {
+  width: 350px;
+  background-color: white;
+  border-radius: 40px;
+  display: flex;
+  flex-direction: column;
+  padding: 55px 0 10px 0;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+.log_title {
+  color: #27b148;
+  margin-bottom: 20px;
+}
+.login .el-form-item {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+.login .el-form-item__label {
+  width: auto !important;
+}
+.login .el-form-item__content {
+  margin-left: 0 !important;
+}
+.a .el-form-item__content {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
 </style>

@@ -29,12 +29,12 @@
           </el-table-column>
           <el-table-column prop="paper_type" label="试卷类型">
           </el-table-column>
-          <el-table-column prop="questions_num" label="题量">
+          <el-table-column prop="questions_num" label="题量" sortable>
           </el-table-column>
-          <el-table-column prop="points" label="总分">
+          <el-table-column prop="points" label="总分" sortable>
           </el-table-column>
           <el-table-column prop="created_by" label="创建者"> </el-table-column>
-          <el-table-column prop="created_at" label="创建日期">
+          <el-table-column prop="created_at" label="创建日期" sortable>
           </el-table-column>
           <el-table-column label="操作" width="400">
             <el-button type="success" plain size="small">查看/编辑</el-button>

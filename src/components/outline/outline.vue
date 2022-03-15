@@ -41,14 +41,18 @@ export default {
   },
   watch: {},
   computed: {},
-  methods: {},
+  methods: {
+    init() {
+      let current = Cookie.get("currentTab");
+      if (current == "second") {
+        this.active_outline = "second";
+        Cookies.set("currentTab", "");
+      }
+    },
+  },
   created() {},
   mounted() {
-    let current = Cookie.get("currentTab");
-    if (current == "second") {
-      this.active_outline = "second";
-      Cookies.set("currentTab", "");
-    }
+    this.init();
   },
 };
 </script>

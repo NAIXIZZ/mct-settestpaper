@@ -59,10 +59,10 @@
           </el-table-column>
           <el-table-column prop="secondary_ques_type" label="二级题型">
           </el-table-column>
-          <el-table-column prop="usage_amount" label="使用量">
+          <el-table-column prop="usage_amount" label="使用量" sortable>
           </el-table-column>
           <el-table-column prop="created_by" label="创建者"> </el-table-column>
-          <el-table-column prop="created_at" label="创建日期">
+          <el-table-column prop="created_at" label="创建日期" sortable>
           </el-table-column>
           <el-table-column label="操作" width="300">
             <el-button type="success" plain>查看/编辑</el-button>

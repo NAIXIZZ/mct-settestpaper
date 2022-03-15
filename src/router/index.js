@@ -5,14 +5,12 @@ import Router from 'vue-router'
 // import home from '@/components/home.vue'
 import login from '@/components/login.vue'
 import outline from '@/components/outline/outline.vue'
-import doc_doc from '@/views/outline/topic/doc_doc.vue'
-import doc_nur from '@/views/outline/topic/doc_nur.vue'
-import doc_pat from '@/views/outline/topic/doc_pat.vue'
-import pat_nur from '@/views/outline/topic/pat_nur.vue'
+import outline_second from '@/views/outline/topic/outline_second.vue'
 import knowledge from '@/views/outline/topic/knowledge.vue'
 import handout from '@/components/hand_out/hand_out.vue'
 import checkQuesP from '@/components/hand_out/checkQuesP.vue'
 import checkMaterial from '@/views/hand_out/material/checkMaterial.vue'
+import ques_checkEdit from '@/views/hand_out/question/ques_checkEdit.vue'
 
 Vue.use(VueRouter)
 export default new Router({
@@ -29,13 +27,8 @@ export default new Router({
         // }
         {
             path: '/',
-            name: 'outline',
-            redirect: '/outline'
-        },
-        {
-            path: '/outline',
-            name: 'outline',
-            component: outline
+            name: 'login',
+            redirect: '/login'
         },
         {
             path: '/login',
@@ -43,24 +36,14 @@ export default new Router({
             component: login
         },
         {
-            path: '/doc_doc',
-            name: 'doc_doc',
-            component: doc_doc
+            path: '/outline',
+            name: 'outline',
+            component: outline
         },
         {
-            path: '/doc_nur',
-            name: 'doc_nur',
-            component: doc_nur
-        },
-        {
-            path: '/doc_pat',
-            name: 'doc_pat',
-            component: doc_pat
-        },
-        {
-            path: '/pat_nur',
-            name: 'pat_nur',
-            component: pat_nur
+            path: '/outline_second',
+            name: 'outline_second',
+            component: outline_second
         },
         {
             path: '/knowledge',
@@ -81,6 +64,12 @@ export default new Router({
             path: '/checkMaterial',
             name: 'checkMaterial',
             component: checkMaterial
+        }
+        ,
+        {
+            path: '/ques_checkEdit',
+            name: 'ques_checkEdit',
+            component: ques_checkEdit
         }
     ]
 })

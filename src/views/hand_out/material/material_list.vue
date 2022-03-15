@@ -12,13 +12,10 @@
         </template>
       </el-table-column>
       <el-table-column label="文本标题" prop="title"> </el-table-column>
-      <el-table-column label="文本类别" prop="type" width="180px">
-      </el-table-column>
-      <el-table-column label="文本ID" prop="id" width="180px">
-      </el-table-column>
-      <el-table-column label="模型支持" prop="model_support" width="180px">
-      </el-table-column>
-      <el-table-column label="操作">
+      <el-table-column label="文本类别" prop="type"> </el-table-column>
+      <el-table-column label="文本ID" prop="id"> </el-table-column>
+      <el-table-column label="模型支持" prop="model_support"> </el-table-column>
+      <el-table-column label="操作" width="400px">
         <template slot-scope="scope">
           <el-button type="primary" plain @click="checkQuesP(scope.row.title)"
             >查看题目/试卷</el-button
@@ -68,29 +65,7 @@ export default {
   props: {},
   data() {
     return {
-      tableData: [
-        {
-          title: "脑梗死患者电子病历标注",
-          type: "电子病历",
-          id: "00001",
-          model_support: "AAAAA",
-          description: "xxxxxxx",
-        },
-        {
-          title: "新型冠状病毒诊疗分析",
-          type: "诊疗分析",
-          id: "00002",
-          model_support: "BBBBB",
-          description: "xxxxxxx",
-        },
-        {
-          title: "脑梗死",
-          type: "脑梗死",
-          id: "00003",
-          model_support: "CCCCC",
-          description: "xxxxxxx",
-        },
-      ],
+      tableData: [],
       dialogFormVisible: false,
       form: {
         quesnum: "",
@@ -151,6 +126,21 @@ export default {
   watch: {},
   computed: {},
   methods: {
+    init() {
+      var BaaS = require("minapp-sdk");
+      let clientID = "395062a19e209a770059";
+      BaaS.init(clientID);
+      let Material = new BaaS.TableObject("material");
+      Material.find().then(
+        (res) => {
+          console.log(res);
+          this.tableData = res.data.objects;
+        },
+        (err) => {
+          console.log(err);
+        }
+      );
+    },
     checkQuesP(val) {
       Cookies.set("material_title", val);
       this.$router.push("checkQuesP");
@@ -168,7 +158,9 @@ export default {
     },
   },
   created() {},
-  mounted() {},
+  mounted() {
+    this.init();
+  },
 };
 </script>
 <style>

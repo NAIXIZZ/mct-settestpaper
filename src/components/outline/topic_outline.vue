@@ -96,14 +96,15 @@ export default {
       let currentTab = "second";
       Cookies.set("currentTab", currentTab);
       if (val == "doc_doc") {
-        this.$router.push("/doc_doc");
+        Cookies.set('first_title','医生-医生')
       } else if (val == "doc_nur") {
-        this.$router.push("/doc_nur");
+        Cookies.set('first_title','医生-护士')
       } else if (val == "doc_pat") {
-        this.$router.push("/doc_pat");
+        Cookies.set('first_title','医生-患者')
       } else {
-        this.$router.push("/pat_nur");
+        Cookies.set('first_title','患者-护士')
       }
+      this.$router.push("/outline_second");
     },
   },
 
