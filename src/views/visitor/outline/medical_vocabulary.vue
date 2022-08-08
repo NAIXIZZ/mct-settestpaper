@@ -230,7 +230,7 @@ export default {
       console.log(row.words)
       Cookies.set('word', row.words)
       this.$router.push({
-        path: '/wordKg'
+        path: '/visitor_wordKg'
       })
     }
   },

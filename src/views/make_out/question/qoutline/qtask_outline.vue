@@ -1,6 +1,6 @@
 //任务大纲
 <template>
-  <div>
+  <div class="qoutline">
     <h1>任务大纲</h1>
     <el-collapse>
       <el-collapse-item :title="t.title" v-for="t in task" :key="t.id">
@@ -20,6 +20,7 @@ export default {
   props: {},
   data() {
     return {
+      //   activeNames: ["1"],
       task: {},
     };
   },

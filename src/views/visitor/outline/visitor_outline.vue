@@ -1,7 +1,7 @@
 //侧边栏
 <template>
   <div class="outer">
-    <Heads></Heads>
+    <visitorHead></visitorHead>
     <el-tabs v-model="active_outline" tab-position="left" class="nav">
       <el-tab-pane label="等级标准" name="first"
         ><grade_standard></grade_standard
@@ -20,13 +20,13 @@
 </template>
 
 <script>
-import Heads from '@/components/heads'
+import visitorHead from '@/components/visitorHead'
 import Cookies from "js-cookie";
 import Cookie from "js-cookie";
 import grade_standard from "@/views/outline/grade_standard.vue";
-import topic_outline from "./topic_outline.vue";
+import topic_outline from "@/components/outline/topic_outline.vue";
 import task_outline from "@/views/outline/task_outline.vue";
-import medical_vocabulary from "@/views/outline/medical_vocabulary.vue";
+import medical_vocabulary from "@/views/visitor/outline/medical_vocabulary.vue";
 export default {
   name: "",
   components: {
@@ -34,7 +34,7 @@ export default {
     topic_outline,
     task_outline,
     medical_vocabulary,
-    Heads
+    visitorHead
   },
   props: {},
   data() {
@@ -49,6 +49,9 @@ export default {
       let current = Cookie.get("currentTab");
       if (current == "second") {
         this.active_outline = "second";
+        Cookies.set("currentTab", "");
+      }else if(current == "forth"){
+        this.active_outline = "forth";
         Cookies.set("currentTab", "");
       }
     },

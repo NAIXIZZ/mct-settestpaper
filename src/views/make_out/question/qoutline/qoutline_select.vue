@@ -80,7 +80,7 @@ export default {
     },
     pushto(val) {
       Cookies.set("second_title", val);
-      this.$router.push("/knowledge");
+      this.$router.push("/qknowledge");
     },
     search(val) {
       if (val == "") {

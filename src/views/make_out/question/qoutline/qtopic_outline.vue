@@ -18,6 +18,9 @@
               />
               <div style="padding: 14px">
                 <span>医生-医生</span>
+                <!-- <div class="bottom clearfix">
+                <el-button type="text" class="button">操作按钮</el-button>
+              </div> -->
               </div>
             </el-card>
           </div>
@@ -29,6 +32,9 @@
               />
               <div style="padding: 14px">
                 <span>医生-护士</span>
+                <!-- <div class="bottom clearfix">
+                <el-button type="text" class="button">操作按钮</el-button>
+              </div> -->
               </div>
             </el-card>
           </div>
@@ -49,6 +55,9 @@
               />
               <div style="padding: 14px">
                 <span>医生-患者</span>
+                <!-- <div class="bottom clearfix">
+                <el-button type="text" class="button">操作按钮</el-button>
+              </div> -->
               </div>
             </el-card>
           </div>
@@ -60,6 +69,9 @@
               />
               <div style="padding: 14px">
                 <span>患者-护士</span>
+                <!-- <div class="bottom clearfix">
+                <el-button type="text" class="button">操作按钮</el-button>
+              </div> -->
               </div>
             </el-card>
           </div>
@@ -81,8 +93,6 @@ export default {
   },
   methods: {
     pushto(val) {
-      let currentTab = "second";
-      Cookies.set("currentTab", currentTab);
       if (val == "doc_doc") {
         Cookies.set('first_title','医生-医生')
       } else if (val == "doc_nur") {
@@ -92,7 +102,7 @@ export default {
       } else {
         Cookies.set('first_title','患者-护士')
       }
-      this.$router.push("/outline_second");
+      this.$router.push("/qoutline_select");
     },
   },
 

@@ -1,60 +1,68 @@
 //登录
 <template>
-  <div class="log_reg">
-    <div class="login">
-      <h1 class="log_title">MCT智能出卷系统</h1>
-      <el-form
-        :model="ruleForm"
-        status-icon
-        :rules="rules"
-        ref="ruleForm"
-        label-width="100px"
-        class="demo-ruleForm"
-      >
-        <el-form-item label="邮箱" prop="email">
-          <el-input v-model="ruleForm.email" autocomplete="off"></el-input>
-        </el-form-item>
-        <el-form-item label="密码" prop="password">
-          <el-input
-            type="password"
-            v-model="ruleForm.password"
-            autocomplete="off"
-          ></el-input>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="login('ruleForm')" v-if="log_button"
-            >登录</el-button
-          >
-          <el-button
-            type="primary"
-            @click="register('ruleForm')"
-            v-if="reg_button"
-            >注册</el-button
-          >
-          <!-- <el-button @click="resetForm('ruleForm')">用手机号登录</el-button> -->
-          <!-- <el-button @click="resetForm('ruleForm')">重置</el-button> -->
-        </el-form-item>
-        <el-form-item class="a">
-          <el-button type="text" @click="handleRegister" v-if="log_button"
-            >去注册</el-button
-          >
-          <el-button type="text" @click="handleLogin" v-if="reg_button"
-            >去登录</el-button
-          >
-          <el-button type="text" @click="forgetPass" v-if="log_button"
-            >忘记密码</el-button
-          >
-        </el-form-item>
-      </el-form>
+  <div>
+    <visitorHead></visitorHead>
+    <div class="log_reg">
+      <div class="login">
+        <h1 class="log_title">MCT智能出卷系统</h1>
+        <el-form
+          :model="ruleForm"
+          status-icon
+          :rules="rules"
+          ref="ruleForm"
+          label-width="100px"
+          class="demo-ruleForm"
+        >
+          <el-form-item label="邮箱" prop="email">
+            <el-input v-model="ruleForm.email" autocomplete="off"></el-input>
+          </el-form-item>
+          <el-form-item label="密码" prop="password">
+            <el-input
+              type="password"
+              v-model="ruleForm.password"
+              autocomplete="off"
+            ></el-input>
+          </el-form-item>
+          <el-form-item>
+            <el-button
+              type="primary"
+              @click="login('ruleForm')"
+              v-if="log_button"
+              >登录</el-button
+            >
+            <el-button
+              type="primary"
+              @click="register('ruleForm')"
+              v-if="reg_button"
+              >注册</el-button
+            >
+          </el-form-item>
+          <el-form-item class="a">
+            <el-button type="text" @click="handleRegister" v-if="log_button"
+              >去注册</el-button
+            >
+            <el-button type="text" @click="handleLogin" v-if="reg_button"
+              >去登录</el-button
+            >
+            <el-button type="text" @click="forgetPass" v-if="log_button"
+              >忘记密码</el-button
+            >
+          </el-form-item>
+        </el-form>
+      </div>
     </div>
   </div>
 </template>
 
 <script src="https://dl.ifanr.cn/hydrogen/sdk/sdk-web-latest.js"></script>
 <script>
+import Cookies from "js-cookie";
+import visitorHead from "./visitorHead.vue";
 export default {
   name: "",
-  components: {},
+  components: {
+    visitorHead,
+  },
   props: {},
   data() {
     var validatePass = (rule, value, callback) => {
@@ -96,9 +104,10 @@ export default {
       BaaS.auth
         .getCurrentUser()
         .then((user) => {
+          Cookies.set("user_id", user.id);
           console.log(user);
           if (user._email_verified) {
-            this.$router.push("/outline");
+            this.$router.push("/home");
           } else {
             BaaS.auth
               .getCurrentUser()
@@ -136,7 +145,8 @@ export default {
                   message: "登录成功",
                   type: "success",
                 });
-                this.$router.push("/outline");
+                Cookies.set("user_id", user.id);
+                this.$router.push("/home");
               } else {
                 BaaS.auth
                   .getCurrentUser()
@@ -194,7 +204,8 @@ export default {
                       message: "注册成功",
                       type: "success",
                     });
-                    this.$router.push("/outline");
+                    Cookies.set("user_id", user.id);
+                    this.$router.push("/home");
                   }
                 })
                 .catch((err) => {
