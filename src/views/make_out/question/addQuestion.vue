@@ -1,4 +1,3 @@
-//查看/编辑试卷
 <template>
   <div class="ques_checkEdit">
     <div class="ques_check_top">
@@ -13,7 +12,10 @@
       <div class="edit_type">
         <div class="edit_primary_type">
           一级题型：
-          <el-radio-group v-model="radio1">
+          <el-radio-group
+            v-model="questions.primary_ques_type"
+            @change="typePChange"
+          >
             <el-radio-button label="听力"></el-radio-button>
             <el-radio-button label="阅读"></el-radio-button>
             <el-radio-button label="写作"></el-radio-button>
@@ -24,15 +26,28 @@
             <el-radio-button label="简答题"></el-radio-button>
           </el-radio-group>
         </div>
-        <div class="edit_secondary_type">
+        <div
+          class="edit_secondary_type"
+          v-show="
+            questions.primary_ques_type == '听力' ||
+            questions.primary_ques_type == '阅读' ||
+            questions.primary_ques_type == '写作'
+          "
+        >
           二级题型：
-          <el-radio-group v-model="radio2" v-if="radio1 == '听力'">
+          <el-radio-group
+            v-model="questions.secondary_ques_type"
+            v-if="questions.primary_ques_type == '听力'"
+          >
             <el-radio-button label="听句子，判断对错"></el-radio-button>
             <el-radio-button label="听短对话，选择正确答案"></el-radio-button>
             <el-radio-button label="听长对话，选择正确答案"></el-radio-button>
             <el-radio-button label="听短文，选择正确答案"></el-radio-button>
           </el-radio-group>
-          <el-radio-group v-model="radio2" v-if="radio1 == '阅读'">
+          <el-radio-group
+            v-model="questions.secondary_ques_type"
+            v-if="questions.primary_ques_type == '阅读'"
+          >
             <el-radio-button label="选择正确的词语填空"></el-radio-button>
             <el-radio-button
               label="阅读语段，选择与语段意思一致的一项"
@@ -40,287 +55,307 @@
             <el-radio-button label="阅读材料，选择正确答案"></el-radio-button>
             <el-radio-button label="阅读短文，选择正确答案"></el-radio-button>
           </el-radio-group>
-          <el-radio-group v-model="radio2" v-if="radio1 == '写作'">
+          <el-radio-group
+            v-model="questions.secondary_ques_type"
+            v-if="questions.primary_ques_type == '写作'"
+          >
             <el-radio-button
               label="根据一段长对话写门诊病历记录"
             ></el-radio-button>
           </el-radio-group>
         </div>
       </div>
-      <div v-show="question">
+      <div>
         <div class="edit_ques_content">
           题干：
           <div id="material">
-            <!-- <p v-if="content!=null">{{ content }}</p>
-            <img :src="file_url" alt="" />
-            <audio
-              :src="file_url"
-              controls="controls"
-              v-if="question.primary_ques_type == '听力'"
-            ></audio> -->
+            <p>{{ questions.question_content }}</p>
           </div>
         </div>
-        <p class="warn">选项：答案选中项为正确答案标示。</p>
-        <div style="border-bottom: 1px dashed #c0c4cc">
-          <div class="question">
-            问题：
-            <div id="question">
-              <!-- <p>{{ question.question }}</p> -->
+        <el-collapse v-model="activeNames">
+          <el-collapse-item
+            v-for="s in questions.sub_question"
+            :key="s.sub_sequence"
+            :title="s.sub_sequence + '.' + s.question"
+            :name="s.sub_sequence + ''"
+          >
+            <div class="question">
+              问题：
+              <div :id="'question' + s.sub_sequence">
+                <p>{{ s.question }}</p>
+              </div>
             </div>
-          </div>
-          <div class="write_answer" v-show="radio1 == '写作'">
-            答案：
-            <div id="answer">
-              <!-- <p>{{ question.answer }}</p> -->
+            <p
+              class="warn"
+              v-show="
+                questions.primary_ques_type != '' &&
+                questions.primary_ques_type != '写作' &&
+                questions.primary_ques_type != '简答题'
+              "
+            >
+              选项：答案选中项为正确答案标示。
+            </p>
+            <div
+              class="options"
+              v-show="
+                questions.primary_ques_type != '' &&
+                questions.primary_ques_type != '写作' &&
+                questions.primary_ques_type != '简答题'
+              "
+            >
+              <div
+                v-show="
+                  questions.secondary_ques_type == '听句子，判断对错' ||
+                  questions.primary_ques_type == '判断题'
+                "
+                class="judge"
+              >
+                <el-radio v-model="s.answer" label="√">√</el-radio>
+                <el-radio v-model="s.answer" label="×">×</el-radio>
+              </div>
+              <div
+                class="edit_ques_options"
+                v-show="
+                  questions.secondary_ques_type != '听句子，判断对错' &&
+                  questions.primary_ques_type != '判断题'
+                "
+                v-for="o in option"
+                :key="o.index"
+              >
+                <el-radio
+                  slot="prepend"
+                  :label="o"
+                  v-model="s.answer"
+                  border
+                ></el-radio>
+                <div :id="o + s.sub_sequence" class="input_options">
+                  <p v-if="o == 'A'">{{ s.A }}</p>
+                  <p v-else-if="o == 'B'">{{ s.B }}</p>
+                  <p v-else-if="o == 'C'">{{ s.C }}</p>
+                  <p v-else-if="o == 'D'">{{ s.D }}</p>
+                </div>
+              </div>
             </div>
-          </div>
-
-          <div v-show="radio2 == '听句子，判断对错'" class="judge">
-            <el-radio v-model="judge" label="√">√</el-radio>
-            <el-radio v-model="judge" label="×">×</el-radio>
-          </div>
-          <div
-            class="edit_ques_options"
-            v-show="radio2 != '听句子，判断对错' && radio1 != '写作'"
-            v-for="o in option"
-            :key="o.index"
-          >
-            <el-radio
-              slot="prepend"
-              :label="o"
-              v-model="radio"
-              border
-            ></el-radio>
-            <div :id="o" class="input_options">
-              <!-- <p>{{ s.content }}</p> -->
+            <div
+              class="write_answer"
+              v-show="
+                questions.primary_ques_type == '写作' ||
+                questions.primary_ques_type == '简答题'
+              "
+            >
+              答案：
+              <div :id="'answer' + s.sub_sequence">
+                <p>{{ s.answer }}</p>
+              </div>
             </div>
-          </div>
-          <div class="ques_analysis">
-            <el-checkbox v-model="checked">解析：</el-checkbox>
-            <div id="analysis" v-show="checked">
-              <!-- <p>{{ question.analysis }}</p> -->
+            <div class="ques_analysis">
+              解析：
+              <div :id="'analysis' + s.sub_sequence">
+                <p>{{ s.analysis }}</p>
+              </div>
             </div>
-          </div>
-        </div>
-        <div class="knowledge">
-          等级：
-          <el-select v-model="level_value" placeholder="请选择题目等级">
-            <el-option
-              v-for="item in level"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            >
-            </el-option>
-          </el-select>
-        </div>
-        <div class="knowledge">
-          等级标准：
-          <el-cascader
-            v-model="grade_value"
-            :options="grade_standard"
-            :props="props"
-            collapse-tags
-            clearable
-            placeholder="请选择等级标准"
-          ></el-cascader>
-          <el-tooltip
-            class="item"
-            effect="light"
-            content="点击查看等级标准"
-            placement="right"
-          >
-            <router-link to="/qgrade_standard" target="_blank">
-              <i class="el-icon-info"></i>
-            </router-link>
-          </el-tooltip>
-        </div>
-        <div class="knowledge">
-          话题大纲：
-          <el-cascader
-            v-model="topic_value"
-            :options="topic_outline"
-            :props="props"
-            collapse-tags
-            clearable
-            placeholder="请选择话题大纲"
-          ></el-cascader>
-          <el-tooltip
-            class="item"
-            effect="light"
-            content="点击查看话题大纲"
-            placement="right"
-          >
-            <router-link to="/qtopic_outline" target="_blank">
-              <i class="el-icon-info"></i>
-            </router-link>
-          </el-tooltip>
-        </div>
-        <div class="knowledge">
-          任务大纲：
-          <el-select v-model="task_value" multiple placeholder="请选择任务大纲">
-            <el-option
-              v-for="item in task_outline"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            >
-            </el-option>
-          </el-select>
-          <el-tooltip
-            class="item"
-            effect="light"
-            content="点击查看任务大纲"
-            placement="right"
-          >
-            <router-link to="/qtask_outline" target="_blank">
-              <i class="el-icon-info"></i>
-            </router-link>
-          </el-tooltip>
-        </div>
-        <!-- <div class="knowledge" v-if="knowledge">
-          知识点：
-          <el-select
-            v-model="knowledge_value"
-            multiple
-            filterable
-            allow-create
-            default-first-option
-            placeholder="请搜索或添加知识点"
-          >
-            <el-option
-              v-for="item in knowledge"
-              :key="item.id"
-              :label="item.knowledge_point"
-              :value="item.id"
-            >
-            </el-option>
-          </el-select>
-        </div> -->
-        <div class="knowledge">
-          系统：
-          <el-select
-            v-model="department_value"
-            multiple
-            placeholder="请搜索或添加系统"
-          >
-            <el-option
-              v-for="item in department"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            >
-            </el-option>
-          </el-select>
-        </div>
-        <!-- <div class="knowledge">
-          考点：
-          <el-select
-            v-model="test_value"
-            multiple
-            filterable
-            allow-create
-            default-first-option
-            placeholder="请搜索或添加考点"
-          >
-            <el-option
-              v-for="item in test"
-              :key="item.id"
-              :label="item.test"
-              :value="item.id"
-            >
-            </el-option>
-          </el-select>
-        </div>
-        <div class="knowledge">
-          来源：
-          <el-select
-            v-model="source_value"
-            multiple
-            filterable
-            allow-create
-            default-first-option
-            placeholder="请搜索或添加来源"
-          >
-            <el-option
-              v-for="item in source"
-              :key="item.id"
-              :label="item.source"
-              :value="item.id"
-            >
-            </el-option>
-          </el-select>
-        </div> -->
-        <div class="knowledge">
-          题目类型：
-          <el-select v-model="qclass_value" placeholder="请选择题目类型">
-            <el-option
-              v-for="item in qclass"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            >
-            </el-option>
-          </el-select>
-        </div>
-        <div class="knowledge">
-          五何类型：
-          <el-select v-model="fivehe_value" placeholder="请选择题目五何类型">
-            <el-option
-              v-for="item in fivehe"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            >
-            </el-option>
-          </el-select>
-        </div>
+            <div class="select_bar">
+              <div class="knowledge">
+                等级：
+                <el-select v-model="s.level_value" placeholder="请选择题目等级">
+                  <el-option
+                    v-for="item in level"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  >
+                  </el-option>
+                </el-select>
+              </div>
+              <div class="knowledge">
+                等级标准：
+                <el-cascader
+                  v-model="s.grade_value"
+                  :options="grade_standard"
+                  :props="props"
+                  collapse-tags
+                  clearable
+                  placeholder="请选择等级标准"
+                  @change="(type) => grade(type, s.sub_sequence)"
+                ></el-cascader>
+                <el-tooltip
+                  class="item"
+                  effect="light"
+                  content="点击查看等级标准"
+                  placement="right"
+                >
+                  <router-link to="/qgrade_standard" target="_blank">
+                    <i class="el-icon-info"></i>
+                  </router-link>
+                </el-tooltip>
+              </div>
+              <div class="knowledge">
+                话题大纲：
+                <el-cascader
+                  v-model="s.topic_value"
+                  :options="topic_outline"
+                  :props="props"
+                  collapse-tags
+                  clearable
+                  placeholder="请选择话题大纲"
+                  @change="(type) => topic(type, s.sub_sequence)"
+                ></el-cascader>
+                <el-tooltip
+                  class="item"
+                  effect="light"
+                  content="点击查看话题大纲"
+                  placement="right"
+                >
+                  <router-link to="/qtopic_outline" target="_blank">
+                    <i class="el-icon-info"></i>
+                  </router-link>
+                </el-tooltip>
+              </div>
+              <div class="knowledge">
+                任务大纲：
+                <el-select
+                  v-model="s.task_value"
+                  multiple
+                  placeholder="请选择任务大纲"
+                >
+                  <el-option
+                    v-for="item in task_outline"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  >
+                  </el-option>
+                </el-select>
+                <el-tooltip
+                  class="item"
+                  effect="light"
+                  content="点击查看任务大纲"
+                  placement="right"
+                >
+                  <router-link to="/qtask_outline" target="_blank">
+                    <i class="el-icon-info"></i>
+                  </router-link>
+                </el-tooltip>
+              </div>
+              <div class="knowledge">
+                系统：
+                <el-select
+                  v-model="s.department_value"
+                  multiple
+                  placeholder="请搜索或添加系统"
+                >
+                  <el-option
+                    v-for="item in department"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  >
+                  </el-option>
+                </el-select>
+              </div>
+              <div class="knowledge">
+                题目类型：
+                <el-select
+                  v-model="s.qclass_value"
+                  placeholder="请选择题目类型"
+                >
+                  <el-option
+                    v-for="item in qclass"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  >
+                  </el-option>
+                </el-select>
+              </div>
+              <div class="knowledge">
+                五何类型：
+                <el-select
+                  v-model="s.fivehe_value"
+                  placeholder="请选择题目五何类型"
+                >
+                  <el-option
+                    v-for="item in fivehe"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  >
+                  </el-option>
+                </el-select>
+              </div>
+              <div class="knowledge">
+                作者：
+                <el-input
+                  v-model="s.author"
+                  placeholder="请输入题目作者"
+                ></el-input>
+              </div>
+              <div class="knowledge">
+                作者单位：
+                <el-input
+                  v-model="s.author_org"
+                  placeholder="请输入作者单位"
+                ></el-input>
+              </div>
+              <div class="knowledge">
+                题目创作日期：
+                <el-date-picker
+                  v-model="s.time_created"
+                  type="date"
+                  placeholder="选择题目创作日期"
+                >
+                </el-date-picker>
+              </div>
+            </div>
+            <div class="sub_ques_check">
+              <el-button
+                type="danger"
+                icon="el-icon-delete"
+                circle
+                @click="subDel(s.sub_sequence - 1)"
+              ></el-button>
+            </div>
+          </el-collapse-item>
+        </el-collapse>
       </div>
-      <div class="edit_button">
-        <el-button type="success" plain @click="dialogVisible = true"
-          >保存题目</el-button
-        >
-        <el-button type="info" plain @click="dialogVisible = true"
-          >取消</el-button
-        >
+      <div class="main_right_check">
+        <el-button type="primary" plain @click="checkQues">保存该题</el-button>
+        <el-button type="success" plain @click="addSub">添加小题</el-button>
       </div>
-      <el-dialog
-        title="修改题目"
-        :visible.sync="dialogVisible"
-        width="30%"
-        :before-close="handleClose"
-      >
-        <span>确认保存修改后的题目吗？</span>
-        <span slot="footer" class="dialog-footer">
-          <el-button @click="dialogVisible = false">取 消</el-button>
-          <el-button type="primary" @click="saveQues">确 定</el-button>
-        </span>
-      </el-dialog>
     </div>
+    <el-dialog title="添加题目" :visible.sync="dialogVisible" width="30%">
+      <span>确认添加题目吗？</span>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="dialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="saveQues">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
-<script src="https://dl.ifanr.cn/hydrogen/sdk/sdk-web-latest.js"></script>
 <script>
-import Cookie from "js-cookie";
-import Cookies from "js-cookie";
+// import Cookie from "js-cookie";
+// import Cookies from "js-cookie";
 import E from "wangeditor";
-
+var BaaS = require("minapp-sdk");
+let clientID = "395062a19e209a770059";
+BaaS.init(clientID);
 export default {
   name: "",
   components: {},
   props: {},
   data() {
     return {
-      empty: [],
-      editor: [],
+      currentSubQues: 1,
+      questions: {
+        primary_ques_type: "",
+        secondary_ques_type: "",
+        question_content: "",
+        sub_question: [],
+      },
       option: ["A", "B", "C", "D"],
-      question: [],
-      judge: "",
-      radio: "",
-      radio1: "听力",
-      radio2: "听句子，判断对错",
-      checked: true,
+      editor: [],
+      activeNames: ["1"],
       level: [
         {
           value: "一级",
@@ -336,8 +371,6 @@ export default {
         },
       ],
       level_value: "",
-      knowledge: [],
-      knowledge_value: [],
       department: [
         {
           value: "循环系统",
@@ -373,10 +406,6 @@ export default {
         },
       ],
       department_value: [],
-      test: [],
-      test_value: [],
-      source: [],
-      source_value: [],
       qclass: [
         {
           value: "医学题",
@@ -415,96 +444,95 @@ export default {
         },
       ],
       fivehe_value: "",
-      dialogVisible: false,
       props: { multiple: true, expandTrigger: "hover" },
       grade_value: [],
       grade_standard: [
         {
-          value: 1,
+          value: "医学汉语能力总体描述",
           label: "医学汉语能力总体描述",
           children: [
             {
-              value: 2,
+              value: "一级",
               label: "一级",
             },
             {
-              value: 3,
+              value: "二级",
               label: "二级",
             },
             {
-              value: 4,
+              value: "三级",
               label: "三级",
             },
           ],
         },
         {
-          value: 5,
+          value: "医学汉语口头理解能力（听）",
           label: "医学汉语口头理解能力（听）",
           children: [
             {
-              value: 6,
+              value: "一级",
               label: "一级",
             },
             {
-              value: 7,
+              value: "二级",
               label: "二级",
             },
             {
-              value: 8,
+              value: "三级",
               label: "三级",
             },
           ],
         },
         {
-          value: 9,
+          value: "医学汉语口头理解能力（说）",
           label: "医学汉语口头理解能力（说）",
           children: [
             {
-              value: 10,
+              value: "一级",
               label: "一级",
             },
             {
-              value: 11,
+              value: "二级",
               label: "二级",
             },
             {
-              value: 12,
+              value: "三级",
               label: "三级",
             },
           ],
         },
         {
-          value: 13,
+          value: "医学汉语口头理解能力（读）",
           label: "医学汉语口头理解能力（读）",
           children: [
             {
-              value: 14,
+              value: "一级",
               label: "一级",
             },
             {
-              value: 15,
+              value: "二级",
               label: "二级",
             },
             {
-              value: 16,
+              value: "三级",
               label: "三级",
             },
           ],
         },
         {
-          value: 17,
+          value: "医学汉语口头理解能力（写）",
           label: "医学汉语口头理解能力（写）",
           children: [
             {
-              value: 18,
+              value: "一级",
               label: "一级",
             },
             {
-              value: 19,
+              value: "二级",
               label: "二级",
             },
             {
-              value: 20,
+              value: "三级",
               label: "三级",
             },
           ],
@@ -513,81 +541,81 @@ export default {
       topic_value: [],
       topic_outline: [
         {
-          value: 1,
+          value: "医生-医生",
           label: "医生-医生",
           children: [
             {
-              value: 2,
+              value: "询问",
               label: "询问",
             },
             {
-              value: 3,
+              value: "交流",
               label: "交流",
             },
             {
-              value: 4,
+              value: "指令",
               label: "指令",
             },
           ],
         },
         {
-          value: 5,
+          value: "医生-患者",
           label: "医生-患者",
           children: [
             {
-              value: 6,
+              value: "问诊",
               label: "问诊",
             },
             {
-              value: 7,
+              value: "诊断",
               label: "诊断",
             },
             {
-              value: 8,
+              value: "治疗",
               label: "治疗",
             },
             {
-              value: 9,
+              value: "主诉",
               label: "主诉",
             },
             {
-              value: 10,
+              value: "交流",
               label: "交流",
             },
             {
-              value: 11,
+              value: "指令",
               label: "指令",
             },
           ],
         },
         {
-          value: 12,
+          value: "医生-护士",
           label: "医生-护士",
           children: [
             {
-              value: 13,
+              value: "交流",
               label: "交流",
             },
             {
-              value: 14,
+              value: "指令",
               label: "指令",
             },
           ],
         },
         {
-          value: 15,
+          value: "患者-护士",
           label: "患者-护士",
           children: [
             {
-              value: 16,
+              value: "交流",
               label: "交流",
             },
             {
-              value: 17,
+              value: "指令",
               label: "指令",
             },
             {
-              value: 18,
+              value: "咨询",
               label: "咨询",
             },
           ],
@@ -628,126 +656,314 @@ export default {
         },
       ],
       task_value: [],
+      dialogVisible: false,
     };
   },
   watch: {},
   computed: {},
   methods: {
-    init() {
-      var BaaS = require("minapp-sdk");
-      let clientID = "395062a19e209a770059";
-      BaaS.init(clientID);
-      let Knowledge_All = new BaaS.TableObject("knowledge_point");
-      Knowledge_All.find().then(
-        (res) => {
-          this.knowledge = res.data.objects;
-        },
-        (err) => {
-          console.log(err);
-        }
-      );
-      // let Department = new BaaS.TableObject("department");
-      // Department.find().then(
-      //   (res) => {
-      //     this.department = res.data.objects;
-      //   },
-      //   (err) => {
-      //     console.log(err);
-      //   }
-      // );
-      let Test = new BaaS.TableObject("test");
-      Test.find().then(
-        (res) => {
-          this.test = res.data.objects;
-        },
-        (err) => {
-          console.log(err);
-        }
-      );
-      let Source = new BaaS.TableObject("source");
-      Source.find().then(
-        (res) => {
-          this.source = res.data.objects;
-        },
-        (err) => {
-          console.log(err);
-        }
-      );
+    async init() {
+      var sub = {
+        sub_sequence: 1,
+        question: "",
+        options: [],
+        answer: "",
+        analysis: "",
+        level_value: "",
+        grade_value: "",
+        topic_value: "",
+        task_value: "",
+        department_value: "",
+        qclass_value: "",
+        fivehe_value: "",
+        A: "",
+        B: "",
+        C: "",
+        D: "",
+        author: "",
+        author_org: "",
+        time_created: "",
+      };
+      await this.questions.sub_question.push(sub);
+      this.createEdit();
     },
     back() {
       this.$router.go(-1);
     },
-    handleClose(done) {
-      this.$confirm("确认关闭？")
-        .then((_) => {
-          done();
-        })
-        .catch((_) => {});
+    createEdit() {
+      const material = new E("#material");
+      material.config.uploadImgServer = "@/assets/UploadImage.php";
+      material.config.uploadVideoServer = "/api/upload-video";
+      material.config.height = 200;
+      material.config.zIndex = 4;
+      material.config.placeholder = "请输入题干";
+      material.create();
+      this.editor.push(material);
+      for (let i = 1; i <= this.currentSubQues; i++) {
+        const question = new E("#question" + i);
+        question.config.uploadImgServer = "/upload-img";
+        question.config.uploadVideoServer = "/api/upload-video";
+        question.config.height = 50;
+        question.config.zIndex = 5;
+        question.config.placeholder = "请输入问题";
+        question.create();
+        this.editor.push(question);
+        for (let j = 1; j <= this.option.length; j++) {
+          var alphabet = String.fromCharCode(64 + parseInt(j));
+          var option = new E("#" + alphabet + i);
+          option.config.uploadImgServer = "/upload-img";
+          option.config.uploadVideoServer = "/api/upload-video";
+          option.config.height = 50;
+          option.config.zIndex = 9 - j;
+          option.config.placeholder = "请输入选项";
+          option.create();
+          this.editor.push(option);
+        }
+        const answer = new E("#answer" + i);
+        answer.config.uploadImgServer = "/upload-img";
+        answer.config.uploadVideoServer = "/api/upload-video";
+        answer.config.height = 100;
+        answer.config.zIndex = 9;
+        answer.config.placeholder = "请输入答案";
+        answer.create();
+        this.editor.push(answer);
+        const analysis = new E("#analysis" + i);
+        analysis.config.uploadImgServer = "/upload-img";
+        analysis.config.uploadVideoServer = "/api/upload-video";
+        analysis.config.height = 100;
+        analysis.config.zIndex = 10;
+        analysis.config.placeholder = "请输入解析";
+        analysis.create();
+        this.editor.push(analysis);
+      }
     },
-    saveQues() {
-      this.dialogVisible = false;
-      var BaaS = require("minapp-sdk");
-      let clientID = "395062a19e209a770059";
-      BaaS.init(clientID);
-      this.question.primary_ques_type = this.radio1;
-      this.question.secondary_ques_type = this.radio2;
-      var content_id = "";
-      for (let i = 0; i < this.editor.length; i++) {
-        if (this.editor[i].toolbarSelector == "#material") {
-          let saveContent = new BaaS.TableObject("question_content");
-          let content = saveContent.create();
-          if (this.editor[i].txt.text() == "") {
-            content.set("content", null);
-          } else {
-            content.set("content", this.editor[i].txt.text());
+    async addSub() {
+      var sub = {
+        sub_sequence: this.currentSubQues + 1,
+        question: "",
+        options: [],
+        answer: "",
+        analysis: "",
+        level_value: "",
+        knowledge_value: "",
+        department_value: "",
+        test_value: "",
+        source_value: "",
+        qclass_value: "",
+        fivehe_value: "",
+        A: "",
+        B: "",
+        C: "",
+        D: "",
+        author: "",
+        author_org: "",
+        time_created: "",
+      };
+      await this.questions.sub_question.push(sub);
+      this.currentSubQues += 1;
+      const question = new E("#question" + this.currentSubQues);
+      question.config.uploadImgServer = "/upload-img";
+      question.config.uploadVideoServer = "/api/upload-video";
+      question.config.height = 50;
+      question.config.zIndex = 5;
+      question.config.placeholder = "请输入问题";
+      question.create();
+      this.editor.push(question);
+      for (let i = 1; i <= this.option.length; i++) {
+        var alphabet = String.fromCharCode(64 + parseInt(i));
+        var option = new E("#" + alphabet + this.currentSubQues);
+        option.config.uploadImgServer = "/upload-img";
+        option.config.uploadVideoServer = "/api/upload-video";
+        option.config.height = 50;
+        option.config.zIndex = 9 - i;
+        option.config.placeholder = "请输入选项";
+        option.create();
+        this.editor.push(option);
+      }
+      const answer = new E("#answer" + this.currentSubQues);
+      answer.config.uploadImgServer = "/upload-img";
+      answer.config.uploadVideoServer = "/api/upload-video";
+      answer.config.height = 100;
+      answer.config.zIndex = 9;
+      answer.config.placeholder = "请输入答案";
+      answer.create();
+      this.editor.push(answer);
+      const analysis = new E("#analysis" + this.currentSubQues);
+      analysis.config.uploadImgServer = "/upload-img";
+      analysis.config.uploadVideoServer = "/api/upload-video";
+      analysis.config.height = 100;
+      analysis.config.zIndex = 10;
+      analysis.config.placeholder = "请输入解析";
+      analysis.create();
+      this.editor.push(analysis);
+    },
+    async checkQues() {
+      var valid = true;
+      for (let j = 1; j <= this.currentSubQues; j++) {
+        if (this.questions.sub_question[j - 1].level_value == "") {
+          this.questions.sub_question[j - 1].level_value = null;
+        }
+        if (this.questions.sub_question[j - 1].grade_value == "") {
+          this.questions.sub_question[j - 1].grade_value = null;
+        }
+        if (this.questions.sub_question[j - 1].department_value == "") {
+          this.questions.sub_question[j - 1].department_value = null;
+        }
+        if (this.questions.sub_question[j - 1].task_value == "") {
+          this.questions.sub_question[j - 1].task_value = null;
+        }
+        if (this.questions.sub_question[j - 1].topic_value == "") {
+          this.questions.sub_question[j - 1].topic_value = null;
+        }
+        if (this.questions.sub_question[j - 1].qclass_value == "") {
+          this.questions.sub_question[j - 1].qclass_value = null;
+        }
+        if (this.questions.sub_question[j - 1].fivehe_value == "") {
+          this.questions.sub_question[j - 1].fivehe_value = null;
+        }
+        if (this.questions.sub_question[j - 1].author == "") {
+          this.questions.sub_question[j - 1].author = null;
+        }
+        if (this.questions.sub_question[j - 1].author_org == "") {
+          this.questions.sub_question[j - 1].author_org = null;
+        }
+        if (this.questions.sub_question[j - 1].time_created == "") {
+          this.questions.sub_question[j - 1].time_created = null;
+        }
+        let a = new Array();
+        for (let i = 0; i < this.editor.length; i++) {
+          if (valid == false) {
+            break;
           }
-          content.save().then(
-            (res) => {
-              // console.log(res);
-              // console.log(res.data.id)
-              // content_id = res.data.id;
-              this.question.question_content_id = res.data.id;
-              for (let i = 0; i < this.editor.length; i++) {
-                if (this.editor[i].toolbarSelector == "#question") {
-                  if (this.editor[i].txt.text() == "") {
-                    this.question.question = null;
-                  } else {
-                    this.question.question = this.editor[i].txt.text();
-                  }
-                } else if (this.editor[i].toolbarSelector == "#analysis") {
-                  if (this.editor[i].txt.text() == "") {
-                    this.question.analysis = null;
-                  } else {
-                    this.question.analysis = this.editor[i].txt.text();
-                  }
-                } else if (
-                  this.editor[i].toolbarSelector == "#answer" &&
-                  this.radio1 == "写作"
-                ) {
-                  if (this.editor[i].txt.text() == "") {
-                    this.question.answer = null;
-                  } else {
-                    this.question.answer = this.editor[i].txt.text();
-                  }
+          if (this.editor[i].toolbarSelector == "#material") {
+            if (this.editor[i].txt.text() == "") {
+              this.questions.question_content = null;
+              this.$message({
+                message: "请填写题干",
+                type: "warning",
+              });
+              valid = false;
+              break;
+            } else {
+              this.questions.question_content = this.editor[i].txt.text();
+            }
+          }
+          if (this.editor[i].toolbarSelector == "#question" + j) {
+            if (
+              this.editor[i].txt.text() == "" ||
+              this.editor[i].txt.text() == "null" ||
+              this.editor[i].txt.text() == "undefined" ||
+              this.editor[i].txt.text() == undefined
+            ) {
+              this.questions.sub_question[j - 1].question = null;
+            } else {
+              this.questions.sub_question[j - 1].question =
+                this.editor[i].txt.text();
+            }
+          } else if (this.editor[i].toolbarSelector == "#analysis" + j) {
+            if (
+              this.editor[i].txt.text() == "" ||
+              this.editor[i].txt.text() == "null" ||
+              this.editor[i].txt.text() == "undefined" ||
+              this.editor[i].txt.text() == undefined
+            ) {
+              this.questions.sub_question[j - 1].analysis = null;
+            } else {
+              this.questions.sub_question[j - 1].analysis =
+                this.editor[i].txt.text();
+            }
+          }
+          if (this.questions.primary_ques_type != "") {
+            if (
+              (this.questions.primary_ques_type == "听力" ||
+                this.questions.primary_ques_type == "阅读" ||
+                this.questions.primary_ques_type == "写作") &&
+              this.questions.secondary_ques_type == ""
+            ) {
+              this.$message({
+                message: "请选择二级题型",
+                type: "warning",
+              });
+              valid = false;
+              break;
+            }
+            if (
+              this.questions.primary_ques_type == "写作" ||
+              this.questions.primary_ques_type == "简答题"
+            ) {
+              if (this.editor[i].toolbarSelector == "#answer" + j) {
+                if (this.editor[i].txt.text() == "") {
+                  this.questions.sub_question[j - 1].answer = null;
+                  this.$message({
+                    message: "请填写答案",
+                    type: "warning",
+                  });
+                  valid = false;
+                  break;
                 } else {
-                  let a = new Array();
-                  for (let j = 0; j < this.option.length; j++) {
-                    if (
-                      "#" + this.option[j] ==
-                      this.editor[i].toolbarSelector
-                    ) {
+                  this.questions.sub_question[j - 1].answer =
+                    this.editor[i].txt.text();
+                }
+              }
+            } else {
+              if (
+                this.questions.secondary_ques_type != "听句子，判断对错" &&
+                this.questions.primary_ques_type != "判断题"
+              ) {
+                for (let k = 0; k < this.option.length; k++) {
+                  if (
+                    "#" + this.option[k] + j ==
+                    this.editor[i].toolbarSelector
+                  ) {
+                    if (this.editor[i].txt.text() == "") {
+                      this.$message({
+                        message: "请填写选项答案",
+                        type: "warning",
+                      });
+                      valid = false;
+                      break;
+                    } else {
+                      if (this.option[k] == "A") {
+                        this.questions.sub_question[j - 1].A =
+                          this.editor[i].txt.text();
+                      } else if (this.option[k] == "B") {
+                        this.questions.sub_question[j - 1].B =
+                          this.editor[i].txt.text();
+                      } else if (this.option[k] == "C") {
+                        this.questions.sub_question[j - 1].C =
+                          this.editor[i].txt.text();
+                      } else if (this.option[k] == "D") {
+                        this.questions.sub_question[j - 1].D =
+                          this.editor[i].txt.text();
+                      }
+                      this.questions.sub_question[j - 1].options = null;
                       let b = {
                         content: this.editor[i].txt.text(),
-                        index: this.option[j],
+                        index: this.option[k],
                       };
                       a.push(b);
                     }
                   }
-                  this.question.options = a;
                 }
-              }
-              if (this.radio2 == "听句子，判断对错") {
-                let a = [
+                this.questions.sub_question[j - 1].options = a;
+                if (
+                  this.questions.sub_question[j - 1].answer == "" ||
+                  this.option.indexOf(
+                    this.questions.sub_question[j - 1].answer
+                  ) == -1
+                ) {
+                  this.$message({
+                    message:
+                      "请填写第" +
+                      this.questions.sub_question[j - 1].actual_sequence +
+                      "题答案",
+                    type: "warning",
+                  });
+                  valid = false;
+                  break;
+                }
+              } else {
+                let p = [
                   {
                     content: "√",
                     index: "A",
@@ -757,153 +973,457 @@ export default {
                     index: "B",
                   },
                 ];
-                this.question.options = a;
-                this.question.answer = this.judge;
+                this.questions.sub_question[j - 1].options = null;
+                this.questions.sub_question[j - 1].options = p;
+                if (
+                  this.questions.sub_question[j - 1].answer == "" ||
+                  (this.questions.sub_question[j - 1].answer != "√" &&
+                    this.questions.sub_question[j - 1].answer != "×")
+                ) {
+                  this.$message({
+                    message:
+                      "请填写第" +
+                      this.questions.sub_question[j - 1].sub_sequence +
+                      "题答案",
+                    type: "warning",
+                  });
+                  valid = false;
+                  break;
+                }
               }
-              if (this.question.options != null) {
-                this.question.options = JSON.stringify(this.question.options);
-              }
-              if (content_id == "") {
-                this.question.questioon_content_id = null;
-              } else {
-                this.question.questioon_content_id = this.content_id;
-              }
-              if (this.level_value == "") {
-                this.question.ques_level = null;
-              } else {
-                this.question.ques_level = this.level_value;
-              }
-              if (
-                this.grade_value == undefined ||
-                this.grade_value.length <= 0
-              ) {
-                this.question.grade_standard = null;
-              } else {
-                this.question.grade_standard = this.grade_value;
-              }
-              if (
-                this.department_value == undefined ||
-                this.department_value.length <= 0
-              ) {
-                this.question.department_id = null;
-              } else {
-                this.question.department_id = this.department_value;
-              }
-              if (this.topic_value == undefined || this.topic_value.length <= 0) {
-                this.question.topic_outline = null;
-              } else {
-                this.question.topic_outline = this.topic_value;
-              }
-              if (
-                this.task_value == undefined ||
-                this.task_value.length <= 0
-              ) {
-                this.question.task_outline = null;
-              } else {
-                this.question.task_outline = this.task_value;
-              }
-              if (this.qclass_value == "") {
-                this.question.question_class = null;
-              } else {
-                this.question.question_class = this.qclass_value;
-              }
-              if (this.fivehe_value == "") {
-                this.question.question_type_5he = null;
-              } else {
-                this.question.question_type_5he = this.fivehe_value;
-              }
-              if(Cookie.get("catalog")!=""){
-                question.catalog = Cookie.get("catalog")
-              }
-              let saveQues = new BaaS.TableObject("questions_information");
-              let question = saveQues.create();
-              // question.set(this.question);
-              // console.log(this.question);
-              question
-                .set(this.question)
-                .save()
-                .then(
-                  (res) => {
-                    // console.log(res);
-                    if (this.question.options != null) {
-                      this.question.options = JSON.parse(this.question.options);
-                    }
-                    this.$message({
-                      message: "题目保存成功",
-                      type: "success",
-                    });
-                    this.back();
-                  },
-                  (err) => {
-                    console.log(err);
-                    this.$message({
-                      message: "题目保存失败",
-                      type: "danger",
-                    });
-                  }
-                );
-            },
-            (err) => {
-              console.log(err);
             }
-          );
+          } else {
+            this.$message({
+              message: "请选择一级题型",
+              type: "warning",
+            });
+            valid = false;
+            break;
+          }
         }
       }
-    },
-    createEdit() {
-      const material = new E("#material");
-      material.config.uploadImgServer = "/upload-img";
-      material.config.uploadVideoServer = "/api/upload-video";
-      material.config.height = 200;
-      material.config.zIndex = 7;
-      material.config.placeholder = "请输入题干";
-      material.create();
-      this.editor.push(material);
-      const question = new E("#question");
-      question.config.uploadImgServer = "/upload-img";
-      question.config.uploadVideoServer = "/api/upload-video";
-      question.config.height = 50;
-      question.config.zIndex = 6;
-      question.config.placeholder = "请输入问题";
-      question.create();
-      this.editor.push(question);
-      //   if (this.question.options) {
-      for (let i = 1; i <= this.option.length; i++) {
-        var alphabet = String.fromCharCode(64 + parseInt(i));
-        var option = new E("#" + alphabet);
-        option.config.uploadImgServer = "/upload-img";
-        option.config.uploadVideoServer = "/api/upload-video";
-        option.config.height = 50;
-        option.config.zIndex = 6 - i;
-        option.config.placeholder = "请输入选项";
-        option.create();
-        this.editor.push(option);
+      if (valid == true) {
+        this.dialogVisible = true;
       }
-      //   }
-      // if (this.radio1 == "写作") {
-      const answer = new E("#answer");
-      answer.config.uploadImgServer = "/upload-img";
-      answer.config.uploadVideoServer = "/api/upload-video";
-      answer.config.height = 100;
-      answer.config.zIndex = 1;
-      answer.config.placeholder = "请输入答案";
-      answer.create();
-      this.editor.push(answer);
-      // }
-      const analysis = new E("#analysis");
-      analysis.config.uploadImgServer = "/upload-img";
-      analysis.config.uploadVideoServer = "/api/upload-video";
-      analysis.config.height = 100;
-      analysis.config.zIndex = 0;
-      analysis.config.placeholder = "请输入解析";
-      analysis.create();
-      this.editor.push(analysis);
+      return valid;
+    },
+    typePChange() {
+      this.questions.secondary_ques_type = "";
+    },
+    async subDel(val) {
+      if (this.questions.sub_question.length == 1) {
+        this.questions.sub_question.splice(val, 1);
+        this.currentSubQues = 0;
+        for (let i = 0; i < this.editor.length; i++) {
+          if (this.editor[i].toolbarSelector != "#material") {
+            await this.editor[i].destroy();
+          }
+        }
+        this.addSub();
+      } else {
+        if (val != this.questions.sub_question.length - 1) {
+          for (let i = val + 1; i < this.currentSubQues; i++) {
+            this.questions.sub_question[i].sub_sequence--;
+          }
+          for (let j = 1; j <= this.currentSubQues; j++) {
+            for (let i = 0; i < this.editor.length; i++) {
+              if (this.editor[i].toolbarSelector == "#question" + j) {
+                this.questions.sub_question[j - 1].question =
+                  this.editor[i].txt.text();
+              } else if (this.editor[i].toolbarSelector == "#answer" + j) {
+                this.questions.sub_question[j - 1].answer =
+                  this.editor[i].txt.text();
+              } else if (this.editor[i].toolbarSelector == "#analysis" + j) {
+                this.questions.sub_question[j - 1].analysis =
+                  this.editor[i].txt.text();
+              } else {
+                if (this.editor[i].toolbarSelector == "#A" + j) {
+                  this.questions.sub_question[j - 1].A =
+                    this.editor[i].txt.text();
+                } else if (this.editor[i].toolbarSelector == "#B" + j) {
+                  this.questions.sub_question[j - 1].B =
+                    this.editor[i].txt.text();
+                } else if (this.editor[i].toolbarSelector == "#C" + j) {
+                  this.questions.sub_question[j - 1].C =
+                    this.editor[i].txt.text();
+                } else if (this.editor[i].toolbarSelector == "#D" + j) {
+                  this.questions.sub_question[j - 1].D =
+                    this.editor[i].txt.text();
+                }
+              }
+            }
+          }
+        }
+        this.questions.sub_question.splice(val, 1);
+        this.currentSubQues--;
+      }
+    },
+    grade(type, se) {
+      if (type != undefined) {
+        var arr = new Array();
+        for (let i = 0; i < type.length; i++) {
+          let temp;
+          temp = type[i][0] + "," + type[i][1];
+          arr.push(temp);
+        }
+        this.questions.sub_question[se - 1].grade_value = arr;
+      }
+    },
+    topic(type, se) {
+      if (type != undefined) {
+        var arr = new Array();
+        for (let i = 0; i < type.length; i++) {
+          let temp;
+          temp = type[i][0] + "," + type[i][1];
+          arr.push(temp);
+        }
+        this.questions.sub_question[se - 1].topic_value = arr;
+      }
+    },
+    saveQues() {
+      this.dialogVisible = false;
+      let findContent = new BaaS.TableObject("question_content");
+      let findc = new BaaS.Query();
+      findc.compare("content", "=", this.questions.question_content);
+      let q2 = new BaaS.Query();
+      q2.compare("is_delete", "=", false);
+      let andQuery = BaaS.Query.and(findc, q2);
+      findContent
+        .setQuery(andQuery)
+        .find()
+        .then(
+          (res) => {
+            if (res.data.objects.length == 0) {
+              let saveContent = new BaaS.TableObject("question_content");
+              let savec = saveContent.create();
+              savec.set({
+                content: this.questions.question_content,
+                file_url: null,
+                catalog: null,
+                is_delete: false,
+              });
+              savec.save().then(
+                (res) => {
+                  console.log(res);
+                  this.questions.question_content = res.data.id;
+                  for (let i = 0; i < this.questions.sub_question.length; i++) {
+                    let saveQ = new BaaS.TableObject("questions_information");
+                    let saveq = saveQ.create();
+                    let temp = {
+                      question_content_id: this.questions.question_content,
+                      primary_ques_type: this.questions.primary_ques_type,
+                      secondary_ques_type: this.questions.secondary_ques_type,
+                      question: this.questions.sub_question[i].question,
+                      options: JSON.stringify(
+                        this.questions.sub_question[i].options
+                      ),
+                      answer: this.questions.sub_question[i].answer,
+                      analysis: this.questions.sub_question[i].analysis,
+                      department:
+                        this.questions.sub_question[i].department_value,
+                      is_delete: false,
+                      catalog: null,
+                      ques_level: this.questions.sub_question[i].level_value,
+                      question_class:
+                        this.questions.sub_question[i].qclass_value,
+                      question_type_5he:
+                        this.questions.sub_question[i].fivehe_value,
+                      author: this.questions.sub_question[i].author,
+                      author_org: this.questions.sub_question[i].author_org,
+                      time_created: this.questions.sub_question[i].time_created,
+                      topic_outline: this.questions.sub_question[i].topic_value,
+                      grade_standard:
+                        this.questions.sub_question[i].grade_value,
+                      task_outline: this.questions.sub_question[i].task_value,
+                    };
+                    saveq
+                      .set(temp)
+                      .save()
+                      .then(
+                        (res) => {
+                          console.log(res);
+                          this.$message({
+                            message: "第" + (i + 1) + "题保存成功",
+                            type: "success",
+                          });
+                          if (i == this.questions.sub_question.length - 1) {
+                            this.back();
+                          }
+                        },
+                        (err) => {
+                          console.log(err);
+                        }
+                      );
+                  }
+                },
+                (err) => {
+                  console.log(err);
+                }
+              );
+            } else {
+              this.questions.question_content = res.data.objects[0].id;
+              for (let i = 0; i < this.questions.sub_question.length; i++) {
+                let findQ = new BaaS.TableObject("questions_information");
+                let q1 = new BaaS.Query();
+                let q2 = new BaaS.Query();
+                let q3 = new BaaS.Query();
+                let q4 = new BaaS.Query();
+                let q5 = new BaaS.Query();
+                let q6 = new BaaS.Query();
+                let q7 = new BaaS.Query();
+                let q8 = new BaaS.Query();
+                let q9 = new BaaS.Query();
+                // let q10 = new BaaS.Query();
+                let q11 = new BaaS.Query();
+                let q12 = new BaaS.Query();
+                let q13 = new BaaS.Query();
+                let q14 = new BaaS.Query();
+                let q15 = new BaaS.Query();
+                let q16 = new BaaS.Query();
+                let q17 = new BaaS.Query();
+                let q18 = new BaaS.Query();
+                let q19 = new BaaS.Query();
+                q1.compare(
+                  "question_content_id",
+                  "=",
+                  this.questions.question_content
+                );
+                q2.compare(
+                  "primary_ques_type",
+                  "=",
+                  this.questions.primary_ques_type
+                );
+                q3.compare(
+                  "secondary_ques_type",
+                  "=",
+                  this.questions.secondary_ques_type
+                );
+                if (this.questions.sub_question[i].question == null) {
+                  q4.isNull("question");
+                } else {
+                  q4.compare(
+                    "question",
+                    "=",
+                    this.questions.sub_question[i].question
+                  );
+                }
+                q5.compare(
+                  "options",
+                  "=",
+                  JSON.stringify(this.questions.sub_question[i].options)
+                );
+                q6.compare(
+                  "answer",
+                  "=",
+                  this.questions.sub_question[i].answer
+                );
+                if (this.questions.sub_question[i].analysis == null) {
+                  q7.isNull("analysis");
+                } else {
+                  q7.compare(
+                    "analysis",
+                    "=",
+                    this.questions.sub_question[i].analysis
+                  );
+                }
+                if (this.questions.sub_question[i].department_value == null) {
+                  q8.isNull("department");
+                } else {
+                  q8.compare(
+                    "department",
+                    "=",
+                    this.questions.sub_question[i].department_value
+                  );
+                }
+                q9.compare("is_delete", "=", false);
+                if (this.questions.sub_question[i].level_value == null) {
+                  q11.isNull("ques_level");
+                } else {
+                  q11.compare(
+                    "ques_level",
+                    "=",
+                    this.questions.sub_question[i].level_value
+                  );
+                }
+                if (this.questions.sub_question[i].qclass_value == null) {
+                  q12.isNull("question_class");
+                } else {
+                  q12.compare(
+                    "question_class",
+                    "=",
+                    this.questions.sub_question[i].qclass_value
+                  );
+                }
+                if (this.questions.sub_question[i].fivehe_value == null) {
+                  q13.isNull("question_type_5he");
+                } else {
+                  q13.compare(
+                    "question_type_5he",
+                    "=",
+                    this.questions.sub_question[i].fivehe_value
+                  );
+                }
+                if (this.questions.sub_question[i].author == null) {
+                  q14.isNull("author");
+                } else {
+                  q14.compare(
+                    "author",
+                    "=",
+                    this.questions.sub_question[i].author
+                  );
+                }
+                if (this.questions.sub_question[i].author_org == null) {
+                  q15.isNull("author_org");
+                } else {
+                  q15.compare(
+                    "author_org",
+                    "=",
+                    this.questions.sub_question[i].author_org
+                  );
+                }
+                if (this.questions.sub_question[i].time_created == null) {
+                  q16.isNull("time_created");
+                } else {
+                  q16.compare(
+                    "time_created",
+                    "=",
+                    this.questions.sub_question[i].time_created
+                  );
+                }
+                if (this.questions.sub_question[i].topic_value == null) {
+                  q17.isNull("topic_outline");
+                } else {
+                  q17.compare(
+                    "topic_outline",
+                    "=",
+                    this.questions.sub_question[i].topic_value
+                  );
+                }
+                if (this.questions.sub_question[i].grade_value == null) {
+                  q18.isNull("grade_standard");
+                } else {
+                  q18.compare(
+                    "grade_standard",
+                    "=",
+                    this.questions.sub_question[i].grade_value
+                  );
+                }
+                if (this.questions.sub_question[i].task_value == null) {
+                  q19.isNull("task_outline");
+                } else {
+                  q19.compare(
+                    "task_outline",
+                    "=",
+                    this.questions.sub_question[i].task_value
+                  );
+                }
+                let andQuery = BaaS.Query.and(
+                  q1,
+                  q2,
+                  q3,
+                  q4,
+                  q5,
+                  q6,
+                  q7,
+                  q8,
+                  q9,
+                  // q10,
+                  q11,
+                  q12,
+                  q13,
+                  q14,
+                  q15,
+                  q16,
+                  q17,
+                  q18,
+                  q19
+                );
+                findQ
+                  .setQuery(andQuery)
+                  .find()
+                  .then(
+                    (res) => {
+                      if (res.data.objects.length == 0) {
+                        let saveQ = new BaaS.TableObject(
+                          "questions_information"
+                        );
+                        let saveq = saveQ.create();
+                        let temp = {
+                          question_content_id: this.questions.question_content,
+                          primary_ques_type: this.questions.primary_ques_type,
+                          secondary_ques_type:
+                            this.questions.secondary_ques_type,
+                          question: this.questions.sub_question[i].question,
+                          options: JSON.stringify(
+                            this.questions.sub_question[i].options
+                          ),
+                          answer: this.questions.sub_question[i].answer,
+                          analysis: this.questions.sub_question[i].analysis,
+                          department:
+                            this.questions.sub_question[i].department_value,
+                          is_delete: false,
+                          catalog: null,
+                          ques_level:
+                            this.questions.sub_question[i].level_value,
+                          question_class:
+                            this.questions.sub_question[i].qclass_value,
+                          question_type_5he:
+                            this.questions.sub_question[i].fivehe_value,
+                          author: this.questions.sub_question[i].author,
+                          author_org: this.questions.sub_question[i].author_org,
+                          time_created:
+                            this.questions.sub_question[i].time_created,
+                          topic_outline:
+                            this.questions.sub_question[i].topic_value,
+                          grade_standard:
+                            this.questions.sub_question[i].grade_value,
+                          task_outline:
+                            this.questions.sub_question[i].task_value,
+                        };
+                        saveq
+                          .set(temp)
+                          .save()
+                          .then(
+                            (res) => {
+                              console.log(res);
+                              this.$message({
+                                message: "第" + (i + 1) + "题保存成功",
+                                type: "success",
+                              });
+                              if (i == this.questions.sub_question.length - 1) {
+                                this.back();
+                              }
+                            },
+                            (err) => {
+                              console.log(err);
+                            }
+                          );
+                      } else {
+                        this.$message({
+                          message: "第" + (i + 1) + "题已存在",
+                          type: "warning",
+                        });
+                        if (i == this.questions.sub_question.length - 1) {
+                          this.back();
+                        }
+                      }
+                    },
+                    (err) => {
+                      console.log(err);
+                    }
+                  );
+              }
+            }
+          },
+          (err) => {
+            console.log(err);
+          }
+        );
     },
   },
   created() {},
   mounted() {
     this.init();
-    this.createEdit();
   },
 };
 </script>
@@ -1083,5 +1603,15 @@ export default {
 }
 #answer {
   flex: 1;
+}
+.knowledge .el-input {
+  width: initial;
+}
+.ques_checkEdit .sub_ques_check {
+  display: flex;
+  justify-content: flex-end;
+}
+.ques_checkEdit .main_right_check {
+  margin-top: 10px;
 }
 </style>

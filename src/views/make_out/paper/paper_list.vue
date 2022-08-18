@@ -1,6 +1,6 @@
 //试卷
 <template>
-  <div>
+  <div class="paper">
     <div class="ques_top">
       <div class="ques_select">
         <el-select
@@ -34,10 +34,12 @@
           >创建试卷</el-button
         >
         <el-button type="success" plain>导入试卷</el-button>
-        <el-button type="success" plain>导出全部</el-button>
         <el-button type="success" plain>导出选中</el-button>
         <el-button type="success" plain @click="createFolder"
           >新建文件夹</el-button
+        >
+        <el-button type="primary" plain @click="multipleMove"
+          >移动选中</el-button
         >
       </div>
     </div>
@@ -112,16 +114,22 @@
                 <el-button type="success" plain @click="preview(scope.row)"
                   >查看/编辑</el-button
                 >
-                <el-button type="warning" plain>复制</el-button>
-                <el-button type="danger" plain>删除</el-button>
-                <el-button type="primary" plain>移动到</el-button>
+                <el-button type="warning" plain @click="copy(scope.row)"
+                  >复制</el-button
+                >
+                <el-button type="danger" plain @click="delPaper(scope.row)"
+                  >删除</el-button
+                >
+                <el-button type="primary" plain @click="moveTo(scope.row.id, 1)"
+                  >移动到</el-button
+                >
               </div>
               <div v-show="scope.row.catalog != null">
                 <el-button type="primary" plain @click="rename(scope.row)"
                   >重命名</el-button
                 >
                 <el-button
-                  type="primary"
+                  type="danger"
                   plain
                   @click="delCatalog(scope.$index, scope.row)"
                   >删除</el-button
@@ -145,7 +153,9 @@
       </div>
     </div>
     <div class="paper_bottom">
-      <el-button type="primary" icon="el-icon-delete">回收站</el-button>
+      <el-button type="primary" icon="el-icon-delete" @click="trash"
+        >回收站</el-button
+      >
     </div>
     <el-dialog title="创建试卷" :visible.sync="dialogVisible" width="30%">
       <el-radio-group v-model="radio">
@@ -156,6 +166,18 @@
         <el-button @click="dialogVisible = false">取 消</el-button>
         <el-button type="primary" @click="createPaper">确 定</el-button>
       </span>
+    </el-dialog>
+    <el-dialog
+      title="移动到"
+      :visible.sync="moveVisible"
+      :before-close="handleClose"
+      width="30%"
+    >
+      <div class="move">
+        <el-button v-for="o in catalog" :key="o.index" @click="to(o.catalog)">
+          {{ o.catalog }}
+        </el-button>
+      </div>
     </el-dialog>
   </div>
 </template>
@@ -172,6 +194,8 @@ export default {
   props: {},
   data() {
     return {
+      preMove: [],
+      moveVisible: false,
       use: [
         {
           value: "练习",
@@ -200,15 +224,15 @@ export default {
   computed: {},
   methods: {
     init() {
-      var BaaS = require("minapp-sdk");
-      let clientID = "395062a19e209a770059";
-      BaaS.init(clientID);
-      var query = new BaaS.Query();
+      let query = new BaaS.Query();
+      let q2 = new BaaS.Query();
       query.compare("created_by", "=", Cookie.get("user_id") * 1);
+      q2.compare("is_delete", "=", false);
+      let andQuery = BaaS.Query.and(query, q2);
       let Paper = new BaaS.TableObject("test_paper");
       Paper.limit(1000)
         .offset(0)
-        .setQuery(query)
+        .setQuery(andQuery)
         .orderBy("-created_at")
         .find()
         .then(
@@ -258,6 +282,10 @@ export default {
               );
               res.data.objects.unshift(element);
             });
+            sessionStorage.setItem(
+              "paperCatalog",
+              JSON.stringify(this.catalog)
+            );
             this.tableData = res.data.objects;
             this.initial = this.tableData;
           },
@@ -400,8 +428,11 @@ export default {
       } else {
         let query = new BaaS.Query();
         query.compare("catalog", "=", name);
+        let q2 = new BaaS.Query();
+        q2.compare("is_delete", "=", false);
+        let andQuery = BaaS.Query.and(query, q2);
         let Catalog = new BaaS.TableObject("test_paper");
-        Catalog.setQuery(query)
+        Catalog.setQuery(andQuery)
           .find()
           .then(
             (res) => {
@@ -420,11 +451,24 @@ export default {
                       this.tableData[index].id = res.data.id;
                       this.tableData[index].catalog = res.data.catalog;
                       this.tableData[index].finish = true;
+                      this.tableData[index].rename = false;
+                      this.tableData[index].have = false;
                       this.addMore = true;
                       this.$message({
                         message: name + "文件创建成功",
                         type: "success",
                       });
+                      let temp = {
+                        have: false,
+                        finish: true,
+                        rename: false,
+                        catalog: res.data.catalog,
+                      };
+                      this.catalog.push(temp);
+                      sessionStorage.setItem(
+                        "paperCatalog",
+                        JSON.stringify(this.catalog)
+                      );
                     },
                     (err) => {
                       console.log(err);
@@ -493,24 +537,55 @@ export default {
       this.previousName = "";
     },
     delCatalog(index, row) {
-      let Catalog = new BaaS.TableObject("test_paper");
-      Catalog.delete(row.id).then(
-        (res) => {
-          console.log(res);
-          this.tableData.splice(index, 1);
-          this.$message({
-            message: "文件删除成功",
-            type: "success",
-          });
-        },
-        (err) => {
-          console.log(err);
-        }
-      );
+      let findCata = new BaaS.TableObject("test_paper");
+      let findc = new BaaS.Query();
+      let q2 = new BaaS.Query();
+      findc.compare("catalog", "=", row.catalog);
+      q2.compare("is_delete", "=", false);
+      let andQuery = BaaS.Query.and(findc, q2);
+      findCata
+        .setQuery(andQuery)
+        .find()
+        .then(
+          (res) => {
+            for (let i = 0; i < res.data.objects.length; i++) {
+              let Catalog = new BaaS.TableObject("test_paper");
+              let cata = Catalog.getWithoutData(res.data.objects[i].id);
+              cata.set("is_delete", true);
+              cata.update().then(
+                (res) => {
+                  console.log(res);
+                  this.$message({
+                    message: "文件夹删除成功",
+                    type: "success",
+                  });
+                  this.tableData.splice(index, 1);
+                  for (let i = 0; i < this.catalog.length; i++) {
+                    if (this.catalog[i].catalog == row.catalog) {
+                      this.catalog.splice(i, 1);
+                      sessionStorage.setItem(
+                        "paperCatalog",
+                        JSON.stringify(this.catalog)
+                      );
+                      break;
+                    }
+                  }
+                },
+                (err) => {
+                  console.log(err);
+                }
+              );
+            }
+          },
+          (err) => {
+            console.log(err);
+          }
+        );
     },
     enterFolder(row) {
-      Cookies.set("make_out","third")
+      Cookies.set("make_out", "third");
       Cookies.set("catalog", row.catalog);
+      Cookies.set("catalogall", JSON.stringify(this.catalog));
       this.$router.push("/paperCatalog");
     },
     createPaper() {
@@ -630,14 +705,17 @@ export default {
                     question.sub_question = sub;
                     questions.push(question);
                     if (questions.length == qc.length) {
-                      questions.sort(function(a,b) {
-                        return a.sub_question[0].actual_sequence - b.sub_question[0].actual_sequence;
+                      questions.sort(function (a, b) {
+                        return (
+                          a.sub_question[0].actual_sequence -
+                          b.sub_question[0].actual_sequence
+                        );
                       });
-                      let sequen=1
-                      for(let h=0;h<questions.length;h++){
-                        questions[h].sequence=sequen
-                        questions[h].name=questions[h].sequence.toString()
-                        sequen++
+                      let sequen = 1;
+                      for (let h = 0; h < questions.length; h++) {
+                        questions[h].sequence = sequen;
+                        questions[h].name = questions[h].sequence.toString();
+                        sequen++;
                       }
                       sessionStorage.setItem(
                         "questions",
@@ -647,7 +725,7 @@ export default {
                       sessionStorage.setItem("currentQues", questions.length);
                       sessionStorage.setItem(
                         "currentSubQues",
-                        questions[questions.length-1].sub_question.length
+                        questions[questions.length - 1].sub_question.length
                       );
                       sessionStorage.setItem("title", val.paper_title);
                       if (val.paper_type == "模考") {
@@ -657,9 +735,9 @@ export default {
                       }
                       sessionStorage.setItem("ques_num", val.questions_num);
                       sessionStorage.setItem("ques_score", val.points);
-                      Cookies.set("paperEdit",true)
-                      Cookies.set("paperInfo",val.id)
-                      Cookies.set("make_out","third")
+                      Cookies.set("paperEdit", true);
+                      Cookies.set("paperInfo", val.id);
+                      Cookies.set("make_out", "third");
                       this.$router.push("/mcreatePaper");
                     }
                   },
@@ -676,6 +754,119 @@ export default {
         );
       }
     },
+    multipleMove() {
+      if (this.multipleSelection.length == 0) {
+        this.$message({
+          message: "未选择移动项",
+          type: "warning",
+        });
+      } else {
+        let ca = false;
+        for (let i = 0; i < this.multipleSelection.length; i++) {
+          if (this.multipleSelection[i].catalog != null) {
+            this.$message({
+              message: "文件夹不可移动",
+              type: "warning",
+            });
+            ca = true;
+            break;
+          }
+        }
+        if (ca == false) {
+          let temp = [];
+          this.multipleSelection.forEach((element) => {
+            temp.push(element.id);
+          });
+          this.moveTo(temp, 2);
+        }
+      }
+    },
+    moveTo(val, type) {
+      if (type == 1) {
+        this.preMove.push(val);
+      } else if (type == 2) {
+        this.preMove = val;
+      }
+      this.moveVisible = true;
+    },
+    handleClose() {
+      this.preMove = [];
+      this.moveVisible = false;
+    },
+    to(val) {
+      for (let i = 0; i < this.preMove.length; i++) {
+        let Catalog = new BaaS.TableObject("test_paper");
+        let cata = Catalog.getWithoutData(this.preMove[i]);
+        cata.set("catalog", val);
+        cata.update().then(
+          (res) => {
+            console.log(res);
+            this.$message({
+              message: "移动成功",
+              type: "success",
+            });
+            this.handleClose();
+            this.init();
+          },
+          (err) => {
+            console.log(err);
+          }
+        );
+      }
+    },
+    copy(val) {
+      let addQ = new BaaS.TableObject("test_paper");
+      let add = addQ.create();
+      let temp = {
+        paper_title: val.paper_title + "(1)",
+        paper_type: val.paper_type,
+        questions_num: val.questions_num,
+        points: val.points,
+        is_delete: false,
+        catalog: val.catalog,
+        questions_detail: val.questions_detail,
+        ques_type: val.ques_type,
+      };
+      add
+        .set(temp)
+        .save()
+        .then(
+          (res) => {
+            console.log(res);
+            this.$message({
+              message: "复制成功",
+              type: "success",
+            });
+            this.init();
+          },
+          (err) => {
+            console.log(err);
+          }
+        );
+    },
+    delPaper(val) {
+      let Ques = new BaaS.TableObject("test_paper");
+      let ques = Ques.getWithoutData(val.id);
+      ques.set("is_delete", true);
+      ques.update().then(
+        (res) => {
+          console.log(res);
+          this.$message({
+            message: "删除成功",
+            type: "success",
+          });
+          this.init();
+        },
+        (err) => {
+          console.log(err);
+        }
+      );
+    },
+    trash() {
+      Cookies.set("make_out", "third");
+      Cookies.set("trash", "paper");
+      this.$router.push("/trash_list");
+    },
   },
   created() {},
   mounted() {
@@ -684,8 +875,13 @@ export default {
 };
 </script>
 <style>
-/* .paper_top, .paper_bottom{
-    display: flex;
-    justify-content: end;
-} */
+.paper .move,
+.paperCatalog .move {
+  display: flex;
+  flex-direction: column;
+}
+.paper .move .el-button + .el-button,
+.paperCatalog .move .el-button + .el-button {
+  margin-left: 0px;
+}
 </style>

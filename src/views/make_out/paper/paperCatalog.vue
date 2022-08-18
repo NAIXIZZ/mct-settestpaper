@@ -35,8 +35,8 @@
           >创建试卷</el-button
         >
         <el-button type="success" plain>导入试卷</el-button>
-        <el-button type="success" plain>导出全部</el-button>
         <el-button type="success" plain>导出选中</el-button>
+        <el-button type="primary" plain @click="multipleMove">移动选中</el-button>
         <el-button plain @click="back">返回</el-button>
       </div>
     </div>
@@ -66,9 +66,9 @@
                 <el-button type="success" plain @click="preview(scope.row)"
                   >查看/编辑</el-button
                 >
-                <el-button type="warning" plain>复制</el-button>
-                <el-button type="danger" plain>删除</el-button>
-                <el-button type="primary" plain>移动到</el-button>
+                <el-button type="warning" plain @click="copy(scope.row)">复制</el-button>
+                <el-button type="danger" plain @click="delPaper(scope.row)">删除</el-button>
+                <el-button type="primary" plain @click="moveTo(scope.row.id, 1)">移动到</el-button>
               </div>
             </template>
           </el-table-column>
@@ -88,7 +88,7 @@
       </div>
     </div>
     <div class="paper_bottom">
-      <el-button type="primary" icon="el-icon-delete">回收站</el-button>
+      <el-button type="primary" icon="el-icon-delete" @click="trash">回收站</el-button>
     </div>
     <el-dialog title="创建试卷" :visible.sync="dialogVisible" width="30%">
       <el-radio-group v-model="radio">
@@ -99,6 +99,22 @@
         <el-button @click="dialogVisible = false">取 消</el-button>
         <el-button type="primary" @click="createPaper">确 定</el-button>
       </span>
+    </el-dialog>
+    <el-dialog
+      title="移动到"
+      :visible.sync="moveVisible"
+      :before-close="handleClose"
+    >
+      <div class="move">
+        <el-button @click="to('out')"> 文件夹外 </el-button>
+        <el-button
+          v-for="o in catalogall"
+          :key="o.index"
+          @click="to(o.catalog)"
+        >
+          {{ o.catalog }}
+        </el-button>
+      </div>
     </el-dialog>
   </div>
 </template>
@@ -115,6 +131,9 @@ export default {
   props: {},
   data() {
     return {
+      catalogall:[],
+      preMove: [],
+      moveVisible: false,
       use: [
         {
           value: "练习",
@@ -144,14 +163,20 @@ export default {
   methods: {
     init() {
       this.catalog = Cookie.get("catalog");
-      var BaaS = require("minapp-sdk");
-      let clientID = "395062a19e209a770059";
-      BaaS.init(clientID);
+      this.catalogall = JSON.parse(Cookie.get("catalogall"));
+      for(let i=0;i<this.catalogall.length;i++){
+        if(this.catalogall[i].catalog==this.catalog){
+          this.catalogall.splice(i,1)
+          break
+        }
+      }
       let query = new BaaS.Query();
       query.compare("created_by", "=", Cookie.get("user_id") * 1);
       let que = new BaaS.Query();
       que.compare("catalog", "=", this.catalog);
-      let andQuery = BaaS.Query.and(query, que);
+      let q3 = new BaaS.Query()
+      q3.compare("is_delete","=",false)
+      let andQuery = BaaS.Query.and(query, que,q3);
       let Paper = new BaaS.TableObject("test_paper");
       Paper.limit(1000)
         .offset(0)
@@ -166,6 +191,12 @@ export default {
             ) {
               this.tableData = [];
             } else {
+              for(let i=0;i<res.data.objects.length;i++){
+                if(res.data.objects[i].paper_title==null){
+                  res.data.objects.splice(i,1)
+                  break
+                }
+              }
               res.data.objects.forEach((element) => {
                 let date = new Date(element.created_at * 1000);
                 let Y = date.getFullYear() + "-";
@@ -439,9 +470,127 @@ export default {
         );
       }
     },
+    copy(val) {
+      let addQ = new BaaS.TableObject("test_paper");
+      let add = addQ.create();
+      let temp = {
+        paper_title: val.paper_title + "(1)",
+        paper_type: val.paper_type,
+        questions_num: val.questions_num,
+        points: val.points,
+        is_delete: false,
+        catalog: val.catalog,
+        questions_detail: val.questions_detail,
+        ques_type: val.ques_type,
+      };
+      add
+        .set(temp)
+        .save()
+        .then(
+          (res) => {
+            console.log(res);
+            this.$message({
+              message: "复制成功",
+              type: "success",
+            });
+            this.init();
+          },
+          (err) => {
+            console.log(err);
+          }
+        );
+    },
+    delPaper(val) {
+      let Ques = new BaaS.TableObject("test_paper");
+      let ques = Ques.getWithoutData(val.id);
+      ques.set("is_delete", true);
+      ques.update().then(
+        (res) => {
+          console.log(res);
+          this.$message({
+            message: "删除成功",
+            type: "success",
+          });
+          this.init();
+        },
+        (err) => {
+          console.log(err);
+        }
+      );
+    },
+    trash() {
+      Cookies.set("trash", "paper");
+      this.$router.push("/trash_list");
+    },
     back() {
       Cookies.set("catalog", "");
+      Cookies.set("catalogall", "");
       this.$router.go(-1);
+    },
+    multipleMove() {
+      if (this.multipleSelection.length == 0) {
+        this.$message({
+          message: "未选择移动项",
+          type: "warning",
+        });
+      } else {
+        let temp = [];
+        this.multipleSelection.forEach((element) => {
+          temp.push(element.id);
+        });
+        this.moveTo(temp, 2);
+      }
+    },
+    moveTo(val, type) {
+      if (type == 1) {
+        this.preMove.push(val);
+      } else if (type == 2) {
+        this.preMove = val;
+      }
+      this.moveVisible = true;
+    },
+    handleClose() {
+      this.preMove = [];
+      this.moveVisible = false;
+    },
+    to(val) {
+      for (let i = 0; i < this.preMove.length; i++) {
+        let Catalog = new BaaS.TableObject("test_paper");
+        let cata = Catalog.getWithoutData(this.preMove[i]);
+        if (val == "out") {
+          cata.set("catalog", null);
+          cata.update().then(
+            (res) => {
+              console.log(res);
+              this.$message({
+                message: "移动成功",
+                type: "success",
+              });
+              this.handleClose();
+              this.init();
+            },
+            (err) => {
+              console.log(err);
+            }
+          );
+        } else {
+          cata.set("catalog", val);
+          cata.update().then(
+            (res) => {
+              console.log(res);
+              this.$message({
+                message: "移动成功",
+                type: "success",
+              });
+              this.handleClose();
+              this.init();
+            },
+            (err) => {
+              console.log(err);
+            }
+          );
+        }
+      }
     },
   },
   created() {},

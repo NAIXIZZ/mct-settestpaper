@@ -38,6 +38,7 @@ import visitor_wordKg from '@/views/visitor/outline/visitor_wordKg.vue'
 import kgShow from '@/views/kg/kgShow.vue'
 import selectEnterCatalog from '@/views/make_out/paper/selectEnterCatalog.vue'
 import preview from '@/views/make_out/paper/preview.vue'
+import trash_list from '@/views/make_out/trash/trash_list.vue'
 
 Vue.use(VueRouter)
 export default new Router({
@@ -224,6 +225,11 @@ export default new Router({
             path: '/preview',
             name: 'preview',
             component: preview
+        },
+        {
+            path: '/trash_list',
+            name: 'trash_list',
+            component: trash_list
         },
     ]
 })

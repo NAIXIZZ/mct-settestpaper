@@ -13,6 +13,9 @@
       </div>
       <h1 class="title">{{ catalog }}</h1>
       <div class="back">
+        <el-button type="primary" plain @click="multipleMove"
+          >移动选中</el-button
+        >
         <el-button plain @click="back">返回</el-button>
       </div>
     </div>
@@ -67,18 +70,33 @@
       </el-table-column>
       <el-table-column label="操作" width="500">
         <template slot-scope="scope">
-          <div>
+          <div class="button_bar">
             <el-button type="success" plain @click="checkQuesP(scope.row.id)"
               >查看题目/试卷</el-button
             >
             <el-button type="warning" plain @click="handleSet(scope.row.id)"
               >出题/出卷</el-button
             >
-            <el-button type="danger" plain>删除</el-button>
-            <el-button type="primary" plain>移动到</el-button>
-            <!-- <el-button type="primary" plain @click="checkMaterial(scope.row.id)"
-            >查看</el-button
-          > -->
+            <el-button
+              type="danger"
+              plain
+              v-if="!scope.row.have"
+              @click="delContent(scope.row)"
+              >删除</el-button
+            >
+            <div style="margin: 0 10px" v-else>
+              <el-tooltip
+                class="item"
+                effect="dark"
+                content="题干材料中无项目时才可删除"
+                placement="top"
+              >
+                <el-button type="info" plain>删除</el-button>
+              </el-tooltip>
+            </div>
+            <el-button type="primary" plain @click="moveTo(scope.row.id, 1)"
+              >移动到</el-button
+            >
           </div>
         </template>
       </el-table-column>
@@ -96,7 +114,9 @@
       </el-pagination>
     </div>
     <div class="trash">
-      <el-button type="primary" icon="el-icon-delete">回收站</el-button>
+      <el-button type="primary" icon="el-icon-delete" @click="trash"
+        >回收站</el-button
+      >
     </div>
     <el-dialog title="自动出题" :visible.sync="dialogFormVisible">
       <el-form :model="form">
@@ -121,6 +141,22 @@
         <el-button @click="dialogFormVisible = false">取 消</el-button>
       </div>
     </el-dialog>
+    <el-dialog
+      title="移动到"
+      :visible.sync="moveVisible"
+      :before-close="handleClose"
+    >
+      <div class="move">
+        <el-button @click="to('out')"> 文件夹外 </el-button>
+        <el-button
+          v-for="o in catalogall"
+          :key="o.index"
+          @click="to(o.catalog)"
+        >
+          {{ o.catalog }}
+        </el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -136,11 +172,14 @@ export default {
   props: {},
   data() {
     return {
+      preMove: [],
       catalog: "",
       input: "",
       tableData: [],
       initial: [],
+      multipleSelection: [],
       dialogFormVisible: false,
+      moveVisible: false,
       form: {
         quesnum: "",
       },
@@ -200,7 +239,7 @@ export default {
           label: "写作题",
         },
       ],
-      // catalog: [],
+      catalogall: [],
     };
   },
   watch: {},
@@ -208,11 +247,20 @@ export default {
   methods: {
     init() {
       this.catalog = Cookie.get("catalog");
+      this.catalogall = JSON.parse(Cookie.get("catalogall"));
+      for (let i = 0; i < this.catalogall.length; i++) {
+        if (this.catalogall[i].catalog == this.catalog) {
+          this.catalogall.splice(i, 1);
+          break;
+        }
+      }
       let query = new BaaS.Query();
       query.compare("created_by", "=", Cookie.get("user_id") * 1);
       let query2 = new BaaS.Query();
       query2.compare("catalog", "=", this.catalog);
-      let andQuery = BaaS.Query.and(query, query2);
+      let query3 = new BaaS.Query();
+      query3.compare("is_delete", "=", false);
+      let andQuery = BaaS.Query.and(query, query2, query3);
       let Material = new BaaS.TableObject("question_content");
       Material.limit(1000)
         .offset(0)
@@ -228,16 +276,36 @@ export default {
             ) {
               this.tableData = [];
             } else {
-              res.data.objects.forEach((element) => {
+              for (let i = 0; i < res.data.objects.length; i++) {
                 if (
-                  element.file_url != null &&
-                  (element.file_url.path.search(".png") != -1 ||
-                    element.file_url.path.search(".jpg") != -1 ||
-                    element.file_url.path.search(".gif") != -1)
+                  res.data.objects[i].file_url == null &&
+                  res.data.objects[i].content == null
                 ) {
-                  this.srcList.push(element.file_url.path);
+                  res.data.objects.splice(i, 1);
+                  break;
                 }
-              });
+              }
+              for (let i = 0; i < res.data.objects.length; i++) {
+                res.data.objects[i].have = false;
+                let q3 = new BaaS.Query();
+                q3.compare("question_content_id", "=", res.data.objects[i].id);
+                let Question = new BaaS.TableObject("questions_information");
+                let and = BaaS.Query.and(query, query3, q3);
+                Question.setQuery(and)
+                  .limit(1000)
+                  .offset(0)
+                  .find()
+                  .then(
+                    (ress) => {
+                      if (ress.data.objects.length != 0) {
+                        res.data.objects[i].have = true;
+                      }
+                    },
+                    (err) => {
+                      console.log(err);
+                    }
+                  );
+              }
               this.tableData = res.data.objects;
               this.initial = res.data.objects;
             }
@@ -248,7 +316,6 @@ export default {
         );
     },
     title_search(val) {
-      console.log(val);
       if (val == "") {
         this.tableData = this.initial;
       } else {
@@ -279,73 +346,96 @@ export default {
     use_clear() {
       this.tableData = this.initial;
     },
-    rename(row) {
-      row.rename = true;
-      this.previousName = row.catalog;
-    },
-    renameDefine(index, row) {
-      let query = new BaaS.Query();
-      query.compare("catalog", "=", row.catalog);
+    delContent(row) {
       let Catalog = new BaaS.TableObject("question_content");
-      Catalog.setQuery(query)
-        .find()
-        .then(
-          (res) => {
-            console.log(res);
-            if (res.data.objects.length == 0) {
-              let catalog = Catalog.getWithoutData(row.id);
-              catalog.set("catalog", row.catalog);
-              catalog.update().then(
-                (res) => {
-                  console.log(res);
-                  row.rename = false;
-                  this.$message({
-                    message: "文件重命名成功",
-                    type: "success",
-                  });
-                },
-                (err) => {
-                  console.log(err);
-                }
-              );
-            } else {
-              this.$message({
-                message: "该文件名已存在，请重新命名",
-                type: "error",
-              });
-            }
-          },
-          (err) => {
-            console.log(err);
-          }
-        );
-    },
-    cancelRename(index, row) {
-      console.log(index);
-      row.catalog = this.previousName;
-      row.rename = false;
-      this.previousName = "";
-    },
-    delCatalog(index, row) {
-      console.log(row.id);
-      let Catalog = new BaaS.TableObject("question_content");
-      Catalog.delete(row.id).then(
+      let cata = Catalog.getWithoutData(row.id);
+      cata.set("is_delete", true);
+      cata.update().then(
         (res) => {
           console.log(res);
-          this.tableData.splice(index, 1);
           this.$message({
-            message: "文件删除成功",
+            message: "删除成功",
             type: "success",
           });
+          this.init();
         },
         (err) => {
           console.log(err);
         }
       );
     },
+    moveTo(val, type) {
+      if (type == 1) {
+        this.preMove.push(val);
+      } else if (type == 2) {
+        this.preMove = val;
+      }
+      this.moveVisible = true;
+    },
+    handleClose() {
+      this.preMove = [];
+      this.moveVisible = false;
+    },
+    to(val) {
+      for (let i = 0; i < this.preMove.length; i++) {
+        let Catalog = new BaaS.TableObject("question_content");
+        let cata = Catalog.getWithoutData(this.preMove[i]);
+        if (val == "out") {
+          cata.set("catalog", null);
+          cata.update().then(
+            (res) => {
+              console.log(res);
+              this.$message({
+                message: "移动成功",
+                type: "success",
+              });
+              this.handleClose();
+              this.init();
+            },
+            (err) => {
+              console.log(err);
+            }
+          );
+        } else {
+          cata.set("catalog", val);
+          cata.update().then(
+            (res) => {
+              console.log(res);
+              this.$message({
+                message: "移动成功",
+                type: "success",
+              });
+              this.handleClose();
+              this.init();
+            },
+            (err) => {
+              console.log(err);
+            }
+          );
+        }
+      }
+    },
+    multipleMove() {
+      if (this.multipleSelection.length == 0) {
+        this.$message({
+          message: "未选择移动项",
+          type: "warning",
+        });
+      } else {
+        let temp = [];
+        this.multipleSelection.forEach((element) => {
+          temp.push(element.id);
+        });
+        this.moveTo(temp, 2);
+      }
+    },
     checkQuesP(id) {
       Cookies.set("material_id", id);
       this.$router.push("checkQuesP");
+    },
+    trash() {
+      Cookies.set("trash", "content");
+      this.$router.push("/trash_list");
     },
     handleSet(val) {
       Cookies.set("material_id", val);
@@ -375,6 +465,7 @@ export default {
     },
     back() {
       Cookies.set("catalog", "");
+      Cookies.set("catalogall", "");
       this.$router.go(-1);
     },
   },
@@ -429,5 +520,16 @@ export default {
   display: flex;
   justify-content: flex-end;
   margin-top: 10px;
+}
+.materialCatalog .button_bar {
+  display: flex;
+  flex-direction: row;
+}
+.materialCatalog .move {
+  display: flex;
+  flex-direction: column;
+}
+.materialCatalog .move .el-button + .el-button {
+  margin-left: 0px;
 }
 </style>

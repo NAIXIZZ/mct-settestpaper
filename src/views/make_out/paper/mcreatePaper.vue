@@ -84,10 +84,12 @@
                   <i
                     class="el-icon-arrow-up type_up"
                     :id="'type_up' + i + '_' + j"
+                    @click="stypeUp(i, j)"
                   ></i>
                   <i
                     class="el-icon-arrow-down type_down"
                     :id="'type_down' + i + '_' + j"
+                    @click="stypeDown(i, j)"
                   ></i>
                 </div>
               </el-card>
@@ -130,10 +132,15 @@
                       :id="'ques_del' + k"
                       @click="quesDel(i, j, k)"
                     ></i>
-                    <i class="el-icon-arrow-up ques_up" :id="'ques_up' + k"></i>
+                    <i
+                      class="el-icon-arrow-up ques_up"
+                      :id="'ques_up' + k"
+                      @click="quesUp(i, j, k)"
+                    ></i>
                     <i
                       class="el-icon-arrow-down ques_down"
                       :id="'ques_down' + k"
+                      @click="quesDown(i, j, k)"
                     ></i>
                   </el-card>
                 </div>
@@ -435,26 +442,6 @@
                     </router-link>
                   </el-tooltip>
                 </div>
-                <!-- <div class="knowledge" v-if="knowledge">
-                  知识点：
-                  <el-select
-                    v-model="s.knowledge_value"
-                    multiple
-                    filterable
-                    allow-create
-                    default-first-option
-                    placeholder="请搜索或添加知识点"
-                    @change="typeSChange"
-                  >
-                    <el-option
-                      v-for="item in knowledge"
-                      :key="item.id"
-                      :label="item.knowledge_point"
-                      :value="item.id"
-                    >
-                    </el-option>
-                  </el-select>
-                </div> -->
                 <div class="knowledge">
                   系统：
                   <el-select
@@ -472,46 +459,6 @@
                     </el-option>
                   </el-select>
                 </div>
-                <!-- <div class="knowledge">
-                  考点：
-                  <el-select
-                    v-model="s.test_value"
-                    multiple
-                    filterable
-                    allow-create
-                    default-first-option
-                    placeholder="请搜索或添加考点"
-                    @change="typeSChange"
-                  >
-                    <el-option
-                      v-for="item in test"
-                      :key="item.id"
-                      :label="item.test"
-                      :value="item.id"
-                    >
-                    </el-option>
-                  </el-select>
-                </div>
-                <div class="knowledge">
-                  来源：
-                  <el-select
-                    v-model="s.source_value"
-                    multiple
-                    filterable
-                    allow-create
-                    default-first-option
-                    placeholder="请搜索或添加来源"
-                    @change="typeSChange"
-                  >
-                    <el-option
-                      v-for="item in source"
-                      :key="item.id"
-                      :label="item.source"
-                      :value="item.id"
-                    >
-                    </el-option>
-                  </el-select>
-                </div> -->
                 <div class="knowledge">
                   题目类型：
                   <el-select
@@ -648,8 +595,6 @@ export default {
       exam: false,
       ques_num: 0,
       ques_score: 0,
-      // score: "",
-      // judge: "",
       option: ["A", "B", "C", "D"],
       radio: "",
       editor: [],
@@ -1791,6 +1736,27 @@ export default {
             j - 1
           ].fivehe_value = null;
         }
+        if (
+          this.questions[this.currentQues - 1].sub_question[j - 1].author == ""
+        ) {
+          this.questions[this.currentQues - 1].sub_question[j - 1].author =
+            null;
+        }
+        if (
+          this.questions[this.currentQues - 1].sub_question[j - 1].author_org ==
+          ""
+        ) {
+          this.questions[this.currentQues - 1].sub_question[j - 1].author_org =
+            null;
+        }
+        if (
+          this.questions[this.currentQues - 1].sub_question[j - 1]
+            .time_created == ""
+        ) {
+          this.questions[this.currentQues - 1].sub_question[
+            j - 1
+          ].time_created = null;
+        }
         let a = new Array();
         for (let i = 0; i < this.editor.length; i++) {
           if (valid == false) {
@@ -1831,7 +1797,12 @@ export default {
             this.editor[i].toolbarSelector ==
             "#question" + this.currentQues + "_" + j
           ) {
-            if (this.editor[i].txt.text() == "") {
+            if (
+              this.editor[i].txt.text() == "" ||
+              this.editor[i].txt.text() == "null" ||
+              this.editor[i].txt.text() == "undefined" ||
+              this.editor[i].txt.text() == undefined
+            ) {
               this.questions[this.currentQues - 1].sub_question[
                 j - 1
               ].question = null;
@@ -1844,7 +1815,12 @@ export default {
             this.editor[i].toolbarSelector ==
             "#analysis" + this.currentQues + "_" + j
           ) {
-            if (this.editor[i].txt.text() == "") {
+            if (
+              this.editor[i].txt.text() == "" ||
+              this.editor[i].txt.text() == "null" ||
+              this.editor[i].txt.text() == "undefined" ||
+              this.editor[i].txt.text() == undefined
+            ) {
               this.questions[this.currentQues - 1].sub_question[
                 j - 1
               ].analysis = null;
@@ -4272,8 +4248,62 @@ export default {
     typeUp(val) {
       if (val != 0) {
         let type = this.ques_type[val];
-        let fnum = this.ques_type[val].total_num;
-        let snum = this.ques_type[val + 1].total_num;
+        let fstart = this.ques_type[val - 1].secondary[0].start;
+        let fend =
+          this.ques_type[val - 1].secondary[
+            this.ques_type[val - 1].secondary.length - 1
+          ].end;
+        let sstart = this.ques_type[val].secondary[0].start;
+        let send =
+          this.ques_type[val].secondary[
+            this.ques_type[val].secondary.length - 1
+          ].end;
+        let fnum = fend - fstart + 1;
+        let snum = send - sstart + 1;
+        this.ques_type[val] = this.ques_type[val - 1];
+        this.ques_type[val - 1] = type;
+        for (let i = 0; i < this.ques_type[val].secondary.length; i++) {
+          this.ques_type[val].secondary[i].start += snum;
+          this.ques_type[val].secondary[i].end += snum;
+        }
+        for (let i = 0; i < this.ques_type[val - 1].secondary.length; i++) {
+          this.ques_type[val - 1].secondary[i].start -= fnum;
+          this.ques_type[val - 1].secondary[i].end -= fnum;
+        }
+        let ques = [];
+        for (let i = fstart; i <= fend; i++) {
+          ques.push(this.questions[i]);
+        }
+        let s = fstart;
+        for (let i = sstart; i <= send; i++) {
+          this.questions[s] = this.questions[i];
+          s++;
+        }
+        for (let i = 0; i < ques.length; i++) {
+          this.questions[s] = ques[i];
+          s++;
+        }
+        let sequence = 1;
+        let actual_sequence = 1;
+        for (let i = 0; i < this.questions.length; i++) {
+          this.questions[i].sequence = sequence;
+          this.questions[i].name = this.questions[i].sequence.toString();
+          sequence++;
+          for (let j = 0; j < this.questions[i].sub_question.length; j++) {
+            this.questions[i].sub_question[j].actual_sequence = actual_sequence;
+            actual_sequence++;
+          }
+        }
+      } else {
+        this.$message({
+          message: "已经是第一个",
+          type: "warning",
+        });
+      }
+    },
+    typeDown(val) {
+      if (val != this.ques_type.length - 1) {
+        let type = this.ques_type[val];
         let fstart = this.ques_type[val].secondary[0].start;
         let fend =
           this.ques_type[val].secondary[
@@ -4284,6 +4314,8 @@ export default {
           this.ques_type[val + 1].secondary[
             this.ques_type[val + 1].secondary.length - 1
           ].end;
+        let fnum = fend - fstart + 1;
+        let snum = send - sstart + 1;
         this.ques_type[val] = this.ques_type[val + 1];
         this.ques_type[val + 1] = type;
         for (let i = 0; i < this.ques_type[val].secondary.length; i++) {
@@ -4312,14 +4344,155 @@ export default {
         for (let i = 0; i < this.questions.length; i++) {
           this.questions[i].sequence = sequence;
           this.questions[i].name = this.questions[i].sequence.toString();
-          for (let j = 0; j < this.questions[i].secondary.length; j++) {
-            this.questions[i].secondary[j].actual_sequence = actual_sequence;
+          sequence++;
+          for (let j = 0; j < this.questions[i].sub_question.length; j++) {
+            this.questions[i].sub_question[j].actual_sequence = actual_sequence;
+            actual_sequence++;
+          }
+        }
+      } else {
+        this.$message({
+          message: "已经是最后一个",
+          type: "warning",
+        });
+      }
+    },
+    stypeUp(vali, valj) {
+      if (valj != 0) {
+        let type = this.ques_type[vali].secondary[valj];
+        let fstart = this.ques_type[vali].secondary[valj - 1].start;
+        let fend = this.ques_type[vali].secondary[valj - 1].end;
+        let sstart = this.ques_type[vali].secondary[valj].start;
+        let send = this.ques_type[vali].secondary[valj].end;
+        let fnum = fend - fstart + 1;
+        let snum = send - sstart + 1;
+        this.ques_type[vali].secondary[valj] =
+          this.ques_type[vali].secondary[valj - 1];
+        this.ques_type[vali].secondary[valj - 1] = type;
+        this.ques_type[vali].secondary[valj].start += snum;
+        this.ques_type[vali].secondary[valj].end += snum;
+        this.ques_type[vali].secondary[valj - 1].start -= fnum;
+        this.ques_type[vali].secondary[valj - 1].end -= fnum;
+        let ques = [];
+        for (let i = fstart; i <= fend; i++) {
+          ques.push(this.questions[i]);
+        }
+        let s = fstart;
+        for (let i = sstart; i <= send; i++) {
+          this.questions[s] = this.questions[i];
+          s++;
+        }
+        for (let i = 0; i < ques.length; i++) {
+          this.questions[s] = ques[i];
+          s++;
+        }
+        let sequence = 1;
+        let actual_sequence = 1;
+        for (let i = 0; i < this.questions.length; i++) {
+          this.questions[i].sequence = sequence;
+          this.questions[i].name = this.questions[i].sequence.toString();
+          sequence++;
+          for (let j = 0; j < this.questions[i].sub_question.length; j++) {
+            this.questions[i].sub_question[j].actual_sequence = actual_sequence;
             actual_sequence++;
           }
         }
       } else {
         this.$message({
           message: "已经是第一个",
+          type: "warning",
+        });
+      }
+    },
+    stypeDown(vali, valj) {
+      if (valj != this.ques_type[vali].secondary.length - 1) {
+        let type = this.ques_type[vali].secondary[valj];
+        let fstart = this.ques_type[vali].secondary[valj].start;
+        let fend = this.ques_type[vali].secondary[valj].end;
+        let sstart = this.ques_type[vali].secondary[valj + 1].start;
+        let send = this.ques_type[vali].secondary[valj + 1].end;
+        let fnum = fend - fstart + 1;
+        let snum = send - sstart + 1;
+        this.ques_type[vali].secondary[valj] =
+          this.ques_type[vali].secondary[valj + 1];
+        this.ques_type[vali].secondary[valj + 1] = type;
+        this.ques_type[vali].secondary[valj].start -= fnum;
+        this.ques_type[vali].secondary[valj].end -= fnum;
+        this.ques_type[vali].secondary[valj + 1].start += snum;
+        this.ques_type[vali].secondary[valj + 1].end += snum;
+        let ques = [];
+        for (let i = fstart; i <= fend; i++) {
+          ques.push(this.questions[i]);
+        }
+        let s = fstart;
+        for (let i = sstart; i <= send; i++) {
+          this.questions[s] = this.questions[i];
+          s++;
+        }
+        for (let i = 0; i < ques.length; i++) {
+          this.questions[s] = ques[i];
+          s++;
+        }
+        let sequence = 1;
+        let actual_sequence = 1;
+        for (let i = 0; i < this.questions.length; i++) {
+          this.questions[i].sequence = sequence;
+          this.questions[i].name = this.questions[i].sequence.toString();
+          sequence++;
+          for (let j = 0; j < this.questions[i].sub_question.length; j++) {
+            this.questions[i].sub_question[j].actual_sequence = actual_sequence;
+            actual_sequence++;
+          }
+        }
+      } else {
+        this.$message({
+          message: "已经是最后一个",
+          type: "warning",
+        });
+      }
+    },
+    quesUp(vali, valj, valk) {
+      if (valk != this.ques_type[vali].secondary[valj].start) {
+        let ques = this.questions[valk];
+        this.questions[valk] = this.questions[valk - 1];
+        this.questions[valk - 1] = ques;
+        let sequence = 1;
+        let actual_sequence = 1;
+        for (let i = 0; i < this.questions.length; i++) {
+          this.questions[i].sequence = sequence;
+          this.questions[i].name = this.questions[i].sequence.toString();
+          sequence++;
+          for (let j = 0; j < this.questions[i].sub_question.length; j++) {
+            this.questions[i].sub_question[j].actual_sequence = actual_sequence;
+            actual_sequence++;
+          }
+        }
+      } else {
+        this.$message({
+          message: "已经是第一个",
+          type: "warning",
+        });
+      }
+    },
+    quesDown(vali, valj, valk) {
+      if (valk != this.ques_type[vali].secondary[valj].end) {
+        let ques = this.questions[valk];
+        this.questions[valk] = this.questions[valk + 1];
+        this.questions[valk + 1] = ques;
+        let sequence = 1;
+        let actual_sequence = 1;
+        for (let i = 0; i < this.questions.length; i++) {
+          this.questions[i].sequence = sequence;
+          this.questions[i].name = this.questions[i].sequence.toString();
+          sequence++;
+          for (let j = 0; j < this.questions[i].sub_question.length; j++) {
+            this.questions[i].sub_question[j].actual_sequence = actual_sequence;
+            actual_sequence++;
+          }
+        }
+      } else {
+        this.$message({
+          message: "已经是最后一个",
           type: "warning",
         });
       }

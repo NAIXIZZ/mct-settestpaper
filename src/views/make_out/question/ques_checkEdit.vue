@@ -8,7 +8,7 @@
           <i
             class="el-icon-edit-outline ques_edit"
             @click="quesEdit"
-            v-show="!selectQues"
+            v-show="selectQues=='false'"
           ></i>
         </div>
         <div v-show="edit">
@@ -446,7 +446,7 @@ export default {
   props: {},
   data() {
     return {
-      selectQues: false,
+      selectQues: "",
       checked: true,
       editor: [],
       // editorContent: "",
@@ -787,11 +787,6 @@ export default {
   computed: {},
   methods: {
     init() {
-      if (Cookie.get("selectQues" == "true")) {
-        this.selectQues = true;
-      } else {
-        this.selectQues = false;
-      }
       var BaaS = require("minapp-sdk");
       let clientID = "395062a19e209a770059";
       BaaS.init(clientID);
@@ -944,6 +939,7 @@ export default {
       Cookies.set("ques_checkEdit", "");
       Cookies.set("question_content", "");
       Cookies.set("question_file", "");
+      Cookies.set("selectQues","false")
       this.$router.go(-1);
     },
     quesEdit() {
@@ -951,7 +947,6 @@ export default {
       if (this.click == 1) {
         this.createEdit();
       }
-
       var BaaS = require("minapp-sdk");
       let clientID = "395062a19e209a770059";
       BaaS.init(clientID);
@@ -959,8 +954,6 @@ export default {
       this.check = false;
       this.radio1 = this.question.primary_ques_type;
       this.radio2 = this.question.secondary_ques_type;
-
-      // console.log(this.content);
     },
     quesCheck() {
       this.edit = false;
@@ -977,7 +970,6 @@ export default {
         let fileParams = { fileObj: e.target.files[0] };
         File.upload(fileParams).then(
           (res) => {
-            console.log(res.data.file.path);
             // this.image = res.data.file.path;
             this.change_file = true;
             this.$refs.image.src = res.data.file.path;
@@ -1002,16 +994,9 @@ export default {
       // );
       // dialogImageUrl;
     },
-
-    handleRemove(file) {
-      console.log(file);
-    },
     handlePictureCardPreview(file) {
       this.dialogImageUrl = file.url;
       this.dialogVisible = true;
-    },
-    handleDownload(file) {
-      console.log(file);
     },
     handleClose(done) {
       this.$confirm("确认关闭？")

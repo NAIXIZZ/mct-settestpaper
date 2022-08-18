@@ -49,8 +49,12 @@
         <el-button type="success" plain @click="importFile = true"
           >批量导入</el-button
         >
+        <el-button type="success" plain>导出选中</el-button>
         <el-button type="success" plain @click="createFolder"
           >新建文件夹</el-button
+        >
+        <el-button type="primary" plain @click="multipleMove"
+          >移动选中</el-button
         >
       </div>
     </div>
@@ -153,7 +157,7 @@
           </el-table-column>
           <el-table-column label="操作" width="400">
             <template slot-scope="scope">
-              <div v-show="scope.row.primary_ques_type != null">
+              <div v-show="scope.row.primary_ques_type != null" class="btn">
                 <el-button
                   type="success"
                   plain
@@ -162,20 +166,51 @@
                   "
                   >查看/编辑</el-button
                 >
-                <el-button type="warning" plain>复制</el-button>
-                <el-button type="danger" plain>删除</el-button>
-                <el-button type="primary" plain>移动到</el-button>
+                <el-button type="warning" plain @click="copy(scope.row)"
+                  >复制</el-button
+                >
+                <el-button
+                  type="danger"
+                  plain
+                  v-if="!scope.row.have"
+                  @click="delQues(scope.row)"
+                  >删除</el-button
+                >
+                <div style="margin: 0 10px" v-else>
+                  <el-tooltip
+                    class="item"
+                    effect="dark"
+                    content="该题目被应用到试卷中，不可删除"
+                    placement="top"
+                  >
+                    <el-button type="info" plain>删除</el-button>
+                  </el-tooltip>
+                </div>
+                <el-button type="primary" plain @click="moveTo(scope.row.id, 1)"
+                  >移动到</el-button
+                >
               </div>
-              <div v-show="scope.row.catalog != null">
+              <div v-show="scope.row.catalog != null" class="btn">
                 <el-button type="primary" plain @click="rename(scope.row)"
                   >重命名</el-button
                 >
                 <el-button
-                  type="primary"
+                  v-if="!scope.row.have"
+                  type="danger"
                   plain
                   @click="delCatalog(scope.$index, scope.row)"
                   >删除</el-button
                 >
+                <div style="margin-left: 10px" v-else>
+                  <el-tooltip
+                    class="item"
+                    effect="dark"
+                    content="文件夹中有被应用到试卷中的题目，不可直接删除"
+                    placement="top"
+                  >
+                    <el-button type="info" plain>删除</el-button>
+                  </el-tooltip>
+                </div>
               </div>
             </template>
           </el-table-column>
@@ -195,12 +230,9 @@
       </div>
     </div>
     <div class="ques_bottom">
-      <div class="bottom_button">
-        <el-button type="success" plain>导出选中</el-button>
-        <el-button type="success" plain>删除选中</el-button>
-        <el-button type="success" plain>导出全部</el-button>
-      </div>
-      <el-button type="primary" icon="el-icon-delete">回收站</el-button>
+      <el-button type="primary" icon="el-icon-delete" @click="trash"
+        >回收站</el-button
+      >
     </div>
     <el-dialog title="自动出题" :visible.sync="dialogFormVisible">
       <el-form :model="form">
@@ -347,6 +379,18 @@
         ></el-button>
       </span>
     </el-dialog>
+    <el-dialog
+      title="移动到"
+      :visible.sync="moveVisible"
+      :before-close="handleClose"
+      width="30%"
+    >
+      <div class="move">
+        <el-button v-for="o in catalog" :key="o.index" @click="to(o.catalog)">
+          {{ o.catalog }}
+        </el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -443,6 +487,7 @@ export default {
       input: "",
       tableData: [],
       multipleSelection: [],
+      preMove: [],
       dialogFormVisible: false,
       form: {
         title: "",
@@ -467,6 +512,7 @@ export default {
       fileNum: 0,
       sureClick: true,
       catalog: [],
+      moveVisible: false,
     };
   },
   watch: {},
@@ -972,17 +1018,43 @@ export default {
       return blob;
     },
     init() {
-      var query = new BaaS.Query();
+      let query = new BaaS.Query();
       query.compare("created_by", "=", Cookie.get("user_id") * 1);
+      let q2 = new BaaS.Query();
+      q2.compare("is_delete", "=", false);
+      let andQuery = BaaS.Query.and(query, q2);
       let Question = new BaaS.TableObject("questions_information");
       Question.orderBy("-created_at")
         .limit(1000)
         .offset(0)
-        .setQuery(query)
+        .setQuery(andQuery)
         .find()
         .then(
           (res) => {
             res.data.objects.forEach((element) => {
+              element.have = false;
+              let q3 = new BaaS.Query();
+              q3.contains("questions_detail", element.id);
+              let q4 = new BaaS.Query();
+              q4.compare("is_delete", "=", false);
+              let andQuery = BaaS.Query.and(q3, q4);
+              let Paper = new BaaS.TableObject("test_paper");
+              Paper.setQuery(andQuery)
+                .limit(1000)
+                .offset(0)
+                .find()
+                .then(
+                  (res) => {
+                    if (res.data.objects.length != 0) {
+                      element.have = true;
+                    } else {
+                      element.have = false;
+                    }
+                  },
+                  (err) => {
+                    console.log(err);
+                  }
+                );
               let date = new Date(element.created_at * 1000);
               let Y = date.getFullYear() + "-";
               let M =
@@ -1007,7 +1079,7 @@ export default {
                   : date.getSeconds();
               element.created_at = Y + M + D + h + m + s;
               if (element.question_content_id != null) {
-                var query = new BaaS.Query();
+                let query = new BaaS.Query();
                 query.compare("id", "=", element.question_content_id);
                 let findContent = new BaaS.TableObject("question_content");
                 findContent
@@ -1029,25 +1101,9 @@ export default {
                     }
                   );
               }
-              if (element.source_id != null) {
-                var query = new BaaS.Query();
-                query.in("id", element.source_id);
-                let findSource = new BaaS.TableObject("source");
-                findSource
-                  .setQuery(query)
-                  .find()
-                  .then(
-                    (res) => {
-                      // console.log(res);
-                      element.source_id = res.data.objects[0].source;
-                    },
-                    (err) => {
-                      console.log(err);
-                    }
-                  );
-              }
               if (element.catalog != null) {
                 var a = {
+                  have: false,
                   finish: true,
                   rename: false,
                   catalog: element.catalog,
@@ -1055,20 +1111,37 @@ export default {
                 this.catalog.push(a);
               }
             });
-            if (this.catalog.length != 0) {
-              const map = new Map();
-              this.catalog = this.catalog.filter(
-                (key) => !map.has(key.catalog) && map.set(key.catalog, 1)
+            setTimeout(() => {
+              if (this.catalog.length != 0) {
+                const map = new Map();
+                this.catalog = this.catalog.filter(
+                  (key) => !map.has(key.catalog) && map.set(key.catalog, 1)
+                );
+                for (let i = 0; i < this.catalog.length; i++) {
+                  for (let j = 0; j < res.data.objects.length; j++) {
+                    if (
+                      this.catalog[i].catalog == res.data.objects[j].catalog &&
+                      res.data.objects[j].have
+                    ) {
+                      this.catalog[i].have = true;
+                      break;
+                    }
+                  }
+                }
+              }
+              this.catalog.forEach((element) => {
+                res.data.objects = res.data.objects.filter(
+                  (t) => t.catalog != element.catalog
+                );
+                res.data.objects.unshift(element);
+              });
+              sessionStorage.setItem(
+                "questionsCatalog",
+                JSON.stringify(this.catalog)
               );
-            }
-            this.catalog.forEach((element) => {
-              res.data.objects = res.data.objects.filter(
-                (t) => t.catalog != element.catalog
-              );
-              res.data.objects.unshift(element);
-            });
-            this.tableData = res.data.objects;
-            this.initial = this.tableData;
+              this.tableData = res.data.objects;
+              this.initial = this.tableData;
+            }, 3000);
           },
           (err) => {
             console.log(err);
@@ -1085,6 +1158,66 @@ export default {
         } else if (columnIndex === 3) {
           return [0, 0];
         }
+      }
+    },
+    multipleMove() {
+      if (this.multipleSelection.length == 0) {
+        this.$message({
+          message: "未选择移动项",
+          type: "warning",
+        });
+      } else {
+        let ca = false;
+        for (let i = 0; i < this.multipleSelection.length; i++) {
+          if (this.multipleSelection[i].catalog != null) {
+            this.$message({
+              message: "文件夹不可移动",
+              type: "warning",
+            });
+            ca = true;
+            break;
+          }
+        }
+        if (ca == false) {
+          let temp = [];
+          this.multipleSelection.forEach((element) => {
+            temp.push(element.id);
+          });
+          this.moveTo(temp, 2);
+        }
+      }
+    },
+    moveTo(val, type) {
+      if (type == 1) {
+        this.preMove.push(val);
+      } else if (type == 2) {
+        this.preMove = val;
+      }
+      this.moveVisible = true;
+    },
+    handleClose() {
+      this.preMove = [];
+      this.moveVisible = false;
+    },
+    to(val) {
+      for (let i = 0; i < this.preMove.length; i++) {
+        let Catalog = new BaaS.TableObject("questions_information");
+        let cata = Catalog.getWithoutData(this.preMove[i]);
+        cata.set("catalog", val);
+        cata.update().then(
+          (res) => {
+            console.log(res);
+            this.$message({
+              message: "移动成功",
+              type: "success",
+            });
+            this.handleClose();
+            this.init();
+          },
+          (err) => {
+            console.log(err);
+          }
+        );
       }
     },
     createFolder() {
@@ -1122,8 +1255,11 @@ export default {
       } else {
         let query = new BaaS.Query();
         query.compare("catalog", "=", name);
+        let q2 = new BaaS.Query();
+        q2.compare("is_delete", "=", false);
+        let andQuery = BaaS.Query.and(query, q2);
         let Catalog = new BaaS.TableObject("questions_information");
-        Catalog.setQuery(query)
+        Catalog.setQuery(andQuery)
           .find()
           .then(
             (res) => {
@@ -1161,11 +1297,23 @@ export default {
                     this.tableData[index].id = res.data.id;
                     this.tableData[index].finish = true;
                     this.tableData[index].rename = false;
+                    this.tableData[index].have = false;
                     this.addMore = true;
                     this.$message({
                       message: name + "文件创建成功",
                       type: "success",
                     });
+                    let temp = {
+                      have: false,
+                      finish: true,
+                      rename: false,
+                      catalog: res.data.catalog,
+                    };
+                    this.catalog.push(temp);
+                    sessionStorage.setItem(
+                      "questionsCatalog",
+                      JSON.stringify(this.catalog)
+                    );
                   },
                   (err) => {
                     console.log(err);
@@ -1248,28 +1396,130 @@ export default {
       this.previousName = "";
     },
     delCatalog(index, row) {
-      let Catalog = new BaaS.TableObject("questions_information");
-      Catalog.delete(row.id).then(
+      let findCata = new BaaS.TableObject("questions_information");
+      let findc = new BaaS.Query();
+      let q2 = new BaaS.Query();
+      findc.compare("catalog", "=", row.catalog);
+      q2.compare("is_delete", "=", false);
+      let andQuery = BaaS.Query.and(findc, q2);
+      findCata
+        .setQuery(andQuery)
+        .find()
+        .then(
+          (res) => {
+            for (let i = 0; i < res.data.objects.length; i++) {
+              let Catalog = new BaaS.TableObject("questions_information");
+              let cata = Catalog.getWithoutData(res.data.objects[i].id);
+              cata.set("is_delete", true);
+              cata.update().then(
+                (res) => {
+                  console.log(res);
+                  this.$message({
+                    message: "文件夹删除成功",
+                    type: "success",
+                  });
+                  this.tableData.splice(index, 1);
+                  for (let i = 0; i < this.catalog.length; i++) {
+                    if (this.catalog[i].catalog == row.catalog) {
+                      this.catalog.splice(i, 1);
+                      sessionStorage.setItem(
+                        "questionsCatalog",
+                        JSON.stringify(this.catalog)
+                      );
+                      break;
+                    }
+                  }
+                },
+                (err) => {
+                  console.log(err);
+                }
+              );
+            }
+          },
+          (err) => {
+            console.log(err);
+          }
+        );
+    },
+    trash() {
+      Cookies.set("trash", "questions");
+      Cookies.set("make_out", "second");
+      this.$router.push("/trash_list");
+    },
+    enterFolder(row) {
+      Cookies.set("make_out", "second");
+      Cookies.set("catalog", row.catalog);
+      Cookies.set("catalogall", JSON.stringify(this.catalog));
+      this.$router.push("/questionCatalog");
+    },
+    delQues(val) {
+      let Ques = new BaaS.TableObject("questions_information");
+      let ques = Ques.getWithoutData(val.id);
+      ques.set("is_delete", true);
+      ques.update().then(
         (res) => {
-          // console.log(res);
-          this.tableData.splice(index, 1);
+          console.log(res);
           this.$message({
-            message: "文件删除成功",
+            message: "删除成功",
             type: "success",
           });
+          this.init();
         },
         (err) => {
           console.log(err);
         }
       );
     },
-    enterFolder(row) {
-      Cookies.set("make_out","second")
-      Cookies.set("catalog", row.catalog);
-      this.$router.push("/questionCatalog");
+    copy(val) {
+      let findQ = new BaaS.TableObject("questions_information");
+      findQ.get(val.id).then(
+        (res) => {
+          let addQ = new BaaS.TableObject("questions_information");
+          let add = addQ.create();
+          let temp = {
+            question_content_id: res.data.question_content_id,
+            primary_ques_type: val.primary_ques_type,
+            secondary_ques_type: val.secondary_ques_type,
+            question: val.question,
+            options: val.options,
+            answer: val.answer,
+            analysis: val.analysis,
+            department: val.department,
+            is_delete: false,
+            catalog: null,
+            ques_level: val.ques_level,
+            question_class: val.question_class,
+            question_type_5he: val.question_type_5he,
+            author: null,
+            author_org: null,
+            time_created: null,
+            topic_outline: val.topic_outline,
+            task_outline: val.task_outline,
+            grade_standard: val.grade_standard,
+          };
+          add
+            .set(temp)
+            .save()
+            .then(
+              (res) => {
+                console.log(res);
+                this.$message({
+                  message: "复制成功",
+                  type: "success",
+                });
+                this.init();
+              },
+              (err) => {
+                console.log(err);
+              }
+            );
+        },
+        (err) => {
+          console.log(err);
+        }
+      );
     },
     type_select(type) {
-      console.log(type);
       if (type == "") {
         this.tableData = this.initial;
       } else {
@@ -1422,7 +1672,7 @@ export default {
       } else {
         Cookies.set("question_content", question);
       }
-      Cookies.set("selectQues",false)
+      Cookies.set("selectQues", false);
       this.$router.push("/ques_checkEdit");
     },
   },
@@ -1438,5 +1688,23 @@ export default {
 }
 .ques_list {
   margin-top: 15px;
+}
+.question .ques_bottom {
+  display: flex;
+  justify-content: flex-end;
+}
+.question .btn,
+.questionCatalog .btn {
+  display: flex;
+  flex-direction: row;
+}
+.question .move,
+.questionCatalog .move {
+  display: flex;
+  flex-direction: column;
+}
+.question .move .el-button + .el-button,
+.questionCatalog .move .el-button + .el-button {
+  margin-left: 0px;
 }
 </style>

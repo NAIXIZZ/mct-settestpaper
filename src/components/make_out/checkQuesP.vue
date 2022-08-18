@@ -79,7 +79,6 @@ export default {
         .find()
         .then(
           (res) => {
-            console.log(res);
             if (res.data.objects[0].content == null) {
               this.file = res.data.objects[0].file_url.path;
               console.log(this.file)

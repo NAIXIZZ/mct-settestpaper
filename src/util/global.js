@@ -1,14 +1,16 @@
 let selectQuesCatalog = []
 let tableData = []
-// let multipleSelection = []
 let tinitial = []
-// let multipleSelectionCat = []
 let totalSelect = []
+let contentCatalog = []
+let questionsCatalog = []
+let paperContent = []
 export default{
     tableData,
     selectQuesCatalog,
-    // multipleSelection,
     tinitial,
-    // multipleSelectionCat,
-    totalSelect
+    totalSelect,
+    contentCatalog,
+    questionsCatalog,
+    paperContent
 }

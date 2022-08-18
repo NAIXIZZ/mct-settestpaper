@@ -11,9 +11,14 @@
         ></el-input>
         <el-button type="success" @click="title_search(input)">搜索</el-button>
       </div>
-      <el-button type="success" plain @click="createFolder"
-        >新建文件夹</el-button
-      >
+      <div>
+        <el-button type="success" plain @click="createFolder"
+          >新建文件夹</el-button
+        >
+        <el-button type="primary" plain @click="multipleMove"
+          >移动选中</el-button
+        >
+      </div>
     </div>
     <el-table
       ref="multipleTable"
@@ -26,23 +31,6 @@
     >
       <el-table-column type="selection" width="55"> </el-table-column>
       <el-table-column type="index" :index="indexMethod"> </el-table-column>
-      <!-- <el-table-column type="expand">
-        <template slot-scope="props">
-          <el-form label-position="left" inline class="demo-table-expand">
-            <el-form-item label="材料内容">
-              <span>{{ props.row.content }}</span>
-              <img
-                :src="props.row.file_url.path"
-                alt=""
-                v-if="
-                  props.row.file_url &&
-                  props.row.file_url.path.search('.png') != -1
-                "
-              />
-            </el-form-item>
-          </el-form>
-        </template>
-      </el-table-column> -->
       <el-table-column label="文件夹" prop="catalog">
         <template slot-scope="scope">
           <div class="folder" v-show="scope.row.finish == false">
@@ -114,8 +102,26 @@
             <el-button type="warning" plain @click="handleSet(scope.row.id)"
               >出题/出卷</el-button
             >
-            <el-button type="danger" plain>删除</el-button>
-            <el-button type="primary" plain>移动到</el-button>
+            <el-button
+              type="danger"
+              plain
+              v-if="!scope.row.have"
+              @click="delContent(scope.row)"
+              >删除</el-button
+            >
+            <div style="margin: 0 10px" v-else>
+              <el-tooltip
+                class="item"
+                effect="dark"
+                content="题干材料中无项目时才可删除"
+                placement="top"
+              >
+                <el-button type="info" plain>删除</el-button>
+              </el-tooltip>
+            </div>
+            <el-button type="primary" plain @click="moveTo(scope.row.id,1)"
+              >移动到</el-button
+            >
             <!-- <el-button type="primary" plain @click="checkMaterial(scope.row.id)"
             >查看</el-button
           > -->
@@ -125,11 +131,22 @@
               >重命名</el-button
             >
             <el-button
-              type="primary"
+              v-if="!scope.row.have"
+              type="danger"
               plain
               @click="delCatalog(scope.$index, scope.row)"
               >删除</el-button
             >
+            <div style="margin-left: 10px" v-else>
+              <el-tooltip
+                class="item"
+                effect="dark"
+                content="文件夹中无项目时才可删除"
+                placement="top"
+              >
+                <el-button type="info" plain>删除</el-button>
+              </el-tooltip>
+            </div>
           </div>
         </template>
       </el-table-column>
@@ -147,7 +164,7 @@
       </el-pagination>
     </div>
     <div class="trash">
-      <el-button type="primary" icon="el-icon-delete">回收站</el-button>
+      <el-button type="primary" icon="el-icon-delete" @click="trash">回收站</el-button>
     </div>
     <el-dialog title="自动出题" :visible.sync="dialogFormVisible">
       <el-form :model="form">
@@ -172,6 +189,17 @@
         <el-button @click="dialogFormVisible = false">取 消</el-button>
       </div>
     </el-dialog>
+    <el-dialog
+      title="移动到"
+      :visible.sync="moveVisible"
+      :before-close="handleClose"
+    >
+      <div class="move">
+        <el-button v-for="o in catalog" :key="o.index" @click="to(o.catalog)">
+          {{ o.catalog }}
+        </el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -187,6 +215,13 @@ export default {
   props: {},
   data() {
     return {
+      preMove: [],
+      multipleSelection: [],
+      moveVisible: false,
+      cataContent: [],
+      delCD: false,
+      delC: "",
+      delCN: 0,
       input: "",
       tableData: [],
       initial: [],
@@ -257,17 +292,39 @@ export default {
   computed: {},
   methods: {
     init() {
-      var query = new BaaS.Query();
+      let query = new BaaS.Query();
       query.compare("created_by", "=", Cookie.get("user_id") * 1);
+      let q2 = new BaaS.Query();
+      q2.compare("is_delete", "=", false);
+      let andQuery = BaaS.Query.and(query, q2);
       let Material = new BaaS.TableObject("question_content");
       Material.limit(1000)
         .offset(0)
-        .setQuery(query)
+        .setQuery(andQuery)
         .orderBy("-created_at")
         .find()
         .then(
           (res) => {
             res.data.objects.forEach((element) => {
+              element.have = false;
+              let q3 = new BaaS.Query();
+              q3.compare("question_content_id", "=", element.id);
+              let Question = new BaaS.TableObject("questions_information");
+              let and = BaaS.Query.and(query, q2, q3);
+              Question.setQuery(and)
+                .limit(1000)
+                .offset(0)
+                .find()
+                .then(
+                  (res) => {
+                    if (res.data.objects.length != 0) {
+                      element.have = true;
+                    }
+                  },
+                  (err) => {
+                    console.log(err);
+                  }
+                );
               if (
                 element.file_url != null &&
                 (element.file_url.path.search(".png") != -1 ||
@@ -278,6 +335,7 @@ export default {
               }
               if (element.catalog != null) {
                 var a = {
+                  have: false,
                   finish: true,
                   rename: false,
                   catalog: element.catalog,
@@ -292,11 +350,22 @@ export default {
               );
             }
             this.catalog.forEach((element) => {
+              res.data.objects.forEach((item) => {
+                if (
+                  element.catalog == item.catalog &&
+                  (item.content != null || item.file_url != null)
+                ) {
+                  element.have = true;
+                }
+              });
+            });
+            this.catalog.forEach((element) => {
               res.data.objects = res.data.objects.filter(
                 (t) => t.catalog != element.catalog
               );
               res.data.objects.unshift(element);
             });
+            sessionStorage.setItem("contentCatalog",JSON.stringify(this.catalog))
             this.tableData = res.data.objects;
             this.initial = res.data.objects;
           },
@@ -373,13 +442,15 @@ export default {
         });
       } else {
         let query = new BaaS.Query();
+        let q2 = new BaaS.Query();
         query.compare("catalog", "=", name);
+        q2.compare("is_delete", "=", false);
+        let andQuery = BaaS.Query.and(query, q2);
         let Catalog = new BaaS.TableObject("question_content");
-        Catalog.setQuery(query)
+        Catalog.setQuery(andQuery)
           .find()
           .then(
             (res) => {
-              console.log(res);
               if (res.data.objects.length == 0) {
                 let catalog = Catalog.create();
                 let add = {
@@ -395,11 +466,21 @@ export default {
                       this.tableData[index].id = res.data.id;
                       this.tableData[index].catalog = res.data.catalog;
                       this.tableData[index].finish = true;
+                      this.tableData[index].rename = false;
+                      this.tableData[index].have = false;
                       this.addMore = true;
                       this.$message({
                         message: name + "文件创建成功",
                         type: "success",
                       });
+                      let temp = {
+                        have: false,
+                        finish: true,
+                        rename: false,
+                        catalog: res.data.catalog,
+                      };
+                      this.catalog.push(temp);
+                      sessionStorage.setItem("contentCatalog",JSON.stringify(this.catalog))
                     },
                     (err) => {
                       console.log(err);
@@ -428,9 +509,12 @@ export default {
     },
     renameDefine(index, row) {
       let query = new BaaS.Query();
+      let q2 = new BaaS.Query();
       query.compare("catalog", "=", row.catalog);
+      q2.compare("is_delete", "=", false);
+      let andQuery = BaaS.Query.and(query, q2);
       let Catalog = new BaaS.TableObject("question_content");
-      Catalog.setQuery(query)
+      Catalog.setQuery(andQuery)
         .find()
         .then(
           (res) => {
@@ -469,30 +553,161 @@ export default {
       row.rename = false;
       this.previousName = "";
     },
-    delCatalog(index, row) {
-      console.log(row.id);
+    delCatalogDefine(index, row) {
+      this.delC = row.catalog;
       let Catalog = new BaaS.TableObject("question_content");
-      Catalog.delete(row.id).then(
+      let query = new BaaS.Query();
+      let q2 = new BaaS.Query();
+      let q3 = new BaaS.Query();
+      query.compare("catalog", "=", row.catalog);
+      q2.compare("created_by", "=", Cookie.get("user_id") * 1);
+      q3.compare("is_delete", "=", false);
+      let andQuery = BaaS.Query.and(query, q2, q3);
+      Catalog.setQuery(andQuery)
+        .find()
+        .then(
+          (res) => {
+            this.cataContent = res.data.objects;
+            this.delCN = res.data.objects.length;
+            res.data.objects.forEach((element) => {
+              if (element.content == null && element.file_url == null) {
+                this.delCN--;
+              }
+            });
+            this.delCD = true;
+          },
+          (err) => {
+            console.log(err);
+          }
+        );
+    },
+    delCatalog(index, row) {
+      let findCata = new BaaS.TableObject("question_content");
+      let findc = new BaaS.Query();
+      let q2 = new BaaS.Query();
+      findc.compare("catalog", "=", row.catalog);
+      q2.compare("is_delete", "=", false);
+      let andQuery = BaaS.Query.and(findc, q2);
+      findCata
+        .setQuery(andQuery)
+        .find()
+        .then(
+          (res) => {
+            let Catalog = new BaaS.TableObject("question_content");
+            let cata = Catalog.getWithoutData(res.data.objects[0].id);
+            cata.set("is_delete", true);
+            cata.update().then(
+              (res) => {
+                console.log(res);
+                this.$message({
+                  message: "文件夹删除成功",
+                  type: "success",
+                });
+                this.tableData.splice(index,1)
+                for(let i=0;i<this.catalog.length;i++){
+                  if(this.catalog[i].catalog==row.catalog){
+                    this.catalog.splice(i,1)
+                    sessionStorage.setItem("contentCatalog",JSON.stringify(this.catalog))
+                    break
+                  }
+                }
+              },
+              (err) => {
+                console.log(err);
+              }
+            );
+          },
+          (err) => {
+            console.log(err);
+          }
+        );
+    },
+    delContent(row) {
+      let Catalog = new BaaS.TableObject("question_content");
+      let cata = Catalog.getWithoutData(row.id);
+      cata.set("is_delete", true);
+      cata.update().then(
         (res) => {
           console.log(res);
-          this.tableData.splice(index, 1);
           this.$message({
-            message: "文件删除成功",
+            message: "删除成功",
             type: "success",
           });
+          this.init();
         },
         (err) => {
           console.log(err);
         }
       );
     },
+    moveTo(val,type) {
+      if(type==1){
+        this.preMove.push(val);
+      }else if(type==2){
+        this.preMove = val
+      }
+      this.moveVisible = true;
+    },
+    handleClose() {
+      this.preMove = [];
+      this.moveVisible = false;
+    },
+    to(val) {
+      for (let i = 0; i < this.preMove.length; i++) {
+        let Catalog = new BaaS.TableObject("question_content");
+        let cata = Catalog.getWithoutData(this.preMove[i]);
+        cata.set("catalog", val);
+        cata.update().then(
+          (res) => {
+            console.log(res);
+            this.$message({
+              message: "移动成功",
+              type: "success",
+            });
+            this.handleClose();
+            this.init();
+          },
+          (err) => {
+            console.log(err);
+          }
+        );
+      }
+    },
+    multipleMove() {
+      if (this.multipleSelection.length == 0) {
+        this.$message({
+          message: "未选择移动项",
+          type: "warning",
+        });
+      } else {
+        let ca = false
+        for (let i = 0; i < this.multipleSelection.length; i++) {
+          if (this.multipleSelection[i].catalog != null) {
+            this.$message({
+              message: "文件夹不可移动",
+              type: "warning",
+            });
+            ca=true
+            break
+          }
+        }
+        if(ca==false){
+          let temp = []
+          this.multipleSelection.forEach(element=>{
+            temp.push(element.id)
+          })
+          this.moveTo(temp,2)
+        }
+      }
+    },
     enterFolder(row) {
       Cookies.set("catalog", row.catalog);
+      Cookies.set("catalogall",JSON.stringify(this.catalog))
       this.$router.push("/materialCatalog");
     },
     checkQuesP(id) {
       Cookies.set("material_id", id);
-      this.$router.push("checkQuesP");
+      this.$router.push("/checkQuesP");
     },
     handleSet(val) {
       Cookies.set("material_id", val);
@@ -500,6 +715,10 @@ export default {
     },
     setQues() {
       this.dialogFormVisible = false;
+    },
+    trash(){
+      Cookies.set("trash","content")
+      this.$router.push("/trash_list")
     },
     checkMaterial(id) {
       Cookies.set("material_id", id);
@@ -536,6 +755,10 @@ export default {
 }
 .material .el-table {
   padding-left: 30px;
+}
+.material .el-table td.el-table__cell div {
+  display: flex;
+  flex-direction: row;
 }
 .material .demo-table-expand {
   font-size: 0;
@@ -581,9 +804,16 @@ export default {
 .material .el-cascader {
   width: 100%;
 }
-.material .trash{
+.material .trash {
   display: flex;
   justify-content: flex-end;
   margin-top: 10px;
+}
+.material .move {
+  display: flex;
+  flex-direction: column;
+}
+.material .move .el-button + .el-button {
+  margin-left: 0px;
 }
 </style>

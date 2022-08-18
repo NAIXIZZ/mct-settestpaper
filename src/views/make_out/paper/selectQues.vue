@@ -470,7 +470,7 @@ export default {
       global.tableData=[]
       global.tinitial=[]
       global.selectQuesCatalog=[]
-      Cookies.set("selectQues",false)
+      Cookies.set("selectQues","false")
       Cookies.set("catalog_id","")
       this.$router.go(-1);
     },
@@ -816,7 +816,7 @@ this.listen = 0;
       } else {
         Cookies.set("question_content", question);
       }
-      Cookies.set("selectQues", true);
+      Cookies.set("selectQues", "true");
       this.$router.push("/ques_checkEdit");
     },
     enterFolder(row) {
@@ -841,7 +841,7 @@ this.listen = 0;
       global.tableData=[]
       global.tinitial=[]
       global.selectQuesCatalog=[]
-      Cookies.set("selectQues",false)
+      Cookies.set("selectQues","false")
       Cookies.set("catalog_id","")
       this.$router.go(-1);
     },
