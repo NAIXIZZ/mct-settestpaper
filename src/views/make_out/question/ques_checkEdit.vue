@@ -8,7 +8,7 @@
           <i
             class="el-icon-edit-outline ques_edit"
             @click="quesEdit"
-            v-show="selectQues=='false'"
+            v-show="selectQues == 'false'"
           ></i>
         </div>
         <div v-show="edit">
@@ -54,7 +54,7 @@
       <div class="edit_type">
         <div class="edit_primary_type">
           一级题型：
-          <el-radio-group v-model="radio1">
+          <el-radio-group v-model="question.primary_ques_type">
             <el-radio-button label="听力"></el-radio-button>
             <el-radio-button label="阅读"></el-radio-button>
             <el-radio-button label="写作"></el-radio-button>
@@ -67,13 +67,19 @@
         </div>
         <div class="edit_secondary_type">
           二级题型：
-          <el-radio-group v-model="radio2" v-if="radio1 == '听力'">
+          <el-radio-group
+            v-model="question.secondary_ques_type"
+            v-if="question.primary_ques_type == '听力'"
+          >
             <el-radio-button label="听句子，判断对错"></el-radio-button>
             <el-radio-button label="听短对话，选择正确答案"></el-radio-button>
             <el-radio-button label="听长对话，选择正确答案"></el-radio-button>
             <el-radio-button label="听短文，选择正确答案"></el-radio-button>
           </el-radio-group>
-          <el-radio-group v-model="radio2" v-if="radio1 == '阅读'">
+          <el-radio-group
+            v-model="question.secondary_ques_type"
+            v-if="question.primary_ques_type == '阅读'"
+          >
             <el-radio-button label="选择正确的词语填空"></el-radio-button>
             <el-radio-button
               label="阅读语段，选择与语段意思一致的一项"
@@ -81,7 +87,10 @@
             <el-radio-button label="阅读材料，选择正确答案"></el-radio-button>
             <el-radio-button label="阅读短文，选择正确答案"></el-radio-button>
           </el-radio-group>
-          <el-radio-group v-model="radio2" v-if="radio1 == '写作'">
+          <el-radio-group
+            v-model="question.secondary_ques_type"
+            v-if="question.primary_ques_type == '写作'"
+          >
             <el-radio-button
               label="根据一段长对话写门诊病历记录"
             ></el-radio-button>
@@ -191,7 +200,10 @@
             </div>
           </div>
 
-          <div v-show="radio2 == '听句子，判断对错'" class="judge">
+          <div
+            v-show="question.secondary_ques_type == '听句子，判断对错'"
+            class="judge"
+          >
             <el-radio v-model="question.answer" label="√">√</el-radio>
             <el-radio v-model="question.answer" label="×">×</el-radio>
           </div>
@@ -199,7 +211,7 @@
             v-for="s in question.options"
             :key="s.id"
             class="edit_ques_options"
-            v-show="radio2 != '听句子，判断对错'"
+            v-show="question.secondary_ques_type != '听句子，判断对错'"
           >
             <!-- <el-input
               v-model="s.content"
@@ -406,25 +418,35 @@
             </el-option>
           </el-select>
         </div>
+        <div class="knowledge">
+          作者：
+          <el-input v-model="author" placeholder="请输入题目作者"></el-input>
+        </div>
+        <div class="knowledge">
+          作者单位：
+          <el-input
+            v-model="author_org"
+            placeholder="请输入作者单位"
+          ></el-input>
+        </div>
+        <div class="knowledge">
+          题目创作日期：
+          <el-date-picker
+            v-model="time_created"
+            type="date"
+            placeholder="选择题目创作日期"
+          >
+          </el-date-picker>
+        </div>
       </div>
       <div class="edit_button">
-        <el-button type="success" plain @click="dialogVisible = true"
-          >保存题目</el-button
-        >
+        <el-button type="success" plain @click="checkQues">保存题目</el-button>
         <el-button type="info" plain @click="(check = true), (edit = false)"
           >取消</el-button
         >
       </div>
-      <el-dialog
-        title="修改题目"
-        :visible.sync="dialogVisible"
-        width="30%"
-        :before-close="handleClose"
-      >
-        <span>确认保存修改后的题目吗？</span><br />
-        <el-checkbox v-model="checked" v-show="selectQues"
-          >同步修改引用此题目的试卷</el-checkbox
-        >
+      <el-dialog title="修改题目" :visible.sync="dialogVisible" width="30%">
+        <span>确认保存修改后的题目吗？</span>
         <span slot="footer" class="dialog-footer">
           <el-button @click="dialogVisible = false">取 消</el-button>
           <el-button type="primary" @click="saveQues">确 定</el-button>
@@ -446,32 +468,19 @@ export default {
   props: {},
   data() {
     return {
+      option: ["A", "B", "C", "D"],
       selectQues: "",
-      checked: true,
       editor: [],
       // editorContent: "",
       initial: [],
-      sub_initial: [],
-      question: [],
-      sub_question: [],
+      question: {},
       edit: false,
       check: true,
-      radio: "",
-      radio1: "",
-      radio2: "",
-      ques_content: "",
-      sub_ques_content: "",
       sub_radio1: "",
-      checkboxGroup: [],
-      checked: false,
       change_file: false,
       image: "",
-      saveVerify: false,
-      quitVerify: false,
-      nsaveVerify: false,
       dialogImageUrl: "",
       dialogVisible: false,
-      disabled: false,
       file_url: "",
       content: "",
       click: 0,
@@ -781,6 +790,9 @@ export default {
         },
       ],
       task_value: [],
+      author: "",
+      author_org: "",
+      time_created: "",
     };
   },
   watch: {},
@@ -797,117 +809,9 @@ export default {
         .find()
         .then(
           (res) => {
-            // console.log(res);
-            // var find_ques = new BaaS.Query();
-            // find_ques.compare(
-            //   "id",
-            //   "=",
-            //   res.data.objects[0].question_content_id
-            // );
-            // let quesContent = new BaaS.TableObject("question_content");
-            // quesContent
-            //   .setQuery(find_ques)
-            //   .find()
-            //   .then(
-            //     (res) => {
-            //       // console.log(res);
-            //       if (res.data.objects[0].content != null) {
-            //         this.question.question_content =
-            //           res.data.objects[0].content;
-            //       } else {
-            //         this.question.file_url = res.data.objects[0].file_url;
-            //       }
-            //     },
-            //     (err) => {
-            //       console.log(err);
-            //     }
-            //   );
-
             this.question = res.data.objects[0];
             this.question.options = JSON.parse(this.question.options);
-            if (this.question.analysis != null) {
-              this.checked = true;
-            }
             this.initial = res.data.objects[0];
-
-            // console.log(this.question);
-            // if (this.question.sub_ques != null) {
-            //   let sub_Question = new BaaS.TableObject("questions_information");
-            //   var query1 = new BaaS.Query();
-            //   query1.in("id", this.question.sub_ques);
-            //   sub_Question
-            //     .setQuery(query1)
-            //     .orderBy("sub_sequence")
-            //     .find()
-            //     .then(
-            //       (res) => {
-            //         console.log(res);
-            //         res.data.objects.forEach((element) => {
-            //           element.options = JSON.parse(element.options);
-            //         });
-            //         this.sub_question = res.data.objects;
-            //         this.sub_initial = res.data.objects;
-            //         // console.log(this.sub_question);
-            //         this.sub_question.forEach((element) => {
-            //           if (element.analysis != null) {
-            //             this.checkboxGroup.push(true);
-            //           }
-            //           // console.log(this.checkboxGroup)
-            //         });
-            //       },
-            //       (err) => {
-            //         console.log(err);
-            //       }
-            //     );
-            // }
-            // let Knowledge_All = new BaaS.TableObject("knowledge_point");
-            // Knowledge_All.find().then(
-            //   (res) => {
-            //     this.knowledge = res.data.objects;
-            //     if (this.question.knowledge_id != null) {
-            //       this.knowledge_value = this.question.knowledge_id;
-            //     }
-            //   },
-            //   (err) => {
-            //     console.log(err);
-            //   }
-            // );
-            // let Department = new BaaS.TableObject("department");
-            // Department.find().then(
-            //   (res) => {
-            //     this.department = res.data.objects;
-            //     if (this.question.department != null) {
-            //       this.department_value = this.question.department;
-            //     }
-            //   },
-            //   (err) => {
-            //     console.log(err);
-            //   }
-            // );
-            // let Test = new BaaS.TableObject("test");
-            // Test.find().then(
-            //   (res) => {
-            //     this.test = res.data.objects;
-            //     if (this.question.test_id != null) {
-            //       this.test_value = this.question.test_id;
-            //     }
-            //   },
-            //   (err) => {
-            //     console.log(err);
-            //   }
-            // );
-            // let Source = new BaaS.TableObject("source");
-            // Source.find().then(
-            //   (res) => {
-            //     this.source = res.data.objects;
-            //     if (this.question.source_id != null) {
-            //       this.source_value = this.question.source_id;
-            //     }
-            //   },
-            //   (err) => {
-            //     console.log(err);
-            //   }
-            // );
             if (this.question.ques_level != null) {
               this.level_value = this.question.ques_level;
             }
@@ -929,6 +833,15 @@ export default {
             if (this.question.question_type_5he != null) {
               this.fivehe_value = this.question.question_type_5he;
             }
+            if (this.question.author != null) {
+              this.author = this.question.author;
+            }
+            if (this.question.author_org != null) {
+              this.author_org = this.question.author_org;
+            }
+            if (this.question.time_created != null) {
+              this.time_created = this.question.time_created;
+            }
           },
           (err) => {
             console.log(err);
@@ -939,7 +852,7 @@ export default {
       Cookies.set("ques_checkEdit", "");
       Cookies.set("question_content", "");
       Cookies.set("question_file", "");
-      Cookies.set("selectQues","false")
+      Cookies.set("selectQues", "false");
       this.$router.go(-1);
     },
     quesEdit() {
@@ -952,8 +865,6 @@ export default {
       BaaS.init(clientID);
       this.edit = true;
       this.check = false;
-      this.radio1 = this.question.primary_ques_type;
-      this.radio2 = this.question.secondary_ques_type;
     },
     quesCheck() {
       this.edit = false;
@@ -1005,100 +916,252 @@ export default {
         })
         .catch((_) => {});
     },
-    saveQues() {
-      if (
-        this.selectQues == false ||
-        (this.selectQues == true && this.checked == true)
-      ) {
-        this.dialogVisible = false;
-        var BaaS = require("minapp-sdk");
-        let clientID = "395062a19e209a770059";
-        BaaS.init(clientID);
-        this.question.primary_ques_type = this.radio1;
-        this.question.secondary_ques_type = this.radio2;
-        for (let i = 0; i < this.editor.length; i++) {
-          if (this.editor[i].toolbarSelector == "#material") {
-            let saveContent = new BaaS.TableObject("question_content");
-            let content = saveContent.getWithoutData(Cookie.get("material_id"));
-            if (this.editor[i].txt.text() == "") {
-              content.set("content", null);
-            } else {
-              content.set("content", this.editor[i].txt.text());
-            }
-            content.update().then(
-              (res) => {
-                Cookies.set("question_content", this.editor[i].txt.text());
-                this.content = this.editor[i].txt.text();
-              },
-              (err) => {
-                console.log(err);
+    async checkQues() {
+      var valid = true;
+      if (this.level_value == "") {
+        this.question.ques_level = null;
+      } else {
+        this.question.ques_level = this.level_value;
+      }
+      if (this.grade_value == "") {
+        this.question.grade_standard = null;
+      } else {
+        this.question.grade_standard = this.grade_value;
+      }
+      if (this.department_value == "") {
+        this.question.department = null;
+      } else {
+        this.question.department = this.department_value;
+      }
+      if (this.task_value == "") {
+        this.question.task_outline = null;
+      } else {
+        this.question.task_outline = this.task_value;
+      }
+      if (this.topic_value == "") {
+        this.question.topic_outline = null;
+      } else {
+        this.question.topic_outline = this.topic_value;
+      }
+      if (this.qclass_value == "") {
+        this.question.question_class = null;
+      } else {
+        this.question.question_class = this.qclass_value;
+      }
+      if (this.fivehe_value == "") {
+        this.question.question_type_5he = null;
+      } else {
+        this.question.question_type_5he = this.fivehe_value;
+      }
+      if (this.author == "") {
+        this.question.author = null;
+      } else {
+        this.question.author = this.author;
+      }
+      if (this.author_org == "") {
+        this.question.author_org = null;
+      } else {
+        this.question.author_org = this.author_org;
+      }
+      if (this.time_created == "") {
+        this.question.time_created = null;
+      } else {
+        this.question.time_created = this.time_created;
+      }
+      for (let i = 0; i < this.editor.length; i++) {
+        if (valid == false) {
+          break;
+        }
+        if (this.editor[i].toolbarSelector == "#material") {
+          if (this.editor[i].txt.text() == "") {
+            this.content = null;
+            this.$message({
+              message: "请填写题干",
+              type: "warning",
+            });
+            valid = false;
+            break;
+          } else {
+            this.content = this.editor[i].txt.text();
+          }
+        }
+        if (this.editor[i].toolbarSelector == "#question") {
+          if (
+            this.editor[i].txt.text() == "" ||
+            this.editor[i].txt.text() == "null" ||
+            this.editor[i].txt.text() == "undefined" ||
+            this.editor[i].txt.text() == undefined
+          ) {
+            this.question.question = null;
+          } else {
+            this.question.question = this.editor[i].txt.text();
+          }
+        } else if (this.editor[i].toolbarSelector == "#analysis") {
+          if (
+            this.editor[i].txt.text() == "" ||
+            this.editor[i].txt.text() == "null" ||
+            this.editor[i].txt.text() == "undefined" ||
+            this.editor[i].txt.text() == undefined
+          ) {
+            this.question.analysis = null;
+          } else {
+            this.question.analysis = this.editor[i].txt.text();
+          }
+        }
+        if (this.question.primary_ques_type != "") {
+          if (
+            (this.question.primary_ques_type == "听力" ||
+              this.question.primary_ques_type == "阅读" ||
+              this.question.primary_ques_type == "写作") &&
+            this.question.secondary_ques_type == ""
+          ) {
+            this.$message({
+              message: "请选择二级题型",
+              type: "warning",
+            });
+            valid = false;
+            break;
+          }
+          if (
+            this.question.primary_ques_type == "写作" ||
+            this.question.primary_ques_type == "简答题"
+          ) {
+            if (this.editor[i].toolbarSelector == "#answer") {
+              if (this.editor[i].txt.text() == "") {
+                this.question.answer = null;
+                this.$message({
+                  message: "请填写答案",
+                  type: "warning",
+                });
+                valid = false;
+                break;
+              } else {
+                this.question.answer = this.editor[i].txt.text();
               }
-            );
-          } else if (this.editor[i].toolbarSelector == "#question") {
-            if (this.editor[i].txt.text() == "") {
-              this.question.question = null;
-            } else {
-              this.question.question = this.editor[i].txt.text();
-            }
-          } else if (this.editor[i].toolbarSelector == "#analysis") {
-            if (this.editor[i].txt.text() == "") {
-              this.question.analysis = null;
-            } else {
-              this.question.analysis = this.editor[i].txt.text();
-            }
-          } else if (this.editor[i].toolbarSelector == "#answer") {
-            if (this.editor[i].txt.text() == "") {
-              this.question.answer = null;
-            } else {
-              this.question.answer = this.editor[i].txt.text();
             }
           } else {
-            for (let j = 0; j < this.question.options.length; j++) {
+            if (
+              this.question.secondary_ques_type != "听句子，判断对错" &&
+              this.question.primary_ques_type != "判断题"
+            ) {
+              for (let k = 0; k < this.option.length; k++) {
+                if ("#" + this.option[k] == this.editor[i].toolbarSelector) {
+                  if (this.editor[i].txt.text() == "") {
+                    this.$message({
+                      message: "请填写选项答案",
+                      type: "warning",
+                    });
+                    valid = false;
+                    break;
+                  } else {
+                    for (let j = 0; j < this.question.options.length; j++) {
+                      if (
+                        "#" + this.question.options[j].index ==
+                        this.editor[i].toolbarSelector
+                      ) {
+                        this.question.options[j].content =
+                          this.editor[i].txt.text();
+                      }
+                    }
+                  }
+                }
+              }
               if (
-                "#" + this.question.options[j].index ==
-                this.editor[i].toolbarSelector
+                this.question.answer == "" ||
+                this.option.indexOf(this.question.answer) == -1
               ) {
-                this.question.options[j].content = this.editor[i].txt.text();
+                this.$message({
+                  message: "请填写答案",
+                  type: "warning",
+                });
+                valid = false;
+                break;
+              }
+            } else {
+              let p = [
+                {
+                  content: "√",
+                  index: "A",
+                },
+                {
+                  content: "×",
+                  index: "B",
+                },
+              ];
+              this.question.options = null;
+              this.question.options = p;
+              if (
+                this.question.answer == "" ||
+                (this.question.answer != "√" && this.question.answer != "×")
+              ) {
+                this.$message({
+                  message: "请填写答案",
+                  type: "warning",
+                });
+                valid = false;
+                break;
               }
             }
           }
+        } else {
+          this.$message({
+            message: "请选择一级题型",
+            type: "warning",
+          });
+          valid = false;
+          break;
         }
-        if (this.question.options != null) {
-          this.question.options = JSON.stringify(this.question.options);
-        }
-        // this.question.knowledge_id = this.value;
-        if(Cookie.get("catalog")!=""){
-          question.catalog = Cookie.get("catalog")
-        }
-        let saveQues = new BaaS.TableObject("questions_information");
-        let question = saveQues.getWithoutData(this.question.id);
-        question.set(this.question);
-        question.update().then(
-          (res) => {
-            this.question.options = JSON.parse(this.question.options);
-            this.$message({
-              message: "题目保存成功",
-              type: "success",
-            });
-            this.quesCheck();
-          },
-          (err) => {
-            console.log(err);
-            this.$message({
-              message: "题目保存失败",
-              type: "danger",
-            });
-          }
-        );
-      } else {
-        this.dialogVisible = false;
-        this.$message({
-          message: "题目保存成功",
-          type: "success",
-        });
-        this.quesCheck();
-        Cookies.set("seleditQues", JSON.stringify(this.question));
       }
+      if (valid == true) {
+        this.dialogVisible = true;
+      }
+      return valid;
+    },
+    saveQues() {
+      this.dialogVisible = false;
+      var BaaS = require("minapp-sdk");
+      let clientID = "395062a19e209a770059";
+      BaaS.init(clientID);
+      let saveContent = new BaaS.TableObject("question_content");
+      let content = saveContent.getWithoutData(
+        this.question.question_content_id
+      );
+      content.set("content", this.content);
+      content.update().then(
+        (res) => {
+          this.question.question_content_id = res.data.id;
+          Cookies.set("question_content", this.content);
+        },
+        (err) => {
+          console.log(err);
+        }
+      );
+      if (this.question.options != null) {
+        this.question.options = JSON.stringify(this.question.options);
+      }
+      if (Cookie.get("catalog") != "") {
+        this.question.catalog = Cookie.get("catalog");
+      }
+      let saveQues = new BaaS.TableObject("questions_information");
+      let question = saveQues.getWithoutData(this.question.id);
+      question.set(this.question);
+      question.update().then(
+        (res) => {
+          this.question.options = JSON.parse(this.question.options);
+          this.$message({
+            message: "题目保存成功",
+            type: "success",
+          });
+          this.quesCheck();
+        },
+        (err) => {
+          console.log(err);
+          this.$message({
+            message: "题目保存失败",
+            type: "danger",
+          });
+        }
+      );
     },
     createEdit() {
       const material = new E("#material");
@@ -1139,9 +1202,6 @@ export default {
       analysis.create();
       this.editor.push(analysis);
     },
-    // goto(val){
-    //   this.$router.push("/"+val);
-    // }
   },
   created() {},
   mounted() {

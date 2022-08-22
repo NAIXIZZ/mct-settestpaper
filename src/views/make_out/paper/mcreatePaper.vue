@@ -4580,164 +4580,6 @@ export default {
                                   j < this.questions[i].sub_question.length;
                                   j++
                                 ) {
-                                  //查找知识点等
-                                  // if (
-                                  //   this.questions[i].sub_question[j].knowledge_value !=
-                                  //   null
-                                  // ) {
-                                  //   for (
-                                  //     let k = 0;
-                                  //     k <
-                                  //     this.questions[i].sub_question[j].knowledge_value
-                                  //       .length;
-                                  //     k++
-                                  //   ) {
-                                  //     let findSelect = new BaaS.TableObject(
-                                  //       "knowledge_point"
-                                  //     );
-                                  //     let find_select = new BaaS.Query();
-                                  //     find_select.compare(
-                                  //       "id",
-                                  //       "=",
-                                  //       this.questions[i].sub_question[j]
-                                  //         .knowledge_value[k]
-                                  //     );
-                                  //     findSelect
-                                  //       .setQuery(find_select)
-                                  //       .find()
-                                  //       .then(
-                                  //         (res) => {
-                                  //           if (res.data.objects.length == 0) {
-                                  //             let createSelect = new BaaS.TableObject(
-                                  //               "knowledge_point"
-                                  //             );
-                                  //             let create_select = createSelect.create();
-                                  //             create_select.set(
-                                  //               "knowledge_point",
-                                  //               this.questions[i].sub_question[j]
-                                  //                 .knowledge_value[k]
-                                  //             );
-                                  //             create_select.save().then(
-                                  //               (res) => {
-                                  //                 this.questions[i].sub_question[
-                                  //                   j
-                                  //                 ].knowledge_value[k] = res.data.id;
-                                  //               },
-                                  //               (err) => {
-                                  //                 console.log(err);
-                                  //               }
-                                  //             );
-                                  //           }
-                                  //         },
-                                  //         (err) => {
-                                  //           console.log(err);
-                                  //         }
-                                  //       );
-                                  //   }
-                                  // }
-                                  // if (
-                                  //   this.questions[i].sub_question[j].test_value != null
-                                  // ) {
-                                  //   for (
-                                  //     let k = 0;
-                                  //     k <
-                                  //     this.questions[i].sub_question[j].test_value
-                                  //       .length;
-                                  //     k++
-                                  //   ) {
-                                  //     let findSelect = new BaaS.TableObject("test");
-                                  //     let find_select = new BaaS.Query();
-                                  //     find_select.compare(
-                                  //       "id",
-                                  //       "=",
-                                  //       this.questions[i].sub_question[j].test_value[k]
-                                  //     );
-                                  //     findSelect
-                                  //       .setQuery(find_select)
-                                  //       .find()
-                                  //       .then(
-                                  //         (res) => {
-                                  //           if (res.data.objects.length == 0) {
-                                  //             let createSelect = new BaaS.TableObject(
-                                  //               "test"
-                                  //             );
-                                  //             let create_select = createSelect.create();
-                                  //             create_select.set(
-                                  //               "test",
-                                  //               this.questions[i].sub_question[j]
-                                  //                 .test_value[k]
-                                  //             );
-                                  //             create_select.save().then(
-                                  //               (res) => {
-                                  //                 this.questions[i].sub_question[
-                                  //                   j
-                                  //                 ].test_value[k] = res.data.id;
-                                  //               },
-                                  //               (err) => {
-                                  //                 console.log(err);
-                                  //               }
-                                  //             );
-                                  //           }
-                                  //         },
-                                  //         (err) => {
-                                  //           console.log(err);
-                                  //         }
-                                  //       );
-                                  //   }
-                                  // }
-                                  // if (
-                                  //   this.questions[i].sub_question[j].source_value !=
-                                  //   null
-                                  // ) {
-                                  //   for (
-                                  //     let k = 0;
-                                  //     k <
-                                  //     this.questions[i].sub_question[j].source_value
-                                  //       .length;
-                                  //     k++
-                                  //   ) {
-                                  //     let findSelect = new BaaS.TableObject("source");
-                                  //     let find_select = new BaaS.Query();
-                                  //     find_select.compare(
-                                  //       "id",
-                                  //       "=",
-                                  //       this.questions[i].sub_question[j].source_value[
-                                  //         k
-                                  //       ]
-                                  //     );
-                                  //     findSelect
-                                  //       .setQuery(find_select)
-                                  //       .find()
-                                  //       .then(
-                                  //         (res) => {
-                                  //           if (res.data.objects.length == 0) {
-                                  //             let createSelect = new BaaS.TableObject(
-                                  //               "source"
-                                  //             );
-                                  //             let create_select = createSelect.create();
-                                  //             create_select.set(
-                                  //               "source",
-                                  //               this.questions[i].sub_question[j]
-                                  //                 .source_value[k]
-                                  //             );
-                                  //             create_select.save().then(
-                                  //               (res) => {
-                                  //                 this.questions[i].sub_question[
-                                  //                   j
-                                  //                 ].source_value[k] = res.data.id;
-                                  //               },
-                                  //               (err) => {
-                                  //                 console.log(err);
-                                  //               }
-                                  //             );
-                                  //           }
-                                  //         },
-                                  //         (err) => {
-                                  //           console.log(err);
-                                  //         }
-                                  //       );
-                                  //   }
-                                  // }
                                   //题目是否存在
                                   let findQuestion = new BaaS.TableObject(
                                     "questions_information"
@@ -4756,6 +4598,9 @@ export default {
                                   let ques_level = new BaaS.Query();
                                   let question_class = new BaaS.Query();
                                   let question_type_5he = new BaaS.Query();
+                                  let author = new BaaS.Query();
+                                  let author_org = new BaaS.Query();
+                                  let time_created = new BaaS.Query();
                                   question_content_id.compare(
                                     "question_content_id",
                                     "=",
@@ -4908,6 +4753,44 @@ export default {
                                       "question_type_5he"
                                     );
                                   }
+                                  if (
+                                    this.questions[i].sub_question[j].author !=
+                                    null
+                                  ) {
+                                    author.compare(
+                                      "author",
+                                      "=",
+                                      this.questions[i].sub_question[j].author
+                                    );
+                                  } else {
+                                    author.isNull("author");
+                                  }
+                                  if (
+                                    this.questions[i].sub_question[j]
+                                      .author_org != null
+                                  ) {
+                                    author_org.compare(
+                                      "author_org",
+                                      "=",
+                                      this.questions[i].sub_question[j]
+                                        .author_org
+                                    );
+                                  } else {
+                                    author_org.isNull("author_org");
+                                  }
+                                  if (
+                                    this.questions[i].sub_question[j]
+                                      .time_created != null
+                                  ) {
+                                    time_created.compare(
+                                      "time_created",
+                                      "=",
+                                      this.questions[i].sub_question[j]
+                                        .time_created
+                                    );
+                                  } else {
+                                    time_created.isNull("time_created");
+                                  }
                                   let andQuery = BaaS.Query.and(
                                     question_content_id,
                                     primary_ques_type,
@@ -4922,7 +4805,10 @@ export default {
                                     task_outline,
                                     ques_level,
                                     question_class,
-                                    question_type_5he
+                                    question_type_5he,
+                                    author,
+                                    author_org,
+                                    time_created
                                   );
                                   findQuestion
                                     .setQuery(andQuery)
@@ -5008,6 +4894,18 @@ export default {
                                                 this.questions[i].sub_question[
                                                   j
                                                 ].score * 1,
+                                              author:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].author,
+                                              author_org:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].author_org,
+                                              time_created:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].time_created,
                                             };
                                           } else if (
                                             (this.questions[i]
@@ -5077,6 +4975,18 @@ export default {
                                                 this.questions[i].sub_question[
                                                   j
                                                 ].fivehe_value,
+                                              author:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].author,
+                                              author_org:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].author_org,
+                                              time_created:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].time_created,
                                             };
                                           } else if (
                                             this.questions[i]
@@ -5133,6 +5043,18 @@ export default {
                                                 this.questions[i].sub_question[
                                                   j
                                                 ].fivehe_value,
+                                              author:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].author,
+                                              author_org:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].author_org,
+                                              time_created:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].time_created,
                                             };
                                           }
                                           save_question
@@ -5288,180 +5210,7 @@ export default {
                                         this.questions[i].sub_question.length;
                                         j++
                                       ) {
-                                        //查找知识点等
                                         let tempq;
-                                        // if (
-                                        //   this.questions[i].sub_question[j]
-                                        //     .knowledge_value != null
-                                        // ) {
-                                        //   for (
-                                        //     let k = 0;
-                                        //     k <
-                                        //     this.questions[i].sub_question[j]
-                                        //       .knowledge_value.length;
-                                        //     k++
-                                        //   ) {
-                                        //     console.log(
-                                        //       this.questions[i].sub_question[j]
-                                        //         .knowledge_value[k]
-                                        //     );
-                                        //     let findSelect = new BaaS.TableObject(
-                                        //       "knowledge_point"
-                                        //     );
-                                        //     let find_select = new BaaS.Query();
-                                        //     find_select.compare(
-                                        //       "id",
-                                        //       "=",
-                                        //       this.questions[i].sub_question[j]
-                                        //         .knowledge_value[k]
-                                        //     );
-                                        //     findSelect
-                                        //       .setQuery(find_select)
-                                        //       .find()
-                                        //       .then(
-                                        //         (res) => {
-                                        //           console.log(res);
-                                        //           if (res.data.objects.length == 0) {
-                                        //             let createSelect =
-                                        //               new BaaS.TableObject(
-                                        //                 "knowledge_point"
-                                        //               );
-                                        //             let create_select =
-                                        //               createSelect.create();
-                                        //             create_select.set(
-                                        //               "knowledge_point",
-                                        //               this.questions[i].sub_question[j]
-                                        //                 .knowledge_value[k]
-                                        //             );
-                                        //             create_select.save().then(
-                                        //               (res) => {
-                                        //                 this.questions[i].sub_question[
-                                        //                   j
-                                        //                 ].knowledge_value[k] =
-                                        //                   res.data.id;
-                                        //               },
-                                        //               (err) => {
-                                        //                 console.log(err);
-                                        //               }
-                                        //             );
-                                        //           }
-                                        //         },
-                                        //         (err) => {
-                                        //           console.log(err);
-                                        //         }
-                                        //       );
-                                        //   }
-                                        // }
-                                        // if (
-                                        //   this.questions[i].sub_question[j]
-                                        //     .test_value != null
-                                        // ) {
-                                        //   for (
-                                        //     let k = 0;
-                                        //     k <
-                                        //     this.questions[i].sub_question[j].test_value
-                                        //       .length;
-                                        //     k++
-                                        //   ) {
-                                        //     let findSelect = new BaaS.TableObject(
-                                        //       "test"
-                                        //     );
-                                        //     let find_select = new BaaS.Query();
-                                        //     find_select.compare(
-                                        //       "id",
-                                        //       "=",
-                                        //       this.questions[i].sub_question[j]
-                                        //         .test_value[k]
-                                        //     );
-                                        //     findSelect
-                                        //       .setQuery(find_select)
-                                        //       .find()
-                                        //       .then(
-                                        //         (res) => {
-                                        //           console.log(res);
-                                        //           if (res.data.objects.length == 0) {
-                                        //             let createSelect =
-                                        //               new BaaS.TableObject("test");
-                                        //             let create_select =
-                                        //               createSelect.create();
-                                        //             create_select.set(
-                                        //               "test",
-                                        //               this.questions[i].sub_question[j]
-                                        //                 .test_value[k]
-                                        //             );
-                                        //             create_select.save().then(
-                                        //               (res) => {
-                                        //                 this.questions[i].sub_question[
-                                        //                   j
-                                        //                 ].test_value[k] = res.data.id;
-                                        //               },
-                                        //               (err) => {
-                                        //                 console.log(err);
-                                        //               }
-                                        //             );
-                                        //           }
-                                        //         },
-                                        //         (err) => {
-                                        //           console.log(err);
-                                        //         }
-                                        //       );
-                                        //   }
-                                        // }
-                                        // if (
-                                        //   this.questions[i].sub_question[j]
-                                        //     .source_value != null
-                                        // ) {
-                                        //   for (
-                                        //     let k = 0;
-                                        //     k <
-                                        //     this.questions[i].sub_question[j]
-                                        //       .source_value.length;
-                                        //     k++
-                                        //   ) {
-                                        //     let findSelect = new BaaS.TableObject(
-                                        //       "source"
-                                        //     );
-                                        //     let find_select = new BaaS.Query();
-                                        //     find_select.compare(
-                                        //       "id",
-                                        //       "=",
-                                        //       this.questions[i].sub_question[j]
-                                        //         .source_value[k]
-                                        //     );
-                                        //     findSelect
-                                        //       .setQuery(find_select)
-                                        //       .find()
-                                        //       .then(
-                                        //         (res) => {
-                                        //           console.log(res);
-                                        //           if (res.data.objects.length == 0) {
-                                        //             let createSelect =
-                                        //               new BaaS.TableObject("source");
-                                        //             let create_select =
-                                        //               createSelect.create();
-                                        //             create_select.set(
-                                        //               "source",
-                                        //               this.questions[i].sub_question[j]
-                                        //                 .source_value[k]
-                                        //             );
-                                        //             create_select.save().then(
-                                        //               (res) => {
-                                        //                 this.questions[i].sub_question[
-                                        //                   j
-                                        //                 ].source_value[k] = res.data.id;
-                                        //               },
-                                        //               (err) => {
-                                        //                 console.log(err);
-                                        //               }
-                                        //             );
-                                        //           }
-                                        //         },
-                                        //         (err) => {
-                                        //           console.log(err);
-                                        //         }
-                                        //       );
-                                        //   }
-                                        // }
                                         //存储题目
                                         let saveQuestion = new BaaS.TableObject(
                                           "questions_information"
@@ -5519,6 +5268,15 @@ export default {
                                             question_type_5he:
                                               this.questions[i].sub_question[j]
                                                 .fivehe_value,
+                                            author:
+                                              this.questions[i].sub_question[j]
+                                                .author,
+                                            author_org:
+                                              this.questions[i].sub_question[j]
+                                                .author_org,
+                                            time_created:
+                                              this.questions[i].sub_question[j]
+                                                .time_created,
                                           };
                                         } else if (
                                           (this.questions[i]
@@ -5577,6 +5335,15 @@ export default {
                                             question_type_5he:
                                               this.questions[i].sub_question[j]
                                                 .fivehe_value,
+                                            author:
+                                              this.questions[i].sub_question[j]
+                                                .author,
+                                            author_org:
+                                              this.questions[i].sub_question[j]
+                                                .author_org,
+                                            time_created:
+                                              this.questions[i].sub_question[j]
+                                                .time_created,
                                           };
                                         } else if (
                                           this.questions[i].primary_ques_type ==
@@ -5623,6 +5390,15 @@ export default {
                                             question_type_5he:
                                               this.questions[i].sub_question[j]
                                                 .fivehe_value,
+                                            author:
+                                              this.questions[i].sub_question[j]
+                                                .author,
+                                            author_org:
+                                              this.questions[i].sub_question[j]
+                                                .author_org,
+                                            time_created:
+                                              this.questions[i].sub_question[j]
+                                                .time_created,
                                           };
                                         }
                                         save_question
@@ -5848,164 +5624,6 @@ export default {
                                       j < this.questions[i].sub_question.length;
                                       j++
                                     ) {
-                                      //查找知识点等
-                                      // if (
-                                      //   this.questions[i].sub_question[j].knowledge_value !=
-                                      //   null
-                                      // ) {
-                                      //   for (
-                                      //     let k = 0;
-                                      //     k <
-                                      //     this.questions[i].sub_question[j].knowledge_value
-                                      //       .length;
-                                      //     k++
-                                      //   ) {
-                                      //     let findSelect = new BaaS.TableObject(
-                                      //       "knowledge_point"
-                                      //     );
-                                      //     let find_select = new BaaS.Query();
-                                      //     find_select.compare(
-                                      //       "id",
-                                      //       "=",
-                                      //       this.questions[i].sub_question[j]
-                                      //         .knowledge_value[k]
-                                      //     );
-                                      //     findSelect
-                                      //       .setQuery(find_select)
-                                      //       .find()
-                                      //       .then(
-                                      //         (res) => {
-                                      //           if (res.data.objects.length == 0) {
-                                      //             let createSelect = new BaaS.TableObject(
-                                      //               "knowledge_point"
-                                      //             );
-                                      //             let create_select = createSelect.create();
-                                      //             create_select.set(
-                                      //               "knowledge_point",
-                                      //               this.questions[i].sub_question[j]
-                                      //                 .knowledge_value[k]
-                                      //             );
-                                      //             create_select.save().then(
-                                      //               (res) => {
-                                      //                 this.questions[i].sub_question[
-                                      //                   j
-                                      //                 ].knowledge_value[k] = res.data.id;
-                                      //               },
-                                      //               (err) => {
-                                      //                 console.log(err);
-                                      //               }
-                                      //             );
-                                      //           }
-                                      //         },
-                                      //         (err) => {
-                                      //           console.log(err);
-                                      //         }
-                                      //       );
-                                      //   }
-                                      // }
-                                      // if (
-                                      //   this.questions[i].sub_question[j].test_value != null
-                                      // ) {
-                                      //   for (
-                                      //     let k = 0;
-                                      //     k <
-                                      //     this.questions[i].sub_question[j].test_value
-                                      //       .length;
-                                      //     k++
-                                      //   ) {
-                                      //     let findSelect = new BaaS.TableObject("test");
-                                      //     let find_select = new BaaS.Query();
-                                      //     find_select.compare(
-                                      //       "id",
-                                      //       "=",
-                                      //       this.questions[i].sub_question[j].test_value[k]
-                                      //     );
-                                      //     findSelect
-                                      //       .setQuery(find_select)
-                                      //       .find()
-                                      //       .then(
-                                      //         (res) => {
-                                      //           if (res.data.objects.length == 0) {
-                                      //             let createSelect = new BaaS.TableObject(
-                                      //               "test"
-                                      //             );
-                                      //             let create_select = createSelect.create();
-                                      //             create_select.set(
-                                      //               "test",
-                                      //               this.questions[i].sub_question[j]
-                                      //                 .test_value[k]
-                                      //             );
-                                      //             create_select.save().then(
-                                      //               (res) => {
-                                      //                 this.questions[i].sub_question[
-                                      //                   j
-                                      //                 ].test_value[k] = res.data.id;
-                                      //               },
-                                      //               (err) => {
-                                      //                 console.log(err);
-                                      //               }
-                                      //             );
-                                      //           }
-                                      //         },
-                                      //         (err) => {
-                                      //           console.log(err);
-                                      //         }
-                                      //       );
-                                      //   }
-                                      // }
-                                      // if (
-                                      //   this.questions[i].sub_question[j].source_value !=
-                                      //   null
-                                      // ) {
-                                      //   for (
-                                      //     let k = 0;
-                                      //     k <
-                                      //     this.questions[i].sub_question[j].source_value
-                                      //       .length;
-                                      //     k++
-                                      //   ) {
-                                      //     let findSelect = new BaaS.TableObject("source");
-                                      //     let find_select = new BaaS.Query();
-                                      //     find_select.compare(
-                                      //       "id",
-                                      //       "=",
-                                      //       this.questions[i].sub_question[j].source_value[
-                                      //         k
-                                      //       ]
-                                      //     );
-                                      //     findSelect
-                                      //       .setQuery(find_select)
-                                      //       .find()
-                                      //       .then(
-                                      //         (res) => {
-                                      //           if (res.data.objects.length == 0) {
-                                      //             let createSelect = new BaaS.TableObject(
-                                      //               "source"
-                                      //             );
-                                      //             let create_select = createSelect.create();
-                                      //             create_select.set(
-                                      //               "source",
-                                      //               this.questions[i].sub_question[j]
-                                      //                 .source_value[k]
-                                      //             );
-                                      //             create_select.save().then(
-                                      //               (res) => {
-                                      //                 this.questions[i].sub_question[
-                                      //                   j
-                                      //                 ].source_value[k] = res.data.id;
-                                      //               },
-                                      //               (err) => {
-                                      //                 console.log(err);
-                                      //               }
-                                      //             );
-                                      //           }
-                                      //         },
-                                      //         (err) => {
-                                      //           console.log(err);
-                                      //         }
-                                      //       );
-                                      //   }
-                                      // }
                                       //题目是否存在
                                       let findQuestion = new BaaS.TableObject(
                                         "questions_information"
@@ -6026,6 +5644,9 @@ export default {
                                       let ques_level = new BaaS.Query();
                                       let question_class = new BaaS.Query();
                                       let question_type_5he = new BaaS.Query();
+                                      let author = new BaaS.Query();
+                                      let author_org = new BaaS.Query();
+                                      let time_created = new BaaS.Query();
                                       question_content_id.compare(
                                         "question_content_id",
                                         "=",
@@ -6180,6 +5801,45 @@ export default {
                                           "question_type_5he"
                                         );
                                       }
+                                      if (
+                                        this.questions[i].sub_question[j]
+                                          .author != null
+                                      ) {
+                                        author.compare(
+                                          "author",
+                                          "=",
+                                          this.questions[i].sub_question[j]
+                                            .author
+                                        );
+                                      } else {
+                                        author.isNull("author");
+                                      }
+                                      if (
+                                        this.questions[i].sub_question[j]
+                                          .author_org != null
+                                      ) {
+                                        author_org.compare(
+                                          "author_org",
+                                          "=",
+                                          this.questions[i].sub_question[j]
+                                            .author_org
+                                        );
+                                      } else {
+                                        author_org.isNull("author_org");
+                                      }
+                                      if (
+                                        this.questions[i].sub_question[j]
+                                          .time_created != null
+                                      ) {
+                                        time_created.compare(
+                                          "time_created",
+                                          "=",
+                                          this.questions[i].sub_question[j]
+                                            .time_created
+                                        );
+                                      } else {
+                                        time_created.isNull("time_created");
+                                      }
                                       let andQuery = BaaS.Query.and(
                                         question_content_id,
                                         primary_ques_type,
@@ -6194,7 +5854,10 @@ export default {
                                         task_outline,
                                         ques_level,
                                         question_class,
-                                        question_type_5he
+                                        question_type_5he,
+                                        author,
+                                        author_org,
+                                        time_created
                                       );
                                       findQuestion
                                         .setQuery(andQuery)
@@ -6278,6 +5941,17 @@ export default {
                                                     this.questions[i]
                                                       .sub_question[j].score *
                                                     1,
+                                                  author:
+                                                    this.questions[i]
+                                                      .sub_question[j].author,
+                                                  author_org:
+                                                    this.questions[i]
+                                                      .sub_question[j]
+                                                      .author_org,
+                                                  time_created:
+                                                    this.questions[i]
+                                                      .sub_question[j]
+                                                      .time_created,
                                                 };
                                               } else if (
                                                 (this.questions[i]
@@ -6348,6 +6022,17 @@ export default {
                                                     this.questions[i]
                                                       .sub_question[j]
                                                       .fivehe_value,
+                                                  author:
+                                                    this.questions[i]
+                                                      .sub_question[j].author,
+                                                  author_org:
+                                                    this.questions[i]
+                                                      .sub_question[j]
+                                                      .author_org,
+                                                  time_created:
+                                                    this.questions[i]
+                                                      .sub_question[j]
+                                                      .time_created,
                                                 };
                                               } else if (
                                                 this.questions[i]
@@ -6403,6 +6088,17 @@ export default {
                                                     this.questions[i]
                                                       .sub_question[j]
                                                       .fivehe_value,
+                                                  author:
+                                                    this.questions[i]
+                                                      .sub_question[j].author,
+                                                  author_org:
+                                                    this.questions[i]
+                                                      .sub_question[j]
+                                                      .author_org,
+                                                  time_created:
+                                                    this.questions[i]
+                                                      .sub_question[j]
+                                                      .time_created,
                                                 };
                                               }
                                               save_question
@@ -6633,6 +6329,16 @@ export default {
                                                   this.questions[i]
                                                     .sub_question[j]
                                                     .fivehe_value,
+                                                author:
+                                                  this.questions[i]
+                                                    .sub_question[j].author,
+                                                author_org:
+                                                  this.questions[i]
+                                                    .sub_question[j].author_org,
+                                                time_created:
+                                                  this.questions[i]
+                                                    .sub_question[j]
+                                                    .time_created,
                                               };
                                             } else if (
                                               (this.questions[i]
@@ -6700,6 +6406,16 @@ export default {
                                                   this.questions[i]
                                                     .sub_question[j]
                                                     .fivehe_value,
+                                                author:
+                                                  this.questions[i]
+                                                    .sub_question[j].author,
+                                                author_org:
+                                                  this.questions[i]
+                                                    .sub_question[j].author_org,
+                                                time_created:
+                                                  this.questions[i]
+                                                    .sub_question[j]
+                                                    .time_created,
                                               };
                                             } else if (
                                               this.questions[i]
@@ -6753,6 +6469,16 @@ export default {
                                                   this.questions[i]
                                                     .sub_question[j]
                                                     .fivehe_value,
+                                                author:
+                                                  this.questions[i]
+                                                    .sub_question[j].author,
+                                                author_org:
+                                                  this.questions[i]
+                                                    .sub_question[j].author_org,
+                                                time_created:
+                                                  this.questions[i]
+                                                    .sub_question[j]
+                                                    .time_created,
                                               };
                                             }
                                             save_question
@@ -6901,164 +6627,6 @@ export default {
                               j < this.questions[i].sub_question.length;
                               j++
                             ) {
-                              //查找知识点等
-                              // if (
-                              //   this.questions[i].sub_question[j].knowledge_value !=
-                              //   null
-                              // ) {
-                              //   for (
-                              //     let k = 0;
-                              //     k <
-                              //     this.questions[i].sub_question[j].knowledge_value
-                              //       .length;
-                              //     k++
-                              //   ) {
-                              //     let findSelect = new BaaS.TableObject(
-                              //       "knowledge_point"
-                              //     );
-                              //     let find_select = new BaaS.Query();
-                              //     find_select.compare(
-                              //       "id",
-                              //       "=",
-                              //       this.questions[i].sub_question[j]
-                              //         .knowledge_value[k]
-                              //     );
-                              //     findSelect
-                              //       .setQuery(find_select)
-                              //       .find()
-                              //       .then(
-                              //         (res) => {
-                              //           if (res.data.objects.length == 0) {
-                              //             let createSelect = new BaaS.TableObject(
-                              //               "knowledge_point"
-                              //             );
-                              //             let create_select = createSelect.create();
-                              //             create_select.set(
-                              //               "knowledge_point",
-                              //               this.questions[i].sub_question[j]
-                              //                 .knowledge_value[k]
-                              //             );
-                              //             create_select.save().then(
-                              //               (res) => {
-                              //                 this.questions[i].sub_question[
-                              //                   j
-                              //                 ].knowledge_value[k] = res.data.id;
-                              //               },
-                              //               (err) => {
-                              //                 console.log(err);
-                              //               }
-                              //             );
-                              //           }
-                              //         },
-                              //         (err) => {
-                              //           console.log(err);
-                              //         }
-                              //       );
-                              //   }
-                              // }
-                              // if (
-                              //   this.questions[i].sub_question[j].test_value != null
-                              // ) {
-                              //   for (
-                              //     let k = 0;
-                              //     k <
-                              //     this.questions[i].sub_question[j].test_value
-                              //       .length;
-                              //     k++
-                              //   ) {
-                              //     let findSelect = new BaaS.TableObject("test");
-                              //     let find_select = new BaaS.Query();
-                              //     find_select.compare(
-                              //       "id",
-                              //       "=",
-                              //       this.questions[i].sub_question[j].test_value[k]
-                              //     );
-                              //     findSelect
-                              //       .setQuery(find_select)
-                              //       .find()
-                              //       .then(
-                              //         (res) => {
-                              //           if (res.data.objects.length == 0) {
-                              //             let createSelect = new BaaS.TableObject(
-                              //               "test"
-                              //             );
-                              //             let create_select = createSelect.create();
-                              //             create_select.set(
-                              //               "test",
-                              //               this.questions[i].sub_question[j]
-                              //                 .test_value[k]
-                              //             );
-                              //             create_select.save().then(
-                              //               (res) => {
-                              //                 this.questions[i].sub_question[
-                              //                   j
-                              //                 ].test_value[k] = res.data.id;
-                              //               },
-                              //               (err) => {
-                              //                 console.log(err);
-                              //               }
-                              //             );
-                              //           }
-                              //         },
-                              //         (err) => {
-                              //           console.log(err);
-                              //         }
-                              //       );
-                              //   }
-                              // }
-                              // if (
-                              //   this.questions[i].sub_question[j].source_value !=
-                              //   null
-                              // ) {
-                              //   for (
-                              //     let k = 0;
-                              //     k <
-                              //     this.questions[i].sub_question[j].source_value
-                              //       .length;
-                              //     k++
-                              //   ) {
-                              //     let findSelect = new BaaS.TableObject("source");
-                              //     let find_select = new BaaS.Query();
-                              //     find_select.compare(
-                              //       "id",
-                              //       "=",
-                              //       this.questions[i].sub_question[j].source_value[
-                              //         k
-                              //       ]
-                              //     );
-                              //     findSelect
-                              //       .setQuery(find_select)
-                              //       .find()
-                              //       .then(
-                              //         (res) => {
-                              //           if (res.data.objects.length == 0) {
-                              //             let createSelect = new BaaS.TableObject(
-                              //               "source"
-                              //             );
-                              //             let create_select = createSelect.create();
-                              //             create_select.set(
-                              //               "source",
-                              //               this.questions[i].sub_question[j]
-                              //                 .source_value[k]
-                              //             );
-                              //             create_select.save().then(
-                              //               (res) => {
-                              //                 this.questions[i].sub_question[
-                              //                   j
-                              //                 ].source_value[k] = res.data.id;
-                              //               },
-                              //               (err) => {
-                              //                 console.log(err);
-                              //               }
-                              //             );
-                              //           }
-                              //         },
-                              //         (err) => {
-                              //           console.log(err);
-                              //         }
-                              //       );
-                              //   }
-                              // }
                               //题目是否存在
                               let findQuestion = new BaaS.TableObject(
                                 "questions_information"
@@ -7077,6 +6645,9 @@ export default {
                               let ques_level = new BaaS.Query();
                               let question_class = new BaaS.Query();
                               let question_type_5he = new BaaS.Query();
+                              let author = new BaaS.Query();
+                              let author_org = new BaaS.Query();
+                              let time_created = new BaaS.Query();
                               question_content_id.compare(
                                 "question_content_id",
                                 "=",
@@ -7220,6 +6791,41 @@ export default {
                               } else {
                                 question_type_5he.isNull("question_type_5he");
                               }
+                              if (
+                                this.questions[i].sub_question[j].author != null
+                              ) {
+                                author.compare(
+                                  "author",
+                                  "=",
+                                  this.questions[i].sub_question[j].author
+                                );
+                              } else {
+                                author.isNull("author");
+                              }
+                              if (
+                                this.questions[i].sub_question[j].author_org !=
+                                null
+                              ) {
+                                author_org.compare(
+                                  "author_org",
+                                  "=",
+                                  this.questions[i].sub_question[j].author_org
+                                );
+                              } else {
+                                author_org.isNull("author_org");
+                              }
+                              if (
+                                this.questions[i].sub_question[j]
+                                  .time_created != null
+                              ) {
+                                time_created.compare(
+                                  "time_created",
+                                  "=",
+                                  this.questions[i].sub_question[j].time_created
+                                );
+                              } else {
+                                time_created.isNull("time_created");
+                              }
                               let andQuery = BaaS.Query.and(
                                 question_content_id,
                                 primary_ques_type,
@@ -7234,7 +6840,10 @@ export default {
                                 task_outline,
                                 ques_level,
                                 question_class,
-                                question_type_5he
+                                question_type_5he,
+                                author,
+                                author_org,
+                                time_created
                               );
                               findQuestion
                                 .setQuery(andQuery)
@@ -7305,6 +6914,15 @@ export default {
                                           score:
                                             this.questions[i].sub_question[j]
                                               .score * 1,
+                                          author:
+                                            this.questions[i].sub_question[j]
+                                              .author,
+                                          author_org:
+                                            this.questions[i].sub_question[j]
+                                              .author_org,
+                                          time_created:
+                                            this.questions[i].sub_question[j]
+                                              .time_created,
                                         };
                                       } else if (
                                         (this.questions[i].primary_ques_type ==
@@ -7362,6 +6980,15 @@ export default {
                                           question_type_5he:
                                             this.questions[i].sub_question[j]
                                               .fivehe_value,
+                                          author:
+                                            this.questions[i].sub_question[j]
+                                              .author,
+                                          author_org:
+                                            this.questions[i].sub_question[j]
+                                              .author_org,
+                                          time_created:
+                                            this.questions[i].sub_question[j]
+                                              .time_created,
                                         };
                                       } else if (
                                         this.questions[i].primary_ques_type ==
@@ -7407,6 +7034,15 @@ export default {
                                           question_type_5he:
                                             this.questions[i].sub_question[j]
                                               .fivehe_value,
+                                          author:
+                                            this.questions[i].sub_question[j]
+                                              .author,
+                                          author_org:
+                                            this.questions[i].sub_question[j]
+                                              .author_org,
+                                          time_created:
+                                            this.questions[i].sub_question[j]
+                                              .time_created,
                                         };
                                       }
                                       save_question
@@ -7558,180 +7194,7 @@ export default {
                                     j < this.questions[i].sub_question.length;
                                     j++
                                   ) {
-                                    //查找知识点等
                                     let tempq;
-                                    // if (
-                                    //   this.questions[i].sub_question[j]
-                                    //     .knowledge_value != null
-                                    // ) {
-                                    //   for (
-                                    //     let k = 0;
-                                    //     k <
-                                    //     this.questions[i].sub_question[j]
-                                    //       .knowledge_value.length;
-                                    //     k++
-                                    //   ) {
-                                    //     console.log(
-                                    //       this.questions[i].sub_question[j]
-                                    //         .knowledge_value[k]
-                                    //     );
-                                    //     let findSelect = new BaaS.TableObject(
-                                    //       "knowledge_point"
-                                    //     );
-                                    //     let find_select = new BaaS.Query();
-                                    //     find_select.compare(
-                                    //       "id",
-                                    //       "=",
-                                    //       this.questions[i].sub_question[j]
-                                    //         .knowledge_value[k]
-                                    //     );
-                                    //     findSelect
-                                    //       .setQuery(find_select)
-                                    //       .find()
-                                    //       .then(
-                                    //         (res) => {
-                                    //           console.log(res);
-                                    //           if (res.data.objects.length == 0) {
-                                    //             let createSelect =
-                                    //               new BaaS.TableObject(
-                                    //                 "knowledge_point"
-                                    //               );
-                                    //             let create_select =
-                                    //               createSelect.create();
-                                    //             create_select.set(
-                                    //               "knowledge_point",
-                                    //               this.questions[i].sub_question[j]
-                                    //                 .knowledge_value[k]
-                                    //             );
-                                    //             create_select.save().then(
-                                    //               (res) => {
-                                    //                 this.questions[i].sub_question[
-                                    //                   j
-                                    //                 ].knowledge_value[k] =
-                                    //                   res.data.id;
-                                    //               },
-                                    //               (err) => {
-                                    //                 console.log(err);
-                                    //               }
-                                    //             );
-                                    //           }
-                                    //         },
-                                    //         (err) => {
-                                    //           console.log(err);
-                                    //         }
-                                    //       );
-                                    //   }
-                                    // }
-                                    // if (
-                                    //   this.questions[i].sub_question[j]
-                                    //     .test_value != null
-                                    // ) {
-                                    //   for (
-                                    //     let k = 0;
-                                    //     k <
-                                    //     this.questions[i].sub_question[j].test_value
-                                    //       .length;
-                                    //     k++
-                                    //   ) {
-                                    //     let findSelect = new BaaS.TableObject(
-                                    //       "test"
-                                    //     );
-                                    //     let find_select = new BaaS.Query();
-                                    //     find_select.compare(
-                                    //       "id",
-                                    //       "=",
-                                    //       this.questions[i].sub_question[j]
-                                    //         .test_value[k]
-                                    //     );
-                                    //     findSelect
-                                    //       .setQuery(find_select)
-                                    //       .find()
-                                    //       .then(
-                                    //         (res) => {
-                                    //           console.log(res);
-                                    //           if (res.data.objects.length == 0) {
-                                    //             let createSelect =
-                                    //               new BaaS.TableObject("test");
-                                    //             let create_select =
-                                    //               createSelect.create();
-                                    //             create_select.set(
-                                    //               "test",
-                                    //               this.questions[i].sub_question[j]
-                                    //                 .test_value[k]
-                                    //             );
-                                    //             create_select.save().then(
-                                    //               (res) => {
-                                    //                 this.questions[i].sub_question[
-                                    //                   j
-                                    //                 ].test_value[k] = res.data.id;
-                                    //               },
-                                    //               (err) => {
-                                    //                 console.log(err);
-                                    //               }
-                                    //             );
-                                    //           }
-                                    //         },
-                                    //         (err) => {
-                                    //           console.log(err);
-                                    //         }
-                                    //       );
-                                    //   }
-                                    // }
-                                    // if (
-                                    //   this.questions[i].sub_question[j]
-                                    //     .source_value != null
-                                    // ) {
-                                    //   for (
-                                    //     let k = 0;
-                                    //     k <
-                                    //     this.questions[i].sub_question[j]
-                                    //       .source_value.length;
-                                    //     k++
-                                    //   ) {
-                                    //     let findSelect = new BaaS.TableObject(
-                                    //       "source"
-                                    //     );
-                                    //     let find_select = new BaaS.Query();
-                                    //     find_select.compare(
-                                    //       "id",
-                                    //       "=",
-                                    //       this.questions[i].sub_question[j]
-                                    //         .source_value[k]
-                                    //     );
-                                    //     findSelect
-                                    //       .setQuery(find_select)
-                                    //       .find()
-                                    //       .then(
-                                    //         (res) => {
-                                    //           console.log(res);
-                                    //           if (res.data.objects.length == 0) {
-                                    //             let createSelect =
-                                    //               new BaaS.TableObject("source");
-                                    //             let create_select =
-                                    //               createSelect.create();
-                                    //             create_select.set(
-                                    //               "source",
-                                    //               this.questions[i].sub_question[j]
-                                    //                 .source_value[k]
-                                    //             );
-                                    //             create_select.save().then(
-                                    //               (res) => {
-                                    //                 this.questions[i].sub_question[
-                                    //                   j
-                                    //                 ].source_value[k] = res.data.id;
-                                    //               },
-                                    //               (err) => {
-                                    //                 console.log(err);
-                                    //               }
-                                    //             );
-                                    //           }
-                                    //         },
-                                    //         (err) => {
-                                    //           console.log(err);
-                                    //         }
-                                    //       );
-                                    //   }
-                                    // }
                                     //存储题目
                                     let saveQuestion = new BaaS.TableObject(
                                       "questions_information"
@@ -7785,6 +7248,15 @@ export default {
                                         question_type_5he:
                                           this.questions[i].sub_question[j]
                                             .fivehe_value,
+                                        author:
+                                          this.questions[i].sub_question[j]
+                                            .author,
+                                        author_org:
+                                          this.questions[i].sub_question[j]
+                                            .author_org,
+                                        time_created:
+                                          this.questions[i].sub_question[j]
+                                            .time_created,
                                       };
                                     } else if (
                                       (this.questions[i].primary_ques_type ==
@@ -7840,6 +7312,15 @@ export default {
                                         question_type_5he:
                                           this.questions[i].sub_question[j]
                                             .fivehe_value,
+                                        author:
+                                          this.questions[i].sub_question[j]
+                                            .author,
+                                        author_org:
+                                          this.questions[i].sub_question[j]
+                                            .author_org,
+                                        time_created:
+                                          this.questions[i].sub_question[j]
+                                            .time_created,
                                       };
                                     } else if (
                                       this.questions[i].primary_ques_type ==
@@ -7884,6 +7365,15 @@ export default {
                                         question_type_5he:
                                           this.questions[i].sub_question[j]
                                             .fivehe_value,
+                                        author:
+                                          this.questions[i].sub_question[j]
+                                            .author,
+                                        author_org:
+                                          this.questions[i].sub_question[j]
+                                            .author_org,
+                                        time_created:
+                                          this.questions[i].sub_question[j]
+                                            .time_created,
                                       };
                                     }
                                     save_question
@@ -8076,6 +7566,112 @@ export default {
                         type: "warning",
                       });
                     } else {
+                      let tempQues = this.questions;
+                      this.questions = [];
+                      let tempType = this.ques_type;
+                      this.ques_type = [];
+                      let seq = [
+                        "听句子，判断对错",
+                        "听短对话，选择正确答案",
+                        "听长对话，选择正确答案",
+                        "听短文，选择正确答案",
+                        "选择正确的词语填空",
+                        "阅读语段，选择与语段意思一致的一项",
+                        "阅读材料，选择正确答案",
+                        "阅读短文，选择正确答案",
+                        "根据一段长对话写门诊病历记录",
+                      ];
+                      for (let i = 0; i < seq.length; i++) {
+                        for (let j = 0; j < tempQues.length; j++) {
+                          if (seq[i] == tempQues[j].secondary_ques_type) {
+                            this.questions.push(tempQues[j]);
+                          }
+                        }
+                      }
+                      let tseq = [
+                        {
+                          p: "听力",
+                          s: [
+                            "听句子，判断对错",
+                            "听短对话，选择正确答案",
+                            "听长对话，选择正确答案",
+                            "听短文，选择正确答案",
+                          ],
+                        },
+                        {
+                          p: "阅读",
+                          s: [
+                            "选择正确的词语填空",
+                            "阅读语段，选择与语段意思一致的一项",
+                            "阅读材料，选择正确答案",
+                            "阅读短文，选择正确答案",
+                          ],
+                        },
+                        {
+                          p: "写作",
+                          s: ["根据一段长对话写门诊病历记录"],
+                        },
+                      ];
+                      for (let i = 0; i < tseq.length; i++) {
+                        for (let j = 0; j < tempType.length; j++) {
+                          if (tseq[i].p == tempType[j].primary) {
+                            let t = tempType[j].secondary;
+                            tempType[j].secondary = [];
+                            for (let k = 0; k < tseq[i].s.length; k++) {
+                              for (let n = 0; n < t.length; n++) {
+                                if (tseq[i].s[k] == t[n].type) {
+                                  tempType[j].secondary.push(t[n]);
+                                }
+                              }
+                            }
+                            this.ques_type.push(tempType[j]);
+                          }
+                        }
+                      }
+                      let num = 1;
+                      for (let i = 0; i < this.questions.length; i++) {
+                        this.questions[i].sequence = i + 1;
+                        this.questions[i].name =
+                          this.questions[i].sequence.toString();
+                        for (
+                          let j = 0;
+                          j < this.questions[i].sub_question.length;
+                          j++
+                        ) {
+                          this.questions[i].sub_question[j].sub_sequence =
+                            j + 1;
+                          this.questions[i].sub_question[j].actual_sequence =
+                            num;
+                          num++;
+                        }
+                      }
+                      this.ques_type[0].secondary[0].start = 0;
+                      for (let i = 0; i < this.ques_type.length; i++) {
+                        for (
+                          let j = 0;
+                          j < this.ques_type[i].secondary.length;
+                          j++
+                        ) {
+                          for (let k = this.questions.length - 1; k >= 0; k--) {
+                            if (
+                              this.ques_type[i].secondary[j].type ==
+                              this.questions[k].secondary_ques_type
+                            ) {
+                              this.ques_type[i].secondary[j].end = k;
+                              if (j != this.ques_type[i].secondary.length - 1) {
+                                this.ques_type[i].secondary[j + 1].start =
+                                  k + 1;
+                              } else {
+                                if (i != this.ques_type.length - 1) {
+                                  this.ques_type[i + 1].secondary[0].start =
+                                    k + 1;
+                                }
+                              }
+                              break;
+                            }
+                          }
+                        }
+                      }
                       let question_detail = new Array();
                       for (let i = 0; i < this.questions.length; i++) {
                         //找是否有已存在题干
@@ -8101,164 +7697,6 @@ export default {
                                   j < this.questions[i].sub_question.length;
                                   j++
                                 ) {
-                                  //查找知识点等
-                                  // if (
-                                  //   this.questions[i].sub_question[j].knowledge_value !=
-                                  //   null
-                                  // ) {
-                                  //   for (
-                                  //     let k = 0;
-                                  //     k <
-                                  //     this.questions[i].sub_question[j].knowledge_value
-                                  //       .length;
-                                  //     k++
-                                  //   ) {
-                                  //     let findSelect = new BaaS.TableObject(
-                                  //       "knowledge_point"
-                                  //     );
-                                  //     let find_select = new BaaS.Query();
-                                  //     find_select.compare(
-                                  //       "id",
-                                  //       "=",
-                                  //       this.questions[i].sub_question[j]
-                                  //         .knowledge_value[k]
-                                  //     );
-                                  //     findSelect
-                                  //       .setQuery(find_select)
-                                  //       .find()
-                                  //       .then(
-                                  //         (res) => {
-                                  //           if (res.data.objects.length == 0) {
-                                  //             let createSelect = new BaaS.TableObject(
-                                  //               "knowledge_point"
-                                  //             );
-                                  //             let create_select = createSelect.create();
-                                  //             create_select.set(
-                                  //               "knowledge_point",
-                                  //               this.questions[i].sub_question[j]
-                                  //                 .knowledge_value[k]
-                                  //             );
-                                  //             create_select.save().then(
-                                  //               (res) => {
-                                  //                 this.questions[i].sub_question[
-                                  //                   j
-                                  //                 ].knowledge_value[k] = res.data.id;
-                                  //               },
-                                  //               (err) => {
-                                  //                 console.log(err);
-                                  //               }
-                                  //             );
-                                  //           }
-                                  //         },
-                                  //         (err) => {
-                                  //           console.log(err);
-                                  //         }
-                                  //       );
-                                  //   }
-                                  // }
-                                  // if (
-                                  //   this.questions[i].sub_question[j].test_value != null
-                                  // ) {
-                                  //   for (
-                                  //     let k = 0;
-                                  //     k <
-                                  //     this.questions[i].sub_question[j].test_value
-                                  //       .length;
-                                  //     k++
-                                  //   ) {
-                                  //     let findSelect = new BaaS.TableObject("test");
-                                  //     let find_select = new BaaS.Query();
-                                  //     find_select.compare(
-                                  //       "id",
-                                  //       "=",
-                                  //       this.questions[i].sub_question[j].test_value[k]
-                                  //     );
-                                  //     findSelect
-                                  //       .setQuery(find_select)
-                                  //       .find()
-                                  //       .then(
-                                  //         (res) => {
-                                  //           if (res.data.objects.length == 0) {
-                                  //             let createSelect = new BaaS.TableObject(
-                                  //               "test"
-                                  //             );
-                                  //             let create_select = createSelect.create();
-                                  //             create_select.set(
-                                  //               "test",
-                                  //               this.questions[i].sub_question[j]
-                                  //                 .test_value[k]
-                                  //             );
-                                  //             create_select.save().then(
-                                  //               (res) => {
-                                  //                 this.questions[i].sub_question[
-                                  //                   j
-                                  //                 ].test_value[k] = res.data.id;
-                                  //               },
-                                  //               (err) => {
-                                  //                 console.log(err);
-                                  //               }
-                                  //             );
-                                  //           }
-                                  //         },
-                                  //         (err) => {
-                                  //           console.log(err);
-                                  //         }
-                                  //       );
-                                  //   }
-                                  // }
-                                  // if (
-                                  //   this.questions[i].sub_question[j].source_value !=
-                                  //   null
-                                  // ) {
-                                  //   for (
-                                  //     let k = 0;
-                                  //     k <
-                                  //     this.questions[i].sub_question[j].source_value
-                                  //       .length;
-                                  //     k++
-                                  //   ) {
-                                  //     let findSelect = new BaaS.TableObject("source");
-                                  //     let find_select = new BaaS.Query();
-                                  //     find_select.compare(
-                                  //       "id",
-                                  //       "=",
-                                  //       this.questions[i].sub_question[j].source_value[
-                                  //         k
-                                  //       ]
-                                  //     );
-                                  //     findSelect
-                                  //       .setQuery(find_select)
-                                  //       .find()
-                                  //       .then(
-                                  //         (res) => {
-                                  //           if (res.data.objects.length == 0) {
-                                  //             let createSelect = new BaaS.TableObject(
-                                  //               "source"
-                                  //             );
-                                  //             let create_select = createSelect.create();
-                                  //             create_select.set(
-                                  //               "source",
-                                  //               this.questions[i].sub_question[j]
-                                  //                 .source_value[k]
-                                  //             );
-                                  //             create_select.save().then(
-                                  //               (res) => {
-                                  //                 this.questions[i].sub_question[
-                                  //                   j
-                                  //                 ].source_value[k] = res.data.id;
-                                  //               },
-                                  //               (err) => {
-                                  //                 console.log(err);
-                                  //               }
-                                  //             );
-                                  //           }
-                                  //         },
-                                  //         (err) => {
-                                  //           console.log(err);
-                                  //         }
-                                  //       );
-                                  //   }
-                                  // }
                                   //题目是否存在
                                   let findQuestion = new BaaS.TableObject(
                                     "questions_information"
@@ -8277,6 +7715,9 @@ export default {
                                   let ques_level = new BaaS.Query();
                                   let question_class = new BaaS.Query();
                                   let question_type_5he = new BaaS.Query();
+                                  let author = new BaaS.Query();
+                                  let author_org = new BaaS.Query();
+                                  let time_created = new BaaS.Query();
                                   question_content_id.compare(
                                     "question_content_id",
                                     "=",
@@ -8429,6 +7870,44 @@ export default {
                                       "question_type_5he"
                                     );
                                   }
+                                  if (
+                                    this.questions[i].sub_question[j].author !=
+                                    null
+                                  ) {
+                                    author.compare(
+                                      "author",
+                                      "=",
+                                      this.questions[i].sub_question[j].author
+                                    );
+                                  } else {
+                                    author.isNull("author");
+                                  }
+                                  if (
+                                    this.questions[i].sub_question[j]
+                                      .author_org != null
+                                  ) {
+                                    author_org.compare(
+                                      "author_org",
+                                      "=",
+                                      this.questions[i].sub_question[j]
+                                        .author_org
+                                    );
+                                  } else {
+                                    author_org.isNull("author_org");
+                                  }
+                                  if (
+                                    this.questions[i].sub_question[j]
+                                      .time_created != null
+                                  ) {
+                                    time_created.compare(
+                                      "time_created",
+                                      "=",
+                                      this.questions[i].sub_question[j]
+                                        .time_created
+                                    );
+                                  } else {
+                                    time_created.isNull("time_created");
+                                  }
                                   let andQuery = BaaS.Query.and(
                                     question_content_id,
                                     primary_ques_type,
@@ -8443,7 +7922,10 @@ export default {
                                     task_outline,
                                     ques_level,
                                     question_class,
-                                    question_type_5he
+                                    question_type_5he,
+                                    author,
+                                    author_org,
+                                    time_created
                                   );
                                   findQuestion
                                     .setQuery(andQuery)
@@ -8529,6 +8011,18 @@ export default {
                                                 this.questions[i].sub_question[
                                                   j
                                                 ].score * 1,
+                                              author:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].author,
+                                              author_org:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].author_org,
+                                              time_created:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].time_created,
                                             };
                                           } else if (
                                             (this.questions[i]
@@ -8598,6 +8092,18 @@ export default {
                                                 this.questions[i].sub_question[
                                                   j
                                                 ].fivehe_value,
+                                              author:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].author,
+                                              author_org:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].author_org,
+                                              time_created:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].time_created,
                                             };
                                           } else if (
                                             this.questions[i]
@@ -8654,6 +8160,18 @@ export default {
                                                 this.questions[i].sub_question[
                                                   j
                                                 ].fivehe_value,
+                                              author:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].author,
+                                              author_org:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].author_org,
+                                              time_created:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].time_created,
                                             };
                                           }
                                           save_question
@@ -8809,7 +8327,6 @@ export default {
                                         this.questions[i].sub_question.length;
                                         j++
                                       ) {
-                                        //查找知识点等
                                         let tempq;
                                         //存储题目
                                         let saveQuestion = new BaaS.TableObject(
@@ -8868,6 +8385,15 @@ export default {
                                             question_type_5he:
                                               this.questions[i].sub_question[j]
                                                 .fivehe_value,
+                                            author:
+                                              this.questions[i].sub_question[j]
+                                                .author,
+                                            author_org:
+                                              this.questions[i].sub_question[j]
+                                                .author_org,
+                                            time_created:
+                                              this.questions[i].sub_question[j]
+                                                .time_created,
                                           };
                                         } else if (
                                           (this.questions[i]
@@ -8926,6 +8452,15 @@ export default {
                                             question_type_5he:
                                               this.questions[i].sub_question[j]
                                                 .fivehe_value,
+                                            author:
+                                              this.questions[i].sub_question[j]
+                                                .author,
+                                            author_org:
+                                              this.questions[i].sub_question[j]
+                                                .author_org,
+                                            time_created:
+                                              this.questions[i].sub_question[j]
+                                                .time_created,
                                           };
                                         } else if (
                                           this.questions[i].primary_ques_type ==
@@ -8972,6 +8507,15 @@ export default {
                                             question_type_5he:
                                               this.questions[i].sub_question[j]
                                                 .fivehe_value,
+                                            author:
+                                              this.questions[i].sub_question[j]
+                                                .author,
+                                            author_org:
+                                              this.questions[i].sub_question[j]
+                                                .author_org,
+                                            time_created:
+                                              this.questions[i].sub_question[j]
+                                                .time_created,
                                           };
                                         }
                                         save_question
