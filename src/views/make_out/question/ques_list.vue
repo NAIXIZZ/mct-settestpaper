@@ -49,7 +49,7 @@
         <el-button type="success" plain @click="importFile = true"
           >批量导入</el-button
         >
-        <el-button type="success" plain>导出选中</el-button>
+        <el-button type="success" plain @click="exp">导出选中</el-button>
         <el-button type="success" plain @click="createFolder"
           >新建文件夹</el-button
         >
@@ -61,6 +61,7 @@
     <div class="ques_content">
       <div class="ques_list">
         <el-table
+          v-loading="loading"
           ref="multipleTable"
           :data="
             tableData.slice(
@@ -72,8 +73,18 @@
           style="width: 100%"
           @selection-change="handleSelectionChange"
           :span-method="arraySpanMethod"
+          :row-key="
+            (row) => {
+              return row.id;
+            }
+          "
         >
-          <el-table-column type="selection" width="55"> </el-table-column>
+          <el-table-column
+            type="selection"
+            width="55"
+            :reserve-selection="true"
+          >
+          </el-table-column>
           <el-table-column type="index" :index="indexMethod"> </el-table-column>
           <el-table-column label="文件夹" prop="catalog">
             <template slot-scope="scope">
@@ -391,13 +402,26 @@
         </el-button>
       </div>
     </el-dialog>
+    <el-dialog title="导出" :visible.sync="exVisible" width="30%">
+      <el-radio v-model="ex" label="1">导出为excel</el-radio>
+      <el-radio v-model="ex" label="2">导出为word</el-radio>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="exVisible = false">取 消</el-button>
+        <el-button type="primary" @click="derive">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
 <script lang="javascript" src="dist/xlsx.full.min.js"></script>
 <script>
+import { export_json_to_excel } from "@/util/Export2Excel.js";
 import Cookies from "js-cookie";
 import Cookie from "js-cookie";
+// import "docxtemplater/build/docxtemplater.js";
+// import "pizzip/dist/pizzip.js";
+// import "pizzip/dist/pizzip-utils.js";
+// import "file-saver";
 const JSZip = require("jszip");
 var XLSX = require("xlsx");
 var BaaS = require("minapp-sdk");
@@ -409,6 +433,9 @@ export default {
   props: {},
   data() {
     return {
+      ex: "1",
+      der: [],
+      exVisible: false,
       addFileName: "",
       initial: [],
       srcList: [],
@@ -513,6 +540,7 @@ export default {
       sureClick: true,
       catalog: [],
       moveVisible: false,
+      loading: true,
     };
   },
   watch: {},
@@ -631,123 +659,6 @@ export default {
                   if (element.analysis == undefined || element.analysis == "") {
                     element.analysis = null;
                   }
-                  // if (
-                  //   element.knowledge == undefined ||
-                  //   element.knowledge == ""
-                  // ) {
-                  //   element.knowledge = null;
-                  // } else {
-                  //   element.knowledge = element.knowledge.split("，");
-                  //   for (let i = 0; i < element.knowledge.length; i++) {
-                  //     let findID = new BaaS.TableObject("knowledge_point");
-                  //     let findid = new BaaS.Query();
-                  //     findid.compare(
-                  //       "knowledge_point",
-                  //       "=",
-                  //       element.knowledge[i]
-                  //     );
-                  //     findID
-                  //       .setQuery(findid)
-                  //       .find()
-                  //       .then(
-                  //         (res) => {
-                  //           if (res.data.objects.length == 0) {
-                  //             let addKno = new BaaS.TableObject(
-                  //               "knowledge_point"
-                  //             );
-                  //             let addkno = addKno.create();
-                  //             addkno.set(
-                  //               "knowledge_point",
-                  //               element.knowledge[i]
-                  //             );
-                  //             addkno.save().then(
-                  //               (res) => {
-                  //                 element.knowledge[i] = res.data.id;
-                  //               },
-                  //               (err) => {
-                  //                 console.log(err);
-                  //               }
-                  //             );
-                  //           } else {
-                  //             element.knowledge[i] = res.data.objects[0].id;
-                  //           }
-                  //         },
-                  //         (err) => {
-                  //           console.log(err);
-                  //         }
-                  //       );
-                  //   }
-                  // }
-                  // if (element.source == undefined || element.source == "") {
-                  //   element.source = null;
-                  // } else {
-                  //   element.source = element.source.split("，");
-                  //   for (let i = 0; i < element.source.length; i++) {
-                  //     let findID = new BaaS.TableObject("source");
-                  //     let findid = new BaaS.Query();
-                  //     findid.compare("source", "=", element.source[i]);
-                  //     findID
-                  //       .setQuery(findid)
-                  //       .find()
-                  //       .then(
-                  //         (res) => {
-                  //           if (res.data.objects.length == 0) {
-                  //             let addKno = new BaaS.TableObject("source");
-                  //             let addkno = addKno.create();
-                  //             addkno.set("source", element.source[i]);
-                  //             addkno.save().then(
-                  //               (res) => {
-                  //                 element.source[i] = res.data.id;
-                  //               },
-                  //               (err) => {
-                  //                 console.log(err);
-                  //               }
-                  //             );
-                  //           } else {
-                  //             element.source[i] = res.data.objects[0].id;
-                  //           }
-                  //         },
-                  //         (err) => {
-                  //           console.log(err);
-                  //         }
-                  //       );
-                  //   }
-                  // }
-                  // if (element.test == undefined || element.test == "") {
-                  //   element.test = null;
-                  // } else {
-                  //   element.test = element.test.split("，");
-                  //   for (let i = 0; i < element.test.length; i++) {
-                  //     let findID = new BaaS.TableObject("test");
-                  //     let findid = new BaaS.Query();
-                  //     findid.compare("test", "=", element.test[i]);
-                  //     findID
-                  //       .setQuery(findid)
-                  //       .find()
-                  //       .then(
-                  //         (res) => {
-                  //           if (res.data.objects.length == 0) {
-                  //             let addKno = new BaaS.TableObject("test");
-                  //             let addkno = addKno.create();
-                  //             addkno.set("test", element.test[i]);
-                  //             addkno.save().then(
-                  //               (res) => {
-                  //                 element.test[i] = res.data.id;
-                  //               },
-                  //               (err) => {
-                  //                 console.log(err);
-                  //               }
-                  //             );
-                  //           } else {
-                  //             element.test[i] = res.data.objects[0].id;
-                  //           }
-                  //         },
-                  //         (err) => {
-                  //           console.log(err);
-                  //         }
-                  //       );
-                  //   }
-                  // }
                   if (
                     element.department == undefined ||
                     element.department == ""
@@ -755,43 +666,7 @@ export default {
                     element.department = null;
                   } else {
                     element.department = element.department.split("，");
-                    for (let i = 0; i < element.department.length; i++) {
-                      let findID = new BaaS.TableObject("department");
-                      let findid = new BaaS.Query();
-                      findid.compare("department", "=", element.department[i]);
-                      findID
-                        .setQuery(findid)
-                        .find()
-                        .then(
-                          (res) => {
-                            if (res.data.objects.length == 0) {
-                              let addKno = new BaaS.TableObject("department");
-                              let addkno = addKno.create();
-                              addkno.set("department", element.department[i]);
-                              addkno.save().then(
-                                (res) => {
-                                  element.department[i] = res.data.id;
-                                },
-                                (err) => {
-                                  console.log(err);
-                                }
-                              );
-                            } else {
-                              element.department[i] = res.data.objects[0].id;
-                            }
-                          },
-                          (err) => {
-                            console.log(err);
-                          }
-                        );
-                    }
                   }
-                  // if (
-                  //   element.sub_sequence == undefined ||
-                  //   element.sub_sequence == ""
-                  // ) {
-                  //   element.sub_sequence = null;
-                  // }
                   if (
                     element.ques_level == undefined ||
                     element.ques_level == ""
@@ -825,6 +700,18 @@ export default {
                   ) {
                     element.time_created = null;
                   }
+                  if (
+                    element.grade_standard == undefined ||
+                    element.grade_standard == ""
+                  ) {
+                    element.grade_standard = null;
+                  }
+                  if (element.topic == undefined || element.topic == "") {
+                    element.topic = null;
+                  }
+                  if (element.task == undefined || element.task == "") {
+                    element.task = null;
+                  }
                   var a = {
                     catalog: element.catalog,
                     primary_ques_type: element.primary_ques_type,
@@ -834,17 +721,16 @@ export default {
                     options: element.options,
                     answer: element.answer,
                     analysis: element.analysis,
-                    knowledge_id: element.knowledge,
-                    source_id: element.source,
-                    test_id: element.test,
                     department: element.department,
-                    sub_sequence: element.sub_sequence,
                     ques_level: element.ques_level,
                     question_class: element.question_class,
                     question_type_5he: element.question_type_5he,
                     author: element.author,
                     author_org: element.author_org,
                     time_created: element.time_created,
+                    grade_standard: element.grade_standard,
+                    topic_outline: element.topic,
+                    task_outline: element.task,
                   };
                   this.excelFile.push(a);
                 });
@@ -1139,6 +1025,7 @@ export default {
                 "questionsCatalog",
                 JSON.stringify(this.catalog)
               );
+              this.loading = false;
               this.tableData = res.data.objects;
               this.initial = this.tableData;
             }, 3000);
@@ -1618,16 +1505,12 @@ export default {
         (res) => {
           // console.log(res);
           let viewUrl = res.data.path;
-          console.log(viewUrl);
           window.open(viewUrl, "_self");
         },
         (err) => {
           console.log(err);
         }
       );
-    },
-    handleRemove(file, fileList) {
-      console.log(file, fileList);
     },
     handleChange(file, fileList) {
       this.fileList.push(file);
@@ -1674,6 +1557,394 @@ export default {
       }
       Cookies.set("selectQues", false);
       this.$router.push("/ques_checkEdit");
+    },
+    exp() {
+      if (this.multipleSelection.length == 0) {
+        this.$message({
+          message: "还未选择导出项",
+          type: "warning",
+        });
+      } else {
+        this.der = this.multipleSelection;
+        this.exVisible = true;
+      }
+    },
+    derive() {
+      const loading = this.$loading({
+        lock: true,
+        text: "正在导出，请稍等",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)",
+      });
+      let final = [];
+      let catanum = 0;
+      for (let i = 0; i < this.der.length; i++) {
+        if (this.der[i].catalog != null) {
+          catanum++;
+          let query = new BaaS.Query();
+          query.compare("created_by", "=", Cookie.get("user_id") * 1);
+          let que = new BaaS.Query();
+          que.compare("catalog", "=", this.der[i].catalog);
+          let q3 = new BaaS.Query();
+          q3.compare("is_delete", "=", false);
+          let andQuery = BaaS.Query.and(query, que, q3);
+          let Question = new BaaS.TableObject("questions_information");
+          Question.orderBy("-created_at")
+            .limit(1000)
+            .offset(0)
+            .setQuery(andQuery)
+            .find()
+            .then(
+              (res) => {
+                if (
+                  !(res.data.objects.length == 1 &&
+                  res.data.objects[0].question_content_id == null)
+                ) {
+                  for (let i = 0; i < res.data.objects.length; i++) {
+                    if (res.data.objects[i].question_content_id == null) {
+                      res.data.objects.splice(i, 1);
+                      break;
+                    }
+                  }
+                  res.data.objects.forEach((element) => {
+                    let date = new Date(element.created_at * 1000);
+                    let Y = date.getFullYear() + "-";
+                    let M =
+                      date.getMonth() + 1 < 10
+                        ? "0" + (date.getMonth() + 1) + "-"
+                        : date.getMonth() + 1 + "-";
+                    let D =
+                      date.getDate() < 10
+                        ? "0" + date.getDate() + " "
+                        : date.getDate() + " ";
+                    let h =
+                      date.getHours() < 10
+                        ? "0" + date.getHours() + ":"
+                        : date.getHours() + ":";
+                    let m =
+                      date.getMinutes() < 10
+                        ? "0" + date.getMinutes() + ":"
+                        : date.getMinutes() + ":";
+                    let s =
+                      date.getSeconds() < 10
+                        ? "0" + date.getSeconds()
+                        : date.getSeconds();
+                    element.created_at = Y + M + D + h + m + s;
+                    if (element.question_content_id != null) {
+                      let query = new BaaS.Query();
+                      query.compare("id", "=", element.question_content_id);
+                      let findContent = new BaaS.TableObject(
+                        "question_content"
+                      );
+                      findContent
+                        .setQuery(query)
+                        .find()
+                        .then(
+                          (res) => {
+                            if (res.data.objects[0].content != null) {
+                              element.question_content_id =
+                                res.data.objects[0].content;
+                            } else if (res.data.objects[0].file_url != null) {
+                              element.question_content_id =
+                                res.data.objects[0].file_url.path;
+                            }
+                            final.push(element);
+                          },
+                          (err) => {
+                            console.log(err);
+                          }
+                        );
+                    }
+                    if (element.options != null) {
+                      let temp = JSON.parse(element.options);
+                      let str = "";
+                      for (let j = 0; j < temp.length; j++) {
+                        str += temp[j].index + "." + temp[j].content + " ";
+                      }
+                      element.options = str;
+                    }
+                  });
+                }
+              },
+              (err) => {
+                console.log(err);
+              }
+            );
+        } else {
+          if (this.der[i].options != null) {
+            let temp = JSON.parse(this.der[i].options);
+            let str = "";
+            for (let j = 0; j < temp.length; j++) {
+              str += temp[j].index + "." + temp[j].content + " ";
+            }
+            this.der[i].options = str;
+          }
+          final.push(this.der[i]);
+        }
+      }
+      let time = 0;
+      if (catanum == 0) {
+        time = 1000;
+      } else {
+        time = catanum * 3000;
+      }
+
+      if (this.ex == 1) {
+        setTimeout(() => {
+          const testData = {
+            文件夹: "catalog",
+            一级题型: "primary_ques_type",
+            二级题型: "secondary_ques_type",
+            题干材料: "question_content_id",
+            题目: "question",
+            选项: "options",
+            答案: "answer",
+            解析: "analysis",
+            等级标准: "grade_standard",
+            话题大纲: "topic_outline",
+            任务大纲: "task_outline",
+            科室: "department",
+            题目等级: "ques_level",
+            题目类型: "question_class",
+            五何类型: "question_type_5he",
+            作者: "author",
+            作者单位: "author_org",
+            出题时间: "time_created",
+            创建时间: "created_at",
+          };
+          const header = Object.keys(testData);
+          const data = final.map((user) => {
+            const userArr = [];
+            for (const Key in testData) {
+              const newKey = testData[Key];
+              userArr.push(user[newKey]);
+            }
+            return userArr;
+          });
+          export_json_to_excel({
+            header,
+            data,
+          });
+          loading.close();
+          this.exVisible = false;
+          this.$message({
+            message: "导出成功",
+            type: "success",
+          });
+        }, time);
+      } else if (this.ex == 2) {
+        setTimeout(() => {
+          for (let i = 0; i < final.length; i++) {
+            final[i].sequence = i + 1;
+            if (
+              final[i].question == null ||
+              final[i].question == undefined ||
+              final[i].question == "" ||
+              final[i].question == "null" ||
+              final[i].question == "undefined"
+            ) {
+              final[i].question = "/";
+            }
+            if (
+              final[i].options == null ||
+              final[i].options == undefined ||
+              final[i].options == "" ||
+              final[i].options == "null" ||
+              final[i].options == "undefined"
+            ) {
+              final[i].options = "/";
+            }
+            if (
+              final[i].analysis == null ||
+              final[i].analysis == undefined ||
+              final[i].analysis == "" ||
+              final[i].analysis == "null" ||
+              final[i].analysis == "undefined"
+            ) {
+              final[i].analysis = "/";
+            }
+            if (
+              final[i].catalog == null ||
+              final[i].catalog == undefined ||
+              final[i].catalog == "" ||
+              final[i].catalog == "null" ||
+              final[i].catalog == "undefined"
+            ) {
+              final[i].catalog = "/";
+            }
+            if (
+              final[i].ques_level == null ||
+              final[i].ques_level == undefined ||
+              final[i].ques_level == "" ||
+              final[i].ques_level == "null" ||
+              final[i].ques_level == "undefined"
+            ) {
+              final[i].ques_level = "/";
+            }
+            if (
+              final[i].grade_standard == null ||
+              final[i].grade_standard == undefined ||
+              final[i].grade_standard == "" ||
+              final[i].grade_standard == "null" ||
+              final[i].grade_standard == "undefined"
+            ) {
+              final[i].grade_standard = "/";
+            }
+            if (
+              final[i].topic_outline == null ||
+              final[i].topic_outline == undefined ||
+              final[i].topic_outline == "" ||
+              final[i].topic_outline == "null" ||
+              final[i].topic_outline == "undefined"
+            ) {
+              final[i].topic_outline = "/";
+            }
+            if (
+              final[i].task_outline == null ||
+              final[i].task_outline == undefined ||
+              final[i].task_outline == "" ||
+              final[i].task_outline == "null" ||
+              final[i].task_outline == "undefined"
+            ) {
+              final[i].task_outline = "/";
+            }
+            if (
+              final[i].department == null ||
+              final[i].department == undefined ||
+              final[i].department == "" ||
+              final[i].department == "null" ||
+              final[i].department == "undefined"
+            ) {
+              final[i].department = "/";
+            }
+            if (
+              final[i].question_class == null ||
+              final[i].question_class == undefined ||
+              final[i].question_class == "" ||
+              final[i].question_class == "null" ||
+              final[i].question_class == "undefined"
+            ) {
+              final[i].question_class = "/";
+            }
+            if (
+              final[i].question_type_5he == null ||
+              final[i].question_type_5he == undefined ||
+              final[i].question_type_5he == "" ||
+              final[i].question_type_5he == "null" ||
+              final[i].question_type_5he == "undefined"
+            ) {
+              final[i].question_type_5he = "/";
+            }
+            if (
+              final[i].author == null ||
+              final[i].author == undefined ||
+              final[i].author == "" ||
+              final[i].author == "null" ||
+              final[i].author == "undefined"
+            ) {
+              final[i].author = "/";
+            }
+            if (
+              final[i].author_org == null ||
+              final[i].author_org == undefined ||
+              final[i].author_org == "" ||
+              final[i].author_org == "null" ||
+              final[i].author_org == "undefined"
+            ) {
+              final[i].author_org = "/";
+            }
+            if (
+              final[i].time_created == null ||
+              final[i].time_created == undefined ||
+              final[i].time_created == "" ||
+              final[i].time_created == "null" ||
+              final[i].time_created == "undefined"
+            ) {
+              final[i].time_created = "/";
+            }
+          }
+          var ImageModule = require("open-docxtemplater-image-module");
+          // 点击导出word
+          var that = this;
+          this.loadFile("export_ques.docx", function (error, content) {
+            if (error) {
+              throw error;
+            }
+            let opts = {};
+            opts.centered = true; // 图片居中，在word模板中定义方式为{%%image}
+            opts.fileType = "docx";
+            opts.getImage = function (chartId) {
+              return that.base64DataURLToArrayBuffer(chartId);
+            };
+            opts.getSize = function () {
+              return [600, 300];
+            };
+
+            let imageModule = new ImageModule(opts);
+
+            var zip = new PizZip(content);
+            var doc = new window.docxtemplater().loadZip(zip);
+            // doc.attachModule(imageModule);
+            doc.setData({
+              final: final,
+            });
+            try {
+              // render the document (replace all occurences of {first_name} by John, {last_name} by Doe, ...)
+              doc.render();
+            } catch (error) {
+              var e = {
+                message: error.message,
+                name: error.name,
+                stack: error.stack,
+                properties: error.properties,
+              };
+              console.log(
+                JSON.stringify({
+                  error: e,
+                })
+              );
+              // The error thrown here contains additional information when logged with JSON.stringify (it contains a property object).
+              throw error;
+            }
+            var out = doc.getZip().generate({
+              type: "blob",
+              mimeType:
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            }); //Output the document using Data-URI
+            saveAs(out, "题目导出.docx");
+          });
+          loading.close();
+          this.exVisible = false;
+          this.$message({
+            message: "导出成功",
+            type: "success",
+          });
+        }, time);
+      }
+      this.$refs.multipleTable.clearSelection();
+    },
+    base64DataURLToArrayBuffer(dataURL) {
+      const base64Regex = /^data:image\/(png|jpg|svg|svg\+xml);base64,/;
+      if (!base64Regex.test(dataURL)) {
+        return false;
+      }
+      const stringBase64 = dataURL.replace(base64Regex, "");
+      let binaryString;
+      if (typeof window !== "undefined") {
+        binaryString = window.atob(stringBase64);
+      } else {
+        binaryString = new Buffer(stringBase64, "base64").toString("binary");
+      }
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        const ascii = binaryString.charCodeAt(i);
+        bytes[i] = ascii;
+      }
+      return bytes.buffer;
+    },
+    loadFile(url, callback) {
+      PizZipUtils.getBinaryContent(url, callback);
     },
   },
   created() {},

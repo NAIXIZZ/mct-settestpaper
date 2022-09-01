@@ -30,6 +30,7 @@
       </div>
     </div>
     <el-table
+    v-loading="loading"
       ref="multipleTable"
       :data="
         tableData.slice((currentPage - 1) * pageSize, currentPage * pageSize)
@@ -148,6 +149,7 @@ export default {
   props: {},
   data() {
     return {
+      loading:true,
       questionsCatalog: [],
       type: "",
       dialogVisible: false,
@@ -266,6 +268,7 @@ export default {
                   );
               }
             });
+            this.loading=false
             this.tableData = res.data.objects;
             this.initial = res.data.objects;
           },

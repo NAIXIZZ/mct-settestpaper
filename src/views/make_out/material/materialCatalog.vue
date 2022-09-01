@@ -20,6 +20,7 @@
       </div>
     </div>
     <el-table
+    v-loading="loading"
       ref="multipleTable"
       :data="
         tableData.slice((currentPage - 1) * pageSize, currentPage * pageSize)
@@ -172,6 +173,7 @@ export default {
   props: {},
   data() {
     return {
+      loading:true,
       preMove: [],
       catalog: "",
       input: "",
@@ -274,6 +276,7 @@ export default {
               res.data.objects[0].file_url == null &&
               res.data.objects[0].content == null
             ) {
+              this.loading=false
               this.tableData = [];
             } else {
               for (let i = 0; i < res.data.objects.length; i++) {
@@ -306,6 +309,7 @@ export default {
                     }
                   );
               }
+              this.loading=false
               this.tableData = res.data.objects;
               this.initial = res.data.objects;
             }

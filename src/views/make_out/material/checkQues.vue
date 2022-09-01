@@ -48,11 +48,13 @@
         <el-button type="success" plain @click="importFile = true"
           >批量导入</el-button
         >
+        <el-button type="success" plain @click="exp">导出选中</el-button>
       </div>
     </div>
     <div class="ques_content">
       <div class="ques_list">
         <el-table
+        v-loading="loading"
           ref="multipleTable"
           :data="
             tableData.slice(
@@ -105,12 +107,6 @@
       </div>
     </div>
     <div class="ques_bottom">
-      <div class="bottom_button">
-        <el-button type="success" plain>导出选中</el-button>
-        <el-button type="success" plain>删除选中</el-button>
-        <el-button type="success" plain>批量复制</el-button>
-        <el-button type="success" plain>导出全部</el-button>
-      </div>
       <el-button type="primary" icon="el-icon-delete" @click="trash"
         >回收站</el-button
       >
@@ -172,11 +168,24 @@
         ></el-button>
       </span>
     </el-dialog>
+    <el-dialog title="导出" :visible.sync="exVisible" width="30%">
+      <el-radio v-model="ex" label="1">导出为excel</el-radio>
+      <el-radio v-model="ex" label="2">导出为word</el-radio>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="exVisible = false">取 消</el-button>
+        <el-button type="primary" @click="derive">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
 <script lang="javascript" src="dist/xlsx.full.min.js"></script>
 <script>
+import { export_json_to_excel } from "@/util/Export2Excel.js";
+// import "docxtemplater/build/docxtemplater.js";
+// import "pizzip/dist/pizzip.js";
+// import "pizzip/dist/pizzip-utils.js";
+// import "file-saver";
 const JSZip = require("jszip");
 var XLSX = require("xlsx");
 var BaaS = require("minapp-sdk");
@@ -184,15 +193,13 @@ let clientID = "395062a19e209a770059";
 BaaS.init(clientID);
 import Cookie from "js-cookie";
 import Cookies from "js-cookie";
-import topic_outlineVue from "../../../components/outline/topic_outline.vue";
-import task_outlineVue from "../../outline/task_outline.vue";
-import grade_standardVue from "../../outline/grade_standard.vue";
 export default {
   name: "",
   components: {},
   props: {},
   data() {
     return {
+      loading:true,
       importFile: false,
       ques_select: [
         {
@@ -270,15 +277,15 @@ export default {
       pageSize: 10,
       fileList: [],
       sureClick: true,
+      ex: "1",
+      der: [],
+      exVisible: false,
     };
   },
   watch: {},
   computed: {},
   methods: {
     init() {
-      var BaaS = require("minapp-sdk");
-      let clientID = "395062a19e209a770059";
-      BaaS.init(clientID);
       let query = new BaaS.Query();
       let q2 = new BaaS.Query();
       let q3 = new BaaS.Query();
@@ -317,6 +324,7 @@ export default {
                   : date.getSeconds();
               element.created_at = Y + M + D + h + m + s;
             });
+            this.loading=false
             this.tableData = res.data.objects;
             this.initial = this.tableData;
             // console.log(this.tableData);
@@ -933,6 +941,295 @@ export default {
       Cookies.set("ques_checkEdit", val);
       this.$router.push("/ques_checkEdit");
     },
+    exp() {
+      if (this.multipleSelection.length == 0) {
+        this.$message({
+          message: "还未选择导出项",
+          type: "warning",
+        });
+      } else {
+        this.der = this.multipleSelection;
+        this.exVisible = true;
+      }
+    },
+    derive() {
+      const loading = this.$loading({
+        lock: true,
+        text: "正在导出，请稍等",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)",
+      });
+      let final = [];
+      let catanum = 0;
+      for (let i = 0; i < this.der.length; i++) {
+        this.der[i].question_content_id=Cookie.get("question_content")
+          if (this.der[i].options != null) {
+            let temp = JSON.parse(this.der[i].options);
+            let str = "";
+            for (let j = 0; j < temp.length; j++) {
+              str += temp[j].index + "." + temp[j].content + " ";
+            }
+            this.der[i].options = str;
+          }
+          final.push(this.der[i]);
+      }
+      if (this.ex == 1) {
+        setTimeout(() => {
+          const testData = {
+            文件夹: "catalog",
+            一级题型: "primary_ques_type",
+            二级题型: "secondary_ques_type",
+            题干材料: "question_content_id",
+            题目: "question",
+            选项: "options",
+            答案: "answer",
+            解析: "analysis",
+            等级标准: "grade_standard",
+            话题大纲: "topic_outline",
+            任务大纲: "task_outline",
+            科室: "department",
+            题目等级: "ques_level",
+            题目类型: "question_class",
+            五何类型: "question_type_5he",
+            作者: "author",
+            作者单位: "author_org",
+            出题时间: "time_created",
+            创建时间: "created_at",
+          };
+          const header = Object.keys(testData);
+          const data = final.map((user) => {
+            const userArr = [];
+            for (const Key in testData) {
+              const newKey = testData[Key];
+              userArr.push(user[newKey]);
+            }
+            return userArr;
+          });
+          export_json_to_excel({
+            header,
+            data,
+          });
+          loading.close();
+          this.exVisible = false;
+          this.$message({
+            message: "导出成功",
+            type: "success",
+          });
+        }, 1000);
+      } else if (this.ex == 2) {
+        setTimeout(() => {
+          for (let i = 0; i < final.length; i++) {
+            final[i].sequence = i + 1;
+            if (
+              final[i].question == null ||
+              final[i].question == undefined ||
+              final[i].question == "" ||
+              final[i].question == "null" ||
+              final[i].question == "undefined"
+            ) {
+              final[i].question = "/";
+            }
+            if (
+              final[i].options == null ||
+              final[i].options == undefined ||
+              final[i].options == "" ||
+              final[i].options == "null" ||
+              final[i].options == "undefined"
+            ) {
+              final[i].options = "/";
+            }
+            if (
+              final[i].analysis == null ||
+              final[i].analysis == undefined ||
+              final[i].analysis == "" ||
+              final[i].analysis == "null" ||
+              final[i].analysis == "undefined"
+            ) {
+              final[i].analysis = "/";
+            }
+            if (
+              final[i].catalog == null ||
+              final[i].catalog == undefined ||
+              final[i].catalog == "" ||
+              final[i].catalog == "null" ||
+              final[i].catalog == "undefined"
+            ) {
+              final[i].catalog = "/";
+            }
+            if (
+              final[i].ques_level == null ||
+              final[i].ques_level == undefined ||
+              final[i].ques_level == "" ||
+              final[i].ques_level == "null" ||
+              final[i].ques_level == "undefined"
+            ) {
+              final[i].ques_level = "/";
+            }
+            if (
+              final[i].grade_standard == null ||
+              final[i].grade_standard == undefined ||
+              final[i].grade_standard == "" ||
+              final[i].grade_standard == "null" ||
+              final[i].grade_standard == "undefined"
+            ) {
+              final[i].grade_standard = "/";
+            }
+            if (
+              final[i].topic_outline == null ||
+              final[i].topic_outline == undefined ||
+              final[i].topic_outline == "" ||
+              final[i].topic_outline == "null" ||
+              final[i].topic_outline == "undefined"
+            ) {
+              final[i].topic_outline = "/";
+            }
+            if (
+              final[i].task_outline == null ||
+              final[i].task_outline == undefined ||
+              final[i].task_outline == "" ||
+              final[i].task_outline == "null" ||
+              final[i].task_outline == "undefined"
+            ) {
+              final[i].task_outline = "/";
+            }
+            if (
+              final[i].department == null ||
+              final[i].department == undefined ||
+              final[i].department == "" ||
+              final[i].department == "null" ||
+              final[i].department == "undefined"
+            ) {
+              final[i].department = "/";
+            }
+            if (
+              final[i].question_class == null ||
+              final[i].question_class == undefined ||
+              final[i].question_class == "" ||
+              final[i].question_class == "null" ||
+              final[i].question_class == "undefined"
+            ) {
+              final[i].question_class = "/";
+            }
+            if (
+              final[i].question_type_5he == null ||
+              final[i].question_type_5he == undefined ||
+              final[i].question_type_5he == "" ||
+              final[i].question_type_5he == "null" ||
+              final[i].question_type_5he == "undefined"
+            ) {
+              final[i].question_type_5he = "/";
+            }
+            if (
+              final[i].author == null ||
+              final[i].author == undefined ||
+              final[i].author == "" ||
+              final[i].author == "null" ||
+              final[i].author == "undefined"
+            ) {
+              final[i].author = "/";
+            }
+            if (
+              final[i].author_org == null ||
+              final[i].author_org == undefined ||
+              final[i].author_org == "" ||
+              final[i].author_org == "null" ||
+              final[i].author_org == "undefined"
+            ) {
+              final[i].author_org = "/";
+            }
+            if (
+              final[i].time_created == null ||
+              final[i].time_created == undefined ||
+              final[i].time_created == "" ||
+              final[i].time_created == "null" ||
+              final[i].time_created == "undefined"
+            ) {
+              final[i].time_created = "/";
+            }
+          }
+          var ImageModule = require("open-docxtemplater-image-module");
+          // 点击导出word
+          var that = this;
+          this.loadFile("export_ques.docx", function (error, content) {
+            if (error) {
+              throw error;
+            }
+            let opts = {};
+            opts.centered = true; // 图片居中，在word模板中定义方式为{%%image}
+            opts.fileType = "docx";
+            opts.getImage = function (chartId) {
+              return that.base64DataURLToArrayBuffer(chartId);
+            };
+            opts.getSize = function () {
+              return [600, 300];
+            };
+
+            let imageModule = new ImageModule(opts);
+
+            var zip = new PizZip(content);
+            var doc = new window.docxtemplater().loadZip(zip);
+            // doc.attachModule(imageModule);
+            doc.setData({
+              final: final,
+            });
+            try {
+              // render the document (replace all occurences of {first_name} by John, {last_name} by Doe, ...)
+              doc.render();
+            } catch (error) {
+              var e = {
+                message: error.message,
+                name: error.name,
+                stack: error.stack,
+                properties: error.properties,
+              };
+              console.log(
+                JSON.stringify({
+                  error: e,
+                })
+              );
+              // The error thrown here contains additional information when logged with JSON.stringify (it contains a property object).
+              throw error;
+            }
+            var out = doc.getZip().generate({
+              type: "blob",
+              mimeType:
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            }); //Output the document using Data-URI
+            saveAs(out, "题目导出.docx");
+          });
+          loading.close();
+          this.exVisible = false;
+          this.$message({
+            message: "导出成功",
+            type: "success",
+          });
+        }, 1000);
+      }
+      this.$refs.multipleTable.clearSelection();
+    },
+    base64DataURLToArrayBuffer(dataURL) {
+      const base64Regex = /^data:image\/(png|jpg|svg|svg\+xml);base64,/;
+      if (!base64Regex.test(dataURL)) {
+        return false;
+      }
+      const stringBase64 = dataURL.replace(base64Regex, "");
+      let binaryString;
+      if (typeof window !== "undefined") {
+        binaryString = window.atob(stringBase64);
+      } else {
+        binaryString = new Buffer(stringBase64, "base64").toString("binary");
+      }
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        const ascii = binaryString.charCodeAt(i);
+        bytes[i] = ascii;
+      }
+      return bytes.buffer;
+    },
+    loadFile(url, callback) {
+      PizZipUtils.getBinaryContent(url, callback);
+    },
   },
   created() {},
   mounted() {
@@ -968,6 +1265,6 @@ export default {
 }
 .ques_bottom {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
 }
 </style>

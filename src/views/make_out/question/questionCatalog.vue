@@ -56,6 +56,7 @@
     <div class="ques_content">
       <div class="ques_list">
         <el-table
+        v-loading="loading"
           ref="multipleTable"
           :data="
             tableData.slice(
@@ -342,6 +343,7 @@ export default {
   props: {},
   data() {
     return {
+      loading:true,
       preMove: [],
       addFileName: "",
       initial: [],
@@ -979,6 +981,7 @@ export default {
               res.data.objects.length == 1 &&
               res.data.objects[0].question_content_id == null
             ) {
+              this.loading=false
               this.tableData = [];
             } else {
               for (let i = 0; i < res.data.objects.length; i++) {
@@ -1054,6 +1057,7 @@ export default {
                     );
                 }
               });
+              this.loading=false
               this.tableData = res.data.objects;
               this.initial = this.tableData;
             }

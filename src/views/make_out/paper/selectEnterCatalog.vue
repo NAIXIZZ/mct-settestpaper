@@ -31,6 +31,7 @@
       </div>
       <div class="ques_list">
         <el-table
+        v-loading="loading"
           ref="multipleTable"
           :data="tableData"
           tooltip-effect="dark"
@@ -126,6 +127,7 @@ export default {
   props: {},
   data() {
     return {
+      loading:true,
       tinitial: [],
       initial: [],
       tableData: [],
@@ -254,6 +256,7 @@ export default {
       } else {
         this.selected = "0道题";
       }
+      this.loading=false
       // if(global.multipleSelectionCat.length!=0){
       //   this.multipleSelection = global.multipleSelectionCat
       //   this.multipleSelection.forEach(element=>{

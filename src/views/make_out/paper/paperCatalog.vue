@@ -43,6 +43,7 @@
     <div class="ques_content">
       <div class="ques_list">
         <el-table
+        v-loading="loading"
           ref="multipleTable"
           :data="tableData"
           tooltip-effect="dark"
@@ -131,6 +132,7 @@ export default {
   props: {},
   data() {
     return {
+      loading:true,
       catalogall:[],
       preMove: [],
       moveVisible: false,
@@ -189,6 +191,7 @@ export default {
               res.data.objects.length == 1 &&
               res.data.objects[0].paper_title == null
             ) {
+              this.loading=false
               this.tableData = [];
             } else {
               for(let i=0;i<res.data.objects.length;i++){
@@ -222,6 +225,7 @@ export default {
                     : date.getSeconds();
                 element.created_at = Y + M + D + h + m + s;
               });
+              this.loading=false
               this.tableData = res.data.objects;
               this.initial = this.tableData;
             }

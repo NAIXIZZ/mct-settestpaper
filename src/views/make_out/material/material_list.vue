@@ -5,7 +5,7 @@
       <div class="ques_search">
         <el-input
           v-model="input"
-          placeholder="搜索题目或选项"
+          placeholder="搜索文件夹或材料内容"
           clearable
           @clear="use_clear"
         ></el-input>
@@ -21,6 +21,7 @@
       </div>
     </div>
     <el-table
+      v-loading="loading"
       ref="multipleTable"
       :data="
         tableData.slice((currentPage - 1) * pageSize, currentPage * pageSize)
@@ -28,8 +29,14 @@
       tooltip-effect="dark"
       style="width: 100%"
       @selection-change="handleSelectionChange"
+      :row-key="
+        (row) => {
+          return row.id;
+        }
+      "
     >
-      <el-table-column type="selection" width="55"> </el-table-column>
+      <el-table-column type="selection" width="55" :reserve-selection="true">
+      </el-table-column>
       <el-table-column type="index" :index="indexMethod"> </el-table-column>
       <el-table-column label="文件夹" prop="catalog">
         <template slot-scope="scope">
@@ -119,7 +126,7 @@
                 <el-button type="info" plain>删除</el-button>
               </el-tooltip>
             </div>
-            <el-button type="primary" plain @click="moveTo(scope.row.id,1)"
+            <el-button type="primary" plain @click="moveTo(scope.row.id, 1)"
               >移动到</el-button
             >
             <!-- <el-button type="primary" plain @click="checkMaterial(scope.row.id)"
@@ -164,30 +171,55 @@
       </el-pagination>
     </div>
     <div class="trash">
-      <el-button type="primary" icon="el-icon-delete" @click="trash">回收站</el-button>
+      <el-button type="primary" icon="el-icon-delete" @click="trash"
+        >回收站</el-button
+      >
     </div>
-    <el-dialog title="自动出题" :visible.sync="dialogFormVisible">
-      <el-form :model="form">
-        <el-form-item label="题目数量：" :label-width="formLabelWidth">
-          <el-input v-model="form.quesnum" autocomplete="off"></el-input>
-        </el-form-item>
-        <el-form-item label="题目类型：" :label-width="formLabelWidth">
-          <el-cascader
-            :options="ques_select"
-            :props="{
-              multiple: true,
-              checkStrictly: true,
-              expandTrigger: 'hover',
-            }"
-            clearable
-            placeholder="请选择题型"
-          ></el-cascader>
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="setQues">保存到题库</el-button>
-        <el-button @click="dialogFormVisible = false">取 消</el-button>
-      </div>
+    <el-dialog title="自动出题/出卷" :visible.sync="dialogFormVisible" class="autoQP">
+      <el-tabs>
+        <el-tab-pane label="自动出题">
+          <el-form :model="form">
+            <el-form-item label="题目数量：" :label-width="formLabelWidth">
+              <el-input v-model="form.quesnum" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item label="题目类型：" :label-width="formLabelWidth">
+              <el-cascader
+                :options="ques_select"
+                :props="{
+                  multiple: true,
+                  checkStrictly: true,
+                  expandTrigger: 'hover',
+                }"
+                clearable
+                placeholder="请选择题型"
+              ></el-cascader>
+            </el-form-item>
+          </el-form>
+        </el-tab-pane>
+        <el-tab-pane label="自动出卷"
+          ><el-form :model="form">
+            <el-form-item label="题目数量：" :label-width="formLabelWidth">
+              <el-input v-model="form.quesnum" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item label="题目类型：" :label-width="formLabelWidth">
+              <el-cascader
+                :options="ques_select"
+                :props="{
+                  multiple: true,
+                  checkStrictly: true,
+                  expandTrigger: 'hover',
+                }"
+                clearable
+                placeholder="请选择题型"
+              ></el-cascader>
+            </el-form-item>
+          </el-form>
+        </el-tab-pane>
+      </el-tabs>
+          <div slot="footer" class="dialog-footer">
+            <el-button type="primary" @click="setQues">保存到题库</el-button>
+            <el-button @click="dialogFormVisible = false">取 消</el-button>
+          </div>
     </el-dialog>
     <el-dialog
       title="移动到"
@@ -215,6 +247,7 @@ export default {
   props: {},
   data() {
     return {
+      loading: true,
       preMove: [],
       multipleSelection: [],
       moveVisible: false,
@@ -283,6 +316,12 @@ export default {
         {
           value: "写作题",
           label: "写作题",
+          children: [
+            {
+              value: "根据一段长对话写门诊病历记录",
+              label: "根据一段长对话写门诊病历记录",
+            }
+          ],
         },
       ],
       catalog: [],
@@ -365,7 +404,11 @@ export default {
               );
               res.data.objects.unshift(element);
             });
-            sessionStorage.setItem("contentCatalog",JSON.stringify(this.catalog))
+            this.loading = false;
+            sessionStorage.setItem(
+              "contentCatalog",
+              JSON.stringify(this.catalog)
+            );
             this.tableData = res.data.objects;
             this.initial = res.data.objects;
           },
@@ -480,7 +523,10 @@ export default {
                         catalog: res.data.catalog,
                       };
                       this.catalog.push(temp);
-                      sessionStorage.setItem("contentCatalog",JSON.stringify(this.catalog))
+                      sessionStorage.setItem(
+                        "contentCatalog",
+                        JSON.stringify(this.catalog)
+                      );
                     },
                     (err) => {
                       console.log(err);
@@ -603,12 +649,15 @@ export default {
                   message: "文件夹删除成功",
                   type: "success",
                 });
-                this.tableData.splice(index,1)
-                for(let i=0;i<this.catalog.length;i++){
-                  if(this.catalog[i].catalog==row.catalog){
-                    this.catalog.splice(i,1)
-                    sessionStorage.setItem("contentCatalog",JSON.stringify(this.catalog))
-                    break
+                this.tableData.splice(index, 1);
+                for (let i = 0; i < this.catalog.length; i++) {
+                  if (this.catalog[i].catalog == row.catalog) {
+                    this.catalog.splice(i, 1);
+                    sessionStorage.setItem(
+                      "contentCatalog",
+                      JSON.stringify(this.catalog)
+                    );
+                    break;
                   }
                 }
               },
@@ -640,11 +689,11 @@ export default {
         }
       );
     },
-    moveTo(val,type) {
-      if(type==1){
+    moveTo(val, type) {
+      if (type == 1) {
         this.preMove.push(val);
-      }else if(type==2){
-        this.preMove = val
+      } else if (type == 2) {
+        this.preMove = val;
       }
       this.moveVisible = true;
     },
@@ -680,29 +729,29 @@ export default {
           type: "warning",
         });
       } else {
-        let ca = false
+        let ca = false;
         for (let i = 0; i < this.multipleSelection.length; i++) {
           if (this.multipleSelection[i].catalog != null) {
             this.$message({
               message: "文件夹不可移动",
               type: "warning",
             });
-            ca=true
-            break
+            ca = true;
+            break;
           }
         }
-        if(ca==false){
-          let temp = []
-          this.multipleSelection.forEach(element=>{
-            temp.push(element.id)
-          })
-          this.moveTo(temp,2)
+        if (ca == false) {
+          let temp = [];
+          this.multipleSelection.forEach((element) => {
+            temp.push(element.id);
+          });
+          this.moveTo(temp, 2);
         }
       }
     },
     enterFolder(row) {
       Cookies.set("catalog", row.catalog);
-      Cookies.set("catalogall",JSON.stringify(this.catalog))
+      Cookies.set("catalogall", JSON.stringify(this.catalog));
       this.$router.push("/materialCatalog");
     },
     checkQuesP(id) {
@@ -716,9 +765,9 @@ export default {
     setQues() {
       this.dialogFormVisible = false;
     },
-    trash(){
-      Cookies.set("trash","content")
-      this.$router.push("/trash_list")
+    trash() {
+      Cookies.set("trash", "content");
+      this.$router.push("/trash_list");
     },
     checkMaterial(id) {
       Cookies.set("material_id", id);
@@ -815,5 +864,8 @@ export default {
 }
 .material .move .el-button + .el-button {
   margin-left: 0px;
+}
+.material .autoQP .el-dialog__body{
+  padding: 0 20px;
 }
 </style>

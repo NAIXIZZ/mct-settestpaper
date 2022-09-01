@@ -31,6 +31,7 @@
       </div>
       <div class="ques_list">
         <el-table
+        v-loading="loading"
           ref="multipleTable"
           :data="tableData"
           :row-key="getRowKey"
@@ -144,6 +145,7 @@ export default {
   props: {},
   data() {
     return {
+      loading: true,
       tinitial: [],
       initial: [],
       tableData: [],
@@ -228,13 +230,16 @@ export default {
         // let off=0
         // while(num==1000){
         // console.log("11")
-        var query = new BaaS.Query();
+        let query = new BaaS.Query();
         query.compare("created_by", "=", Cookie.get("user_id") * 1);
+        let q2 = new BaaS.Query()
+        q2.compare("is_delete","=",false)
+        let andQuery = BaaS.Query.and(query,q2)
         let Question = new BaaS.TableObject("questions_information");
         Question.orderBy("-created_at")
           .limit(1000)
           .offset(0)
-          .setQuery(query)
+          .setQuery(andQuery)
           .find()
           .then(
             (res) => {
@@ -328,6 +333,7 @@ export default {
                 );
                 res.data.objects.unshift(element);
               });
+              this.loading = false
               this.tableData = res.data.objects;
               this.initial = this.tableData;
               global.tableData = this.tableData;

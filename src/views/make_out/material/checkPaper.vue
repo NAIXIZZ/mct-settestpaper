@@ -30,13 +30,13 @@
         </div>
       </div>
       <div class="top_button">
-        <el-button type="success" plain>导出全部</el-button>
-        <el-button type="success" plain>导出选中</el-button>
+        <el-button type="success" plain @click="exp">导出选中</el-button>
       </div>
     </div>
     <div class="ques_content">
       <div class="ques_list">
         <el-table
+        v-loading="loading"
           ref="multipleTable"
           :data="tableData"
           tooltip-effect="dark"
@@ -87,10 +87,24 @@
     <div class="paper_bottom">
       <el-button type="primary" icon="el-icon-delete" @click="trash">回收站</el-button>
     </div>
+    <el-dialog title="导出" :visible.sync="exVisible" width="30%">
+      <el-radio v-model="ex" label="1">导出为excel</el-radio>
+      <el-radio v-model="ex" label="2">导出为word</el-radio>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="exVisible = false">取 消</el-button>
+        <el-button type="primary" @click="derive">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
+<script lang="javascript" src="dist/xlsx.full.min.js"></script>
 <script>
+import {
+  export_json_to_excel_zip,
+  downloadZip,
+  downloadWordZip,
+} from "@/util/Export2Excel.js";
 import Cookies from "js-cookie";
 import Cookie from "js-cookie";
 var BaaS = require("minapp-sdk");
@@ -102,6 +116,10 @@ export default {
   props: {},
   data() {
     return {
+      der: [],
+      ex: "1",
+      exVisible: false,
+      loading:true,
       use: [
         {
           value: "练习",
@@ -187,8 +205,11 @@ export default {
                         const qc = this.tableData.filter(
                           (key) => !map.has(key.id) && map.set(key.id, 1)
                         );
+                        this.loading=false
                         this.tableData = qc;
                         this.initial = this.tableData;
+                      }else{
+                        this.loading=false
                       }
                     },
                     (err) => {
@@ -485,6 +506,548 @@ export default {
           }
         );
       }
+    },
+    exp() {
+      if (this.multipleSelection.length == 0) {
+        this.$message({
+          message: "还未选择导出项",
+          type: "warning",
+        });
+      } else {
+        this.der = this.multipleSelection;
+        this.exVisible = true;
+      }
+    },
+    derive() {
+      const loading = this.$loading({
+        lock: true,
+        text: "正在导出，请稍等",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)",
+      });
+      let final = [];
+      let catanum = 0;
+      for (let i = 0; i < this.der.length; i++) {
+          if (this.der[i].paper_title != null) {
+            let ques = [];
+            let qid = JSON.parse(this.der[i].questions_detail);
+            for (let j = 0; j < qid.length; j++) {
+              let findQ = new BaaS.TableObject("questions_information");
+              findQ.get(qid[j].id).then(
+                (res) => {
+                  let q = res.data;
+                  q.sequence = qid[j].sub_sequence;
+                  q.score = qid[j].score;
+                  if (q.options != null) {
+                    let temp = JSON.parse(q.options);
+                    let str = "";
+                    for (let k = 0; k < temp.length; k++) {
+                      str += temp[k].index + "." + temp[k].content + " ";
+                    }
+                    q.options = str;
+                  }
+                  let findC = new BaaS.TableObject("question_content");
+                  findC.get(res.data.question_content_id).then(
+                    (ress) => {
+                      if (ress.data.content != null) {
+                        q.question_content_id = ress.data.content;
+                      } else if (ress.data.file_url != null) {
+                        q.question_content_id = ress.data.file_url.path;
+                      }
+                      ques.push(q);
+                      if (ques.length == qid.length) {
+                        let f = {
+                          paper_title: this.der[i].paper_title,
+                          paper_type: this.der[i].paper_type,
+                          questions_num: this.der[i].questions_num,
+                          points: this.der[i].points,
+                          catalog: null,
+                          questions_detail: ques,
+                        };
+                        final.push(f);
+                      }
+                    },
+                    (err) => {
+                      console.log(err);
+                    }
+                  );
+                },
+                (err) => {
+                  console.log(err);
+                }
+              );
+            }
+          }
+      }
+      let time = 0;
+      if (catanum == 0) {
+        time = 1000;
+      } else {
+        time = catanum * 3000;
+      }
+      if (this.ex == 1) {
+        setTimeout(() => {
+          let files = [];
+          for (let i = 0; i < final.length; i++) {
+            let temp = [];
+            let t = {
+              catalog: final[i].catalog,
+              paper_title: final[i].paper_title,
+              paper_type: final[i].paper_type,
+              questions_num: final[i].questions_num,
+              points: final[i].points,
+            };
+            temp.push(t);
+            for (let j = 0; j < final[i].questions_detail.length; j++) {
+              let date = new Date(
+                final[i].questions_detail[j].created_at * 1000
+              );
+              let Y = date.getFullYear() + "-";
+              let M =
+                date.getMonth() + 1 < 10
+                  ? "0" + (date.getMonth() + 1) + "-"
+                  : date.getMonth() + 1 + "-";
+              let D =
+                date.getDate() < 10
+                  ? "0" + date.getDate() + " "
+                  : date.getDate() + " ";
+              let h =
+                date.getHours() < 10
+                  ? "0" + date.getHours() + ":"
+                  : date.getHours() + ":";
+              let m =
+                date.getMinutes() < 10
+                  ? "0" + date.getMinutes() + ":"
+                  : date.getMinutes() + ":";
+              let s =
+                date.getSeconds() < 10
+                  ? "0" + date.getSeconds()
+                  : date.getSeconds();
+              final[i].questions_detail[j].created_at = Y + M + D + h + m + s;
+              temp.push(final[i].questions_detail[j]);
+            }
+            temp.sort(function (a, b) {
+              return a.sequence - b.sequence;
+            });
+            const testData = {
+              试卷或题目文件夹: "catalog",
+              试卷标题: "paper_title",
+              试卷类型: "paper_type",
+              题量: "questions_num",
+              总分: "points",
+              题号: "sequence",
+              分数:"score",
+              一级题型: "primary_ques_type",
+              二级题型: "secondary_ques_type",
+              题干材料: "question_content_id",
+              题目: "question",
+              选项: "options",
+              答案: "answer",
+              解析: "analysis",
+              等级标准: "grade_standard",
+              话题大纲: "topic_outline",
+              任务大纲: "task_outline",
+              科室: "department",
+              题目等级: "ques_level",
+              题目类型: "question_class",
+              五何类型: "question_type_5he",
+              作者: "author",
+              作者单位: "author_org",
+              出题时间: "time_created",
+              创建时间: "created_at",
+            };
+            const header = Object.keys(testData);
+            const data = temp.map((user) => {
+              const userArr = [];
+              for (const Key in testData) {
+                const newKey = testData[Key];
+                userArr.push(user[newKey]);
+              }
+              return userArr;
+            });
+            let a = {
+              fileName: final[i].paper_title,
+              file: export_json_to_excel_zip({
+                header,
+                data,
+              }),
+            };
+            files.push(a);
+          }
+          downloadZip(files);
+          loading.close();
+          this.exVisible = false;
+          this.$message({
+            message: "导出成功",
+            type: "success",
+          });
+        }, time);
+      } else if (this.ex == 2) {
+        setTimeout(() => {
+          let f = [];
+          for (let i = 0; i < final.length; i++) {
+            final[i].questions_detail.sort(function (a, b) {
+              return a.sequence - b.sequence;
+            });
+            let b = [
+              {
+                primary: "听力",
+                secondary: [
+                  {
+                    type: "听句子，判断对错",
+                    ques: [],
+                    start: -1,
+                  },
+                  {
+                    type: "听短对话，选择正确答案",
+                    ques: [],
+                    start: -1,
+                  },
+                  {
+                    type: "听长对话，选择正确答案",
+                    ques: [],
+                    start: -1,
+                  },
+                  {
+                    type: "听短文，选择正确答案",
+                    ques: [],
+                    start: -1,
+                  },
+                ],
+                start: -1,
+              },
+              {
+                primary: "阅读",
+                secondary: [
+                  {
+                    type: "选择正确的词语填空",
+                    ques: [],
+                    start: -1,
+                  },
+                  {
+                    type: "阅读语段，选择与语段意思一致的一项",
+                    ques: [],
+                    start: -1,
+                  },
+                  {
+                    type: "阅读材料，选择正确答案",
+                    ques: [],
+                    start: -1,
+                  },
+                  {
+                    type: "阅读短文，选择正确答案",
+                    ques: [],
+                    start: -1,
+                  },
+                ],
+                start: -1,
+              },
+              {
+                primary: "写作",
+                secondary: [
+                  {
+                    type: "根据一段长对话写门诊病历记录",
+                    ques: [],
+                    start: -1,
+                  },
+                ],
+                start: -1,
+              },
+            ];
+            for (let j = 0; j < final[i].questions_detail.length; j++) {
+              let date = new Date(
+                final[i].questions_detail[j].created_at * 1000
+              );
+              let Y = date.getFullYear() + "-";
+              let M =
+                date.getMonth() + 1 < 10
+                  ? "0" + (date.getMonth() + 1) + "-"
+                  : date.getMonth() + 1 + "-";
+              let D =
+                date.getDate() < 10
+                  ? "0" + date.getDate() + " "
+                  : date.getDate() + " ";
+              let h =
+                date.getHours() < 10
+                  ? "0" + date.getHours() + ":"
+                  : date.getHours() + ":";
+              let m =
+                date.getMinutes() < 10
+                  ? "0" + date.getMinutes() + ":"
+                  : date.getMinutes() + ":";
+              let s =
+                date.getSeconds() < 10
+                  ? "0" + date.getSeconds()
+                  : date.getSeconds();
+              final[i].questions_detail[j].created_at = Y + M + D + h + m + s;
+              if (
+                final[i].questions_detail[j].question == null ||
+                final[i].questions_detail[j].question == undefined ||
+                final[i].questions_detail[j].question == "" ||
+                final[i].questions_detail[j].question == "null" ||
+                final[i].questions_detail[j].question == "undefined"
+              ) {
+                final[i].questions_detail[j].question = "/";
+              }
+              if (
+                final[i].questions_detail[j].options == null ||
+                final[i].questions_detail[j].options == undefined ||
+                final[i].questions_detail[j].options == "" ||
+                final[i].questions_detail[j].options == "null" ||
+                final[i].questions_detail[j].options == "undefined"
+              ) {
+                final[i].questions_detail[j].options = "/";
+              }
+              if (
+                final[i].questions_detail[j].analysis == null ||
+                final[i].questions_detail[j].analysis == undefined ||
+                final[i].questions_detail[j].analysis == "" ||
+                final[i].questions_detail[j].analysis == "null" ||
+                final[i].questions_detail[j].analysis == "undefined"
+              ) {
+                final[i].questions_detail[j].analysis = "/";
+              }
+              if (
+                final[i].questions_detail[j].catalog == null ||
+                final[i].questions_detail[j].catalog == undefined ||
+                final[i].questions_detail[j].catalog == "" ||
+                final[i].questions_detail[j].catalog == "null" ||
+                final[i].questions_detail[j].catalog == "undefined"
+              ) {
+                final[i].questions_detail[j].catalog = "/";
+              }
+              if (
+                final[i].questions_detail[j].ques_level == null ||
+                final[i].questions_detail[j].ques_level == undefined ||
+                final[i].questions_detail[j].ques_level == "" ||
+                final[i].questions_detail[j].ques_level == "null" ||
+                final[i].questions_detail[j].ques_level == "undefined"
+              ) {
+                final[i].questions_detail[j].ques_level = "/";
+              }
+              if (
+                final[i].questions_detail[j].grade_standard == null ||
+                final[i].questions_detail[j].grade_standard == undefined ||
+                final[i].questions_detail[j].grade_standard == "" ||
+                final[i].questions_detail[j].grade_standard == "null" ||
+                final[i].questions_detail[j].grade_standard == "undefined"
+              ) {
+                final[i].questions_detail[j].grade_standard = "/";
+              }
+              if (
+                final[i].questions_detail[j].topic_outline == null ||
+                final[i].questions_detail[j].topic_outline == undefined ||
+                final[i].questions_detail[j].topic_outline == "" ||
+                final[i].questions_detail[j].topic_outline == "null" ||
+                final[i].questions_detail[j].topic_outline == "undefined"
+              ) {
+                final[i].questions_detail[j].topic_outline = "/";
+              }
+              if (
+                final[i].questions_detail[j].task_outline == null ||
+                final[i].questions_detail[j].task_outline == undefined ||
+                final[i].questions_detail[j].task_outline == "" ||
+                final[i].questions_detail[j].task_outline == "null" ||
+                final[i].questions_detail[j].task_outline == "undefined"
+              ) {
+                final[i].questions_detail[j].task_outline = "/";
+              }
+              if (
+                final[i].questions_detail[j].department == null ||
+                final[i].questions_detail[j].department == undefined ||
+                final[i].questions_detail[j].department == "" ||
+                final[i].questions_detail[j].department == "null" ||
+                final[i].questions_detail[j].department == "undefined"
+              ) {
+                final[i].questions_detail[j].department = "/";
+              }
+              if (
+                final[i].questions_detail[j].question_class == null ||
+                final[i].questions_detail[j].question_class == undefined ||
+                final[i].questions_detail[j].question_class == "" ||
+                final[i].questions_detail[j].question_class == "null" ||
+                final[i].questions_detail[j].question_class == "undefined"
+              ) {
+                final[i].questions_detail[j].question_class = "/";
+              }
+              if (
+                final[i].questions_detail[j].question_type_5he == null ||
+                final[i].questions_detail[j].question_type_5he == undefined ||
+                final[i].questions_detail[j].question_type_5he == "" ||
+                final[i].questions_detail[j].question_type_5he == "null" ||
+                final[i].questions_detail[j].question_type_5he == "undefined"
+              ) {
+                final[i].questions_detail[j].question_type_5he = "/";
+              }
+              if (
+                final[i].questions_detail[j].author == null ||
+                final[i].questions_detail[j].author == undefined ||
+                final[i].questions_detail[j].author == "" ||
+                final[i].questions_detail[j].author == "null" ||
+                final[i].questions_detail[j].author == "undefined"
+              ) {
+                final[i].questions_detail[j].author = "/";
+              }
+              if (
+                final[i].questions_detail[j].author_org == null ||
+                final[i].questions_detail[j].author_org == undefined ||
+                final[i].questions_detail[j].author_org == "" ||
+                final[i].questions_detail[j].author_org == "null" ||
+                final[i].questions_detail[j].author_org == "undefined"
+              ) {
+                final[i].questions_detail[j].author_org = "/";
+              }
+              if (
+                final[i].questions_detail[j].time_created == null ||
+                final[i].questions_detail[j].time_created == undefined ||
+                final[i].questions_detail[j].time_created == "" ||
+                final[i].questions_detail[j].time_created == "null" ||
+                final[i].questions_detail[j].time_created == "undefined"
+              ) {
+                final[i].questions_detail[j].time_created = "/";
+              }
+              for (let k = 0; k < b.length; k++) {
+                if (
+                  final[i].questions_detail[j].primary_ques_type == b[k].primary
+                ) {
+                  if (b[k].start == -1) {
+                    b[k].start = final[i].questions_detail[j].sequence;
+                  }
+                  for (let h = 0; h < b[k].secondary.length; h++) {
+                    if (
+                      final[i].questions_detail[j].secondary_ques_type ==
+                      b[k].secondary[h].type
+                    ) {
+                      b[k].secondary[h].ques.push(final[i].questions_detail[j]);
+                      if (b[k].secondary[h].start == -1) {
+                        b[k].secondary[h].start =
+                          final[i].questions_detail[j].sequence;
+                      }
+                      break;
+                    }
+                  }
+                  break;
+                }
+              }
+            }
+            for (let z = 0; z < b.length; z++) {
+              b[z].secondary.sort(function (c, d) {
+                return c.start - d.start;
+              });
+            }
+            b.sort(function (c, d) {
+              return c.start - d.start;
+            });
+            for (let a = 0; a < b.length; a++) {
+              if (b[a].start != -1) {
+                b.splice(0, a);
+                break;
+              }
+            }
+            for (let a = 0; a < b.length; a++) {
+              for (let c = 0; c < b[a].secondary.length; c++) {
+                if (b[a].secondary[c].start != -1) {
+                  b[a].secondary.splice(0, c);
+                  break;
+                }
+              }
+            }
+            var ImageModule = require("open-docxtemplater-image-module");
+            // 点击导出word
+            var that = this;
+            this.loadFile("export_paper.docx", function (error, content) {
+              if (error) {
+                throw error;
+              }
+              let opts = {};
+              opts.centered = true; // 图片居中，在word模板中定义方式为{%%image}
+              opts.fileType = "docx";
+              opts.getImage = function (chartId) {
+                return that.base64DataURLToArrayBuffer(chartId);
+              };
+              opts.getSize = function () {
+                return [600, 300];
+              };
+
+              let imageModule = new ImageModule(opts);
+
+              var zip = new PizZip(content);
+              var doc = new window.docxtemplater().loadZip(zip);
+              // doc.attachModule(imageModule);
+              doc.setData({
+                paper_title: final[i].paper_title,
+                paper_type: final[i].paper_type,
+                questions_num: final[i].questions_num,
+                points: final[i].points,
+                b: b,
+              });
+              try {
+                // render the document (replace all occurences of {first_name} by John, {last_name} by Doe, ...)
+                doc.render();
+              } catch (error) {
+                var e = {
+                  message: error.message,
+                  name: error.name,
+                  stack: error.stack,
+                  properties: error.properties,
+                };
+                console.log(
+                  JSON.stringify({
+                    error: e,
+                  })
+                );
+                // The error thrown here contains additional information when logged with JSON.stringify (it contains a property object).
+                throw error;
+              }
+              var out = doc.getZip().generate({
+                type: "blob",
+                mimeType:
+                  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+              }); //Output the document using Data-URI
+              let a = {
+                fileName: final[i].paper_title,
+                file: out,
+              };
+              f.push(a);
+              // saveAs(out, "试卷导出.docx");
+            });
+          }
+          setTimeout(() => {
+            downloadWordZip(f);
+          }, 1000);
+
+          loading.close();
+          this.exVisible = false;
+          this.$message({
+            message: "导出成功",
+            type: "success",
+          });
+        }, time);
+      }
+      this.$refs.multipleTable.clearSelection();
+    },
+    base64DataURLToArrayBuffer(dataURL) {
+      const base64Regex = /^data:image\/(png|jpg|svg|svg\+xml);base64,/;
+      if (!base64Regex.test(dataURL)) {
+        return false;
+      }
+      const stringBase64 = dataURL.replace(base64Regex, "");
+      let binaryString;
+      if (typeof window !== "undefined") {
+        binaryString = window.atob(stringBase64);
+      } else {
+        binaryString = new Buffer(stringBase64, "base64").toString("binary");
+      }
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        const ascii = binaryString.charCodeAt(i);
+        bytes[i] = ascii;
+      }
+      return bytes.buffer;
+    },
+    loadFile(url, callback) {
+      PizZipUtils.getBinaryContent(url, callback);
     },
   },
   created() {},
