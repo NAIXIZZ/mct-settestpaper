@@ -557,6 +557,12 @@ export default {
 
     // 读取压缩文件
     async componentImport() {
+      const loading = this.$loading({
+        lock: true,
+        text: "正在组卷中，请稍后",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)",
+      });
       const zip = new JSZip();
       const zipData = await zip.loadAsync(this.fileList[0].raw);
       var i = 0;
@@ -742,6 +748,7 @@ export default {
           }
         }
         i++;
+        let num = 0;
         if (i == this.fileNum) {
           var arr = new Array();
           this.excelFile.forEach((element) => {
@@ -758,6 +765,16 @@ export default {
                   .then(
                     (res) => {
                       // console.log(res);
+                      num++;
+                      if (num == this.excelFile.length) {
+                        loading.close();
+                        this.$message({
+                          message: "导入成功",
+                          type: "success",
+                        });
+                        this.init()
+                        this.importFile = false;
+                      }
                     },
                     (err) => {
                       console.log(err);
@@ -809,6 +826,16 @@ export default {
                               .then(
                                 (res) => {
                                   // console.log(res);
+                                  num++;
+                                  if (num == this.excelFile.length) {
+                                    loading.close();
+                                    this.$message({
+                                      message: "导入成功",
+                                      type: "success",
+                                    });
+                                    this.init()
+                                    this.importFile = false;
+                                  }
                                 },
                                 (err) => {
                                   console.log(err);
@@ -843,6 +870,16 @@ export default {
                                   .then(
                                     (res) => {
                                       // console.log(res);
+                                      num++;
+                                      if (num == this.excelFile.length) {
+                                        loading.close();
+                                        this.$message({
+                                          message: "导入成功",
+                                          type: "success",
+                                        });
+                                        this.init()
+                                        this.importFile = false;
+                                      }
                                     },
                                     (err) => {
                                       console.log(err);
@@ -1597,8 +1634,10 @@ export default {
             .then(
               (res) => {
                 if (
-                  !(res.data.objects.length == 1 &&
-                  res.data.objects[0].question_content_id == null)
+                  !(
+                    res.data.objects.length == 1 &&
+                    res.data.objects[0].question_content_id == null
+                  )
                 ) {
                   for (let i = 0; i < res.data.objects.length; i++) {
                     if (res.data.objects[i].question_content_id == null) {

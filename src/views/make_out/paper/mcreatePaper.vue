@@ -1106,7 +1106,6 @@ export default {
                   }
                 }
               }
-
               question.sub_question.push(sub);
               num++;
             }

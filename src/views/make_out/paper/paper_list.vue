@@ -170,11 +170,145 @@
         >回收站</el-button
       >
     </div>
-    <el-dialog title="创建试卷" :visible.sync="dialogVisible" width="30%">
+    <el-dialog title="创建试卷" :visible.sync="dialogVisible" width="700px">
       <el-radio-group v-model="radio">
         <el-radio :label="1">手动创建试卷</el-radio>
         <el-radio :label="2">自动随机组卷</el-radio>
       </el-radio-group>
+      <el-form
+        :model="ruleForm"
+        :rules="rules"
+        ref="ruleForm"
+        label-position="left"
+        label-width="100px"
+        class="demo-ruleForm out"
+        v-show="radio == 2"
+      >
+        <el-form-item label="试卷类型" prop="paper_type">
+          <el-select
+            v-model="ruleForm.paper_type"
+            placeholder="请选择试卷类型"
+            required
+          >
+            <el-option label="练习" value="练习"></el-option>
+            <el-option label="模考" value="模考"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="试卷标题" prop="paper_title" required>
+          <el-input
+            v-model="ruleForm.paper_title"
+            placeholder="请输入试卷标题"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="注意：" v-show="ruleForm.paper_type == '模考'">
+          <p>默认模考卷题量为101题，总分为300分。</p>
+        </el-form-item>
+        <el-form-item
+          label="听力"
+          prop="listen"
+          v-show="ruleForm.paper_type == '练习'"
+        >
+          <el-form
+            :model="listenForm"
+            ref="listenForm"
+            label-width="250px"
+            class="demo-ruleForm"
+          >
+            <el-form-item label="听句子，判断对错" prop="listen_sentence">
+              <el-input
+                type="number"
+                v-model="listenForm.listen_sentence"
+                placeholder="请输入题目数量"
+              ></el-input>
+            </el-form-item>
+            <el-form-item label="听短对话，选择正确答案" prop="listen_sdialog">
+              <el-input
+                type="number"
+                v-model="listenForm.listen_sdialog"
+                placeholder="请输入题目数量"
+              ></el-input>
+            </el-form-item>
+            <el-form-item label="听长对话，选择正确答案" prop="listen_ldialog">
+              <el-input
+                type="number"
+                v-model="listenForm.listen_ldialog"
+                placeholder="请输入题目数量"
+              ></el-input>
+            </el-form-item>
+            <el-form-item label="听短文，选择正确答案" prop="listen_essay">
+              <el-input
+                type="number"
+                v-model="listenForm.listen_essay"
+                placeholder="请输入题目数量"
+              ></el-input>
+            </el-form-item>
+          </el-form>
+        </el-form-item>
+        <el-form-item
+          label="阅读"
+          prop="read"
+          v-show="ruleForm.paper_type == '练习'"
+        >
+          <el-form
+            :model="readForm"
+            ref="readForm"
+            label-width="250px"
+            class="demo-ruleForm"
+          >
+            <el-form-item label="选择正确的词语填空" prop="read_word">
+              <el-input
+                type="number"
+                v-model="readForm.read_word"
+                placeholder="请输入题目数量"
+              ></el-input>
+            </el-form-item>
+            <el-form-item
+              label="阅读语段，选择与语段意思一致的一项"
+              prop="read_dialog"
+            >
+              <el-input
+                type="number"
+                v-model="readForm.read_dialog"
+                placeholder="请输入题目数量"
+              ></el-input>
+            </el-form-item>
+            <el-form-item label="阅读材料，选择正确答案" prop="read_material">
+              <el-input
+                type="number"
+                v-model="readForm.read_material"
+                placeholder="请输入题目数量"
+              ></el-input>
+            </el-form-item>
+            <el-form-item label="阅读短文，选择正确答案" prop="read_essay">
+              <el-input
+                type="number"
+                v-model="readForm.read_essay"
+                placeholder="请输入题目数量"
+              ></el-input>
+            </el-form-item>
+          </el-form>
+        </el-form-item>
+        <el-form-item
+          label="写作"
+          prop="write"
+          v-show="ruleForm.paper_type == '练习'"
+        >
+          <el-form
+            :model="writeForm"
+            ref="writeForm"
+            label-width="250px"
+            class="demo-ruleForm"
+          >
+            <el-form-item label="根据一段长对话写门诊病历记录" prop="write">
+              <el-input
+                type="number"
+                v-model="writeForm.write"
+                placeholder="请输入题目数量"
+              ></el-input>
+            </el-form-item>
+          </el-form>
+        </el-form-item>
+      </el-form>
       <span slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">取 消</el-button>
         <el-button type="primary" @click="createPaper">确 定</el-button>
@@ -257,6 +391,33 @@ export default {
   props: {},
   data() {
     return {
+      ruleForm: {
+        paper_type: "",
+        paper_title: "",
+      },
+      rules: {
+        paper_type: [
+          { required: true, message: "请选择试卷类型", trigger: "change" },
+        ],
+        paper_title: [
+          { required: true, message: "请输入试卷标题", trigger: "blur" },
+        ],
+      },
+      listenForm: {
+        listen_sentence: 10,
+        listen_sdialog: 10,
+        listen_ldialog: 10,
+        listen_essay: 10,
+      },
+      readForm: {
+        read_word: 10,
+        read_dialog: 10,
+        read_material: 10,
+        read_essay: 10,
+      },
+      writeForm: {
+        write: 1,
+      },
       fileNum: 0,
       excelFile: [],
       contentFile: [],
@@ -654,7 +815,729 @@ export default {
         this.$router.push("/mcreatePaper");
         Cookies.set("make_out", "third");
       } else if (this.radio == 2) {
-        // this.$router.push("/acreatePaper");
+        if (this.ruleForm.paper_title == "" || this.ruleForm.paper_type == "") {
+          this.$message({
+            message: "请填写试卷类型或试卷标题",
+            type: "warning",
+          });
+        } else {
+          const loading = this.$loading({
+            lock: true,
+            text: "正在组卷中，请稍后",
+            spinner: "el-icon-loading",
+            background: "rgba(0, 0, 0, 0.7)",
+          });
+          let findQ = new BaaS.TableObject("questions_information");
+          let q1 = new BaaS.Query();
+          let q2 = new BaaS.Query();
+          q2.compare("is_delete", "=", false);
+          q1.compare("created_by", "=", 409976063038241);
+          let andQuery = BaaS.Query.and(q1, q2);
+          findQ
+            .setQuery(andQuery)
+            .limit(1000)
+            .find()
+            .then(
+              (res) => {
+                let temp = res.data.objects;
+                let autoq = [];
+                for (let i = 0; i < temp.length; ) {
+                  i++;
+                  let random = parseInt(Math.random() * temp.length);
+                  if (!autoq.includes(temp[random])) {
+                    autoq.push(temp[random]);
+                  } else {
+                    i--;
+                  }
+                }
+                let ques = [];
+                if (this.ruleForm.paper_type == "模考") {
+                  let l1 = 0,
+                    l2 = 10,
+                    l3 = 20,
+                    l4 = 30,
+                    r1 = 50,
+                    r2 = 60,
+                    r3 = 70,
+                    r4 = 80,
+                    w = 100;
+                  for (let i = 0; i < autoq.length; i++) {
+                    if (
+                      autoq[i].secondary_ques_type == "听句子，判断对错" &&
+                      l1 < 10
+                    ) {
+                      l1++;
+                      autoq[i].score = 2;
+                      autoq[i].sequence = l1;
+                      ques.push(autoq[i]);
+                    } else if (
+                      autoq[i].secondary_ques_type ==
+                        "听短对话，选择正确答案" &&
+                      l2 < 20
+                    ) {
+                      l2++;
+                      autoq[i].score = 2;
+                      autoq[i].sequence = l2;
+                      ques.push(autoq[i]);
+                    } else if (
+                      autoq[i].secondary_ques_type ==
+                        "听长对话，选择正确答案" &&
+                      l3 < 30
+                    ) {
+                      l3++;
+                      autoq[i].score = 2;
+                      autoq[i].sequence = l3;
+                      ques.push(autoq[i]);
+                    } else if (
+                      autoq[i].secondary_ques_type == "听短文，选择正确答案" &&
+                      l4 < 50
+                    ) {
+                      l4++;
+                      autoq[i].score = 2;
+                      autoq[i].sequence = l4;
+                      ques.push(autoq[i]);
+                    } else if (
+                      autoq[i].secondary_ques_type == "选择正确的词语填空" &&
+                      r1 < 60
+                    ) {
+                      r1++;
+                      autoq[i].score = 2;
+                      autoq[i].sequence = r1;
+                      ques.push(autoq[i]);
+                    } else if (
+                      autoq[i].secondary_ques_type ==
+                        "阅读语段，选择与语段意思一致的一项" &&
+                      r2 < 70
+                    ) {
+                      r2++;
+                      autoq[i].score = 2;
+                      autoq[i].sequence = r2;
+                      ques.push(autoq[i]);
+                    } else if (
+                      autoq[i].secondary_ques_type ==
+                        "阅读材料，选择正确答案" &&
+                      r3 < 80
+                    ) {
+                      r3++;
+                      autoq[i].score = 2;
+                      autoq[i].sequence = r3;
+                      ques.push(autoq[i]);
+                    } else if (
+                      autoq[i].secondary_ques_type ==
+                        "阅读短文，选择正确答案" &&
+                      r4 < 100
+                    ) {
+                      r4++;
+                      autoq[i].score = 2;
+                      autoq[i].sequence = r4;
+                      ques.push(autoq[i]);
+                    } else if (
+                      autoq[i].secondary_ques_type ==
+                        "根据一段长对话写门诊病历记录" &&
+                      w < 101
+                    ) {
+                      w++;
+                      autoq[i].score = 100;
+                      autoq[i].sequence = w;
+                      ques.push(autoq[i]);
+                    }
+                  }
+                } else {
+                  let l1 = 0,
+                    l2 = this.listenForm.listen_sentence * 1,
+                    l3 = l2 + this.listenForm.listen_sdialog * 1,
+                    l4 = l3 + this.listenForm.listen_ldialog * 1,
+                    r1 = l4 + this.listenForm.listen_essay * 1,
+                    r2 = r1 + this.readForm.read_word * 1,
+                    r3 = r2 + this.readForm.read_dialog * 1,
+                    r4 = r3 + this.readForm.read_material * 1,
+                    w = r4 + this.readForm.read_essay * 1;
+                  for (let i = 0; i < autoq.length; i++) {
+                    if (
+                      autoq[i].secondary_ques_type == "听句子，判断对错" &&
+                      l1 < this.listenForm.listen_sentence * 1
+                    ) {
+                      l1++;
+                      autoq[i].score = 2;
+                      autoq[i].sequence = l1;
+                      ques.push(autoq[i]);
+                    } else if (
+                      autoq[i].secondary_ques_type ==
+                        "听短对话，选择正确答案" &&
+                      l2 <
+                        this.listenForm.listen_sentence * 1 +
+                          this.listenForm.listen_sdialog * 1
+                    ) {
+                      l2++;
+                      autoq[i].score = 2;
+                      autoq[i].sequence = l2;
+                      ques.push(autoq[i]);
+                    } else if (
+                      autoq[i].secondary_ques_type ==
+                        "听长对话，选择正确答案" &&
+                      l3 <
+                        this.listenForm.listen_sentence * 1 +
+                          this.listenForm.listen_sdialog * 1 +
+                          this.listenForm.listen_ldialog * 1
+                    ) {
+                      l3++;
+                      autoq[i].score = 2;
+                      autoq[i].sequence = l3;
+                      ques.push(autoq[i]);
+                    } else if (
+                      autoq[i].secondary_ques_type == "听短文，选择正确答案" &&
+                      l4 <
+                        this.listenForm.listen_sentence * 1 +
+                          this.listenForm.listen_sdialog * 1 +
+                          this.listenForm.listen_ldialog * 1 +
+                          this.listenForm.listen_essay * 1
+                    ) {
+                      l4++;
+                      autoq[i].score = 2;
+                      autoq[i].sequence = l4;
+                      ques.push(autoq[i]);
+                    } else if (
+                      autoq[i].secondary_ques_type == "选择正确的词语填空" &&
+                      r1 <
+                        this.listenForm.listen_sentence * 1 +
+                          this.listenForm.listen_sdialog * 1 +
+                          this.listenForm.listen_ldialog * 1 +
+                          this.listenForm.listen_essay * 1 +
+                          this.readForm.read_word * 1
+                    ) {
+                      r1++;
+                      autoq[i].score = 2;
+                      autoq[i].sequence = r1;
+                      ques.push(autoq[i]);
+                    } else if (
+                      autoq[i].secondary_ques_type ==
+                        "阅读语段，选择与语段意思一致的一项" &&
+                      r2 <
+                        this.listenForm.listen_sentence * 1 +
+                          this.listenForm.listen_sdialog * 1 +
+                          this.listenForm.listen_ldialog * 1 +
+                          this.listenForm.listen_essay * 1 +
+                          this.readForm.read_word * 1 +
+                          this.readForm.read_dialog * 1
+                    ) {
+                      r2++;
+                      autoq[i].score = 2;
+                      autoq[i].sequence = r2;
+                      ques.push(autoq[i]);
+                    } else if (
+                      autoq[i].secondary_ques_type ==
+                        "阅读材料，选择正确答案" &&
+                      r3 <
+                        this.listenForm.listen_sentence * 1 +
+                          this.listenForm.listen_sdialog * 1 +
+                          this.listenForm.listen_ldialog * 1 +
+                          this.listenForm.listen_essay * 1 +
+                          this.readForm.read_word * 1 +
+                          this.readForm.read_dialog * 1 +
+                          this.readForm.read_material * 1
+                    ) {
+                      r3++;
+                      autoq[i].score = 2;
+                      autoq[i].sequence = r3;
+                      ques.push(autoq[i]);
+                    } else if (
+                      autoq[i].secondary_ques_type ==
+                        "阅读短文，选择正确答案" &&
+                      r4 <
+                        this.listenForm.listen_sentence * 1 +
+                          this.listenForm.listen_sdialog * 1 +
+                          this.listenForm.listen_ldialog * 1 +
+                          this.listenForm.listen_essay * 1 +
+                          this.readForm.read_word * 1 +
+                          this.readForm.read_dialog * 1 +
+                          this.readForm.read_material * 1 +
+                          this.readForm.read_essay * 1
+                    ) {
+                      r4++;
+                      autoq[i].score = 2;
+                      autoq[i].sequence = r4;
+                      ques.push(autoq[i]);
+                    } else if (
+                      autoq[i].secondary_ques_type ==
+                        "根据一段长对话写门诊病历记录" &&
+                      w <
+                        this.listenForm.listen_sentence * 1 +
+                          this.listenForm.listen_sdialog * 1 +
+                          this.listenForm.listen_ldialog * 1 +
+                          this.listenForm.listen_essay * 1 +
+                          this.readForm.read_word * 1 +
+                          this.readForm.read_dialog * 1 +
+                          this.readForm.read_material * 1 +
+                          this.readForm.read_essay * 1 +
+                          this.writeForm.write * 1
+                    ) {
+                      w++;
+                      autoq[i].score = 100;
+                      autoq[i].sequence = w;
+                      ques.push(autoq[i]);
+                    }
+                  }
+                }
+                ques.sort(function (a, b) {
+                  return a.sub_sequence - b.sub_sequence;
+                });
+                let questions = [];
+                let contents = [];
+                for (let i = 0; i < ques.length; i++) {
+                  let temp =
+                    ques[i].question_content_id +
+                    ques[i].primary_ques_type +
+                    ques[i].secondary_ques_type;
+                  let s = {
+                    temp: temp,
+                    content_id: ques[i].question_content_id,
+                    primary_ques_type: ques[i].primary_ques_type,
+                    secondary_ques_type: ques[i].secondary_ques_type,
+                  };
+                  contents.push(s);
+                  ques[i].temp = temp;
+                  let sub = {
+                    sub_sequence: 0,
+                    actual_sequence: ques[i].sequence,
+                    score: ques[i].score,
+                    question: ques[i].question,
+                    options: JSON.parse(ques[i].options),
+                    answer: ques[i].answer,
+                    anlysis: ques[i].anlysis,
+                    level_value: ques[i].ques_level,
+                    grade_value: ques[i].grade_standard,
+                    topic_value: ques[i].topic_outline,
+                    task_value: ques[i].task_outline,
+                    department_value: ques[i].department,
+                    qclass_value: ques[i].question_class,
+                    fivehe_value: ques[i].question_type_5he,
+                    A: "",
+                    B: "",
+                    C: "",
+                    D: "",
+                    author: ques[i].author,
+                    author_org: ques[i].author_org,
+                    time_created: ques[i].time_created,
+                  };
+                  let op = JSON.parse(ques[i].options);
+                  if (op != null && op != undefined) {
+                    for (let j = 0; j < op.length; j++) {
+                      if (op[j].index == "A") {
+                        sub.A = op[j].content;
+                      } else if (op[j].index == "B") {
+                        sub.B = op[j].content;
+                      } else if (op[j].index == "C") {
+                        sub.C = op[j].content;
+                      } else if (op[j].index == "D") {
+                        sub.D = op[j].content;
+                      }
+                    }
+                  }
+                  ques[i].sub = sub;
+                  if (contents.length == ques.length) {
+                    const map = new Map();
+                    const qc = contents.filter(
+                      (key) => !map.has(key.temp) && map.set(key.temp, 1)
+                    );
+                    for (let j = 0; j < qc.length; j++) {
+                      let sub = [];
+                      let sub_seq = 1;
+                      let score = 0;
+                      for (let k = 0; k < ques.length; k++) {
+                        if (qc[j].temp == ques[k].temp) {
+                          ques[k].sub.sub_sequence = sub_seq;
+                          sub.push(ques[k].sub);
+                          sub_seq++;
+                          score += ques[k].score;
+                        }
+                      }
+                      setTimeout(() => {
+                        let content = new BaaS.TableObject("question_content");
+                        content.get(qc[j].content_id).then(
+                          (con) => {
+                            let question = {
+                              primary_ques_type: qc[j].primary_ques_type,
+                              secondary_ques_type: qc[j].secondary_ques_type,
+                              total_score: score,
+                              saveQ: true,
+                              saveT: true,
+                              question_content: "",
+                              sub_question: [],
+                            };
+                            if (con.data.file_url != null) {
+                              question.question_content =
+                                con.data.file_url.path;
+                            } else {
+                              question.question_content = con.data.content;
+                            }
+                            question.sub_question = sub;
+                            questions.push(question);
+                            if (questions.length == qc.length) {
+                              questions.sort(function (a, b) {
+                                return (
+                                  a.sub_question[0].actual_sequence -
+                                  b.sub_question[0].actual_sequence
+                                );
+                              });
+                              let sequen = 1;
+                              let acts = 1;
+                              for (let h = 0; h < questions.length; h++) {
+                                questions[h].sequence = sequen;
+                                questions[h].name =
+                                  questions[h].sequence.toString();
+                                sequen++;
+                                for (
+                                  let g = 0;
+                                  g < questions[h].sub_question.length;
+                                  g++
+                                ) {
+                                  questions[h].sub_question[g].sub_sequence =
+                                    g + 1;
+                                  questions[h].sub_question[g].actual_sequence =
+                                    acts;
+                                  acts++;
+                                }
+                              }
+                              let ll1 = 0,
+                                ll2 = 0,
+                                ll3 = 0,
+                                ll4 = 0,
+                                rr1 = 0,
+                                rr2 = 0,
+                                rr3 = 0,
+                                rr4 = 0,
+                                ww = 0;
+                              let sl1 = 0,
+                                sl2 = 0,
+                                sl3 = 0,
+                                sl4 = 0,
+                                sr1 = 0,
+                                sr2 = 0,
+                                sr3 = 0,
+                                sr4 = 0,
+                                sw = 0;
+                              let ssl1 = 0,
+                                ssl2 = 0,
+                                ssl3 = 0,
+                                ssl4 = 0,
+                                ssr1 = 0,
+                                ssr2 = 0,
+                                ssr3 = 0,
+                                ssr4 = 0,
+                                ssw = 0;
+                              for (let z = 0; z < questions.length; z++) {
+                                if (
+                                  questions[z].secondary_ques_type ==
+                                  "听句子，判断对错"
+                                ) {
+                                  ll1++;
+                                  sl1 += questions[z].sub_question.length;
+                                  ssl1 += questions[z].total_score;
+                                } else if (
+                                  questions[z].secondary_ques_type ==
+                                  "听短对话，选择正确答案"
+                                ) {
+                                  ll2++;
+                                  sl2 += questions[z].sub_question.length;
+                                  ssl2 += questions[z].total_score;
+                                } else if (
+                                  questions[z].secondary_ques_type ==
+                                  "听长对话，选择正确答案"
+                                ) {
+                                  ll3++;
+                                  sl3 += questions[z].sub_question.length;
+                                  ssl3 += questions[z].total_score;
+                                } else if (
+                                  questions[z].secondary_ques_type ==
+                                  "听短文，选择正确答案"
+                                ) {
+                                  ll4++;
+                                  sl4 += questions[z].sub_question.length;
+                                  ssl4 += questions[z].total_score;
+                                } else if (
+                                  questions[z].secondary_ques_type ==
+                                  "选择正确的词语填空"
+                                ) {
+                                  rr1++;
+                                  sr1 += questions[z].sub_question.length;
+                                  ssr1 += questions[z].total_score;
+                                } else if (
+                                  questions[z].secondary_ques_type ==
+                                  "阅读语段，选择与语段意思一致的一项"
+                                ) {
+                                  rr2++;
+                                  sr2 += questions[z].sub_question.length;
+                                  ssr2 += questions[z].total_score;
+                                } else if (
+                                  questions[z].secondary_ques_type ==
+                                  "阅读材料，选择正确答案"
+                                ) {
+                                  rr3++;
+                                  sr3 += questions[z].sub_question.length;
+                                  ssr3 += questions[z].total_score;
+                                } else if (
+                                  questions[z].secondary_ques_type ==
+                                  "阅读短文，选择正确答案"
+                                ) {
+                                  rr4++;
+                                  sr4 += questions[z].sub_question.length;
+                                  ssr4 += questions[z].total_score;
+                                } else if (
+                                  questions[z].secondary_ques_type ==
+                                  "根据一段长对话写门诊病历记录"
+                                ) {
+                                  ww++;
+                                  sw += questions[z].sub_question.length;
+                                  ssw += questions[z].total_score;
+                                }
+                              }
+                              let ques_type = [
+                                {
+                                  primary: "听力",
+                                  secondary: [
+                                    {
+                                      type: "听句子，判断对错",
+                                      start: 0,
+                                      end: ll1 - 1,
+                                      hoverS: false,
+                                      num: sl1,
+                                      score: ssl1,
+                                    },
+                                    {
+                                      type: "听短对话，选择正确答案",
+                                      start: ll1,
+                                      end: ll1 + ll2 - 1,
+                                      hoverS: false,
+                                      num: sl2,
+                                      score: ssl2,
+                                    },
+                                    {
+                                      type: "听长对话，选择正确答案",
+                                      start: ll1 + ll2,
+                                      end: ll1 + ll2 + ll3 - 1,
+                                      hoverS: false,
+                                      num: sl3,
+                                      score: ssl3,
+                                    },
+                                    {
+                                      type: "听短文，选择正确答案",
+                                      start: ll1 + ll2 + ll3,
+                                      end: ll1 + ll2 + ll3 + ll4 - 1,
+                                      hoverS: false,
+                                      num: sl4,
+                                      score: ssl4,
+                                    },
+                                  ],
+                                  hoverP: false,
+                                  total_num: sl1 + sl2 + sl3 + sl4,
+                                  total_score: ssl1 + ssl2 + ssl3 + ssl4,
+                                },
+                                {
+                                  primary: "阅读",
+                                  secondary: [
+                                    {
+                                      type: "选择正确的词语填空",
+                                      start: ll1 + ll2 + ll3 + ll4,
+                                      end: ll1 + ll2 + ll3 + ll4 + rr1 - 1,
+                                      hoverS: false,
+                                      num: sr1,
+                                      score: ssr1,
+                                    },
+                                    {
+                                      type: "阅读语段，选择与语段意思一致的一项",
+                                      start: ll1 + ll2 + ll3 + ll4 + rr1,
+                                      end:
+                                        ll1 + ll2 + ll3 + ll4 + rr1 + rr2 - 1,
+                                      hoverS: false,
+                                      num: sr2,
+                                      score: ssr2,
+                                    },
+                                    {
+                                      type: "阅读材料，选择正确答案",
+                                      start: ll1 + ll2 + ll3 + ll4 + rr1 + rr2,
+                                      end:
+                                        ll1 +
+                                        ll2 +
+                                        ll3 +
+                                        ll4 +
+                                        rr1 +
+                                        rr2 +
+                                        rr3 -
+                                        1,
+                                      hoverS: false,
+                                      num: sr3,
+                                      score: ssr3,
+                                    },
+                                    {
+                                      type: "阅读短文，选择正确答案",
+                                      start:
+                                        ll1 + ll2 + ll3 + ll4 + rr1 + rr2 + rr3,
+                                      end:
+                                        ll1 +
+                                        ll2 +
+                                        ll3 +
+                                        ll4 +
+                                        rr1 +
+                                        rr2 +
+                                        rr3 +
+                                        rr4 -
+                                        1,
+                                      hoverS: false,
+                                      num: sr4,
+                                      score: ssr4,
+                                    },
+                                  ],
+                                  hoverP: false,
+                                  total_num: sr1 + sr2 + sr3 + sr4,
+                                  total_score: ssr1 + ssr2 + ssr3 + ssr4,
+                                },
+                                {
+                                  primary: "写作",
+                                  secondary: [
+                                    {
+                                      type: "根据一段长对话写门诊病历记录",
+                                      start:
+                                        ll1 +
+                                        ll2 +
+                                        ll3 +
+                                        ll4 +
+                                        rr1 +
+                                        rr2 +
+                                        rr3 +
+                                        rr4,
+                                      end:
+                                        ll1 +
+                                        ll2 +
+                                        ll3 +
+                                        ll4 +
+                                        rr1 +
+                                        rr2 +
+                                        rr3 +
+                                        rr4 +
+                                        ww -
+                                        1,
+                                      hoverS: false,
+                                      num: sw,
+                                      score: ssw,
+                                    },
+                                  ],
+                                  hoverP: false,
+                                  total_num: sw,
+                                  total_score: ssw,
+                                },
+                              ];
+                              let p = [];
+                              let s = [];
+                              for (let q = 0; q < ques_type.length; q++) {
+                                if (ques_type[q].total_num == 0) {
+                                  p.push(q);
+                                }
+                              }
+                              p.sort(function (a, b) {
+                                return b - a;
+                              });
+                              for (let q = p[0]; q >= p[p.length - 1]; q--) {
+                                ques_type.splice(q, 1);
+                              }
+                              for (let q = 0; q < ques_type.length; q++) {
+                                let t = {
+                                  p: q,
+                                  s: [],
+                                };
+                                for (
+                                  let w = 0;
+                                  w < ques_type[q].secondary.length;
+                                  w++
+                                ) {
+                                  if (ques_type[q].secondary[w].num == 0) {
+                                    t.s.push(w);
+                                  }
+                                }
+                                if (t.s.length != 0) {
+                                  s.push(t);
+                                }
+                              }
+                              s.sort(function (a, b) {
+                                return b.p - a.p;
+                              });
+                              for (let q = 0; q < s.length; q++) {
+                                s[q].s.sort(function (a, b) {
+                                  return b - a;
+                                });
+                              }
+                              for (let q = 0; q < s.length; q++) {
+                                for (let w = 0; w < s[q].s.length; w++) {
+                                  ques_type[s[q].p].secondary.splice(
+                                    s[q].s[w],
+                                    1
+                                  );
+                                }
+                              }
+                              sessionStorage.setItem(
+                                "questions",
+                                JSON.stringify(questions)
+                              );
+                              sessionStorage.setItem(
+                                "ques_type",
+                                JSON.stringify(ques_type)
+                              );
+                              sessionStorage.setItem("currentQues", 1);
+                              sessionStorage.setItem(
+                                "currentSubQues",
+                                questions[0].sub_question.length
+                              );
+                              sessionStorage.setItem(
+                                "title",
+                                this.ruleForm.paper_title
+                              );
+                              if (this.ruleForm.paper_type == "模考") {
+                                sessionStorage.setItem("exam", true);
+                              } else {
+                                sessionStorage.setItem("exam", false);
+                              }
+                              sessionStorage.setItem(
+                                "ques_num",
+                                sl1 +
+                                  sl2 +
+                                  sl3 +
+                                  sl4 +
+                                  sr1 +
+                                  sr2 +
+                                  sr3 +
+                                  sr4 +
+                                  sw
+                              );
+                              sessionStorage.setItem(
+                                "ques_score",
+                                ssl1 +
+                                  ssl2 +
+                                  ssl3 +
+                                  ssl4 +
+                                  ssr1 +
+                                  ssr2 +
+                                  ssr3 +
+                                  ssr4 +
+                                  ssw
+                              );
+                              loading.close();
+                              Cookies.set("make_out", "third");
+                              this.$router.push("/mcreatePaper");
+                            }
+                          },
+                          (err) => {
+                            console.log(err);
+                          }
+                        );
+                      }, 2000);
+                    }
+                  }
+                }
+              },
+              (err) => {
+                console.log(err);
+              }
+            );
+        }
       }
     },
     handleSelectionChange(val) {
@@ -1100,7 +1983,7 @@ export default {
       }
       let time = 0;
       if (catanum == 0) {
-        time = 1000;
+        time = 2000;
       } else {
         time = catanum * 3000;
       }
@@ -1507,15 +2390,15 @@ export default {
             });
           }
           setTimeout(() => {
+            console.log(f);
             downloadWordZip(f);
-          }, 1000);
-
-          loading.close();
-          this.exVisible = false;
-          this.$message({
-            message: "导出成功",
-            type: "success",
-          });
+            loading.close();
+            this.exVisible = false;
+            this.$message({
+              message: "导出成功",
+              type: "success",
+            });
+          }, time * 2);
         }, time);
       }
       this.$refs.multipleTable.clearSelection();
@@ -1566,6 +2449,12 @@ export default {
     },
     // 读取压缩文件
     async componentImport() {
+      const loading = this.$loading({
+        lock: true,
+        text: "正在组卷中，请稍后",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)",
+      });
       const zip = new JSZip();
       const zipData = await zip.loadAsync(this.fileList[0].raw);
       var i = 0;
@@ -1919,10 +2808,10 @@ export default {
                       };
                       questions_detail.push(q);
                       if (questions_detail.length == this.excelFile.length) {
+                        let num = 0;
                         questions_detail.sort(function (a, b) {
                           return a.sub_sequence - b.sub_sequence;
                         });
-
                         for (let a = 0; a < this.excelFile.length; a++) {
                           for (let b = 0; b < ques_type.length; b++) {
                             if (
@@ -1946,13 +2835,18 @@ export default {
                                     this.excelFile[a].score;
                                   if (ques_type[b].secondary[c].start == -1) {
                                     ques_type[b].secondary[c].start =
-                                      this.excelFile[a].sequence - 1;
+                                      this.excelFile[a].sequence - 1 - num;
                                     ques_type[b].secondary[c].end =
-                                      this.excelFile[a].sequence - 1;
+                                      this.excelFile[a].sequence - 1 - num;
                                     ques_type[b].start =
-                                      this.excelFile[a].sequence - 1;
-                                  } else {
+                                      this.excelFile[a].sequence - 1 - num;
+                                  } else if (
+                                    this.excelFile[a].question_content_id !=
+                                    this.excelFile[a - 1].question_content_id
+                                  ) {
                                     ques_type[b].secondary[c].end++;
+                                  } else {
+                                    num++;
                                   }
                                 }
                               }
@@ -2007,7 +2901,9 @@ export default {
                                 message: "导入成功",
                                 type: "success",
                               });
-                              this.exVisible = false;
+                              loading.close();
+                              this.importFile = false;
+                              this.init();
                             },
                             (err) => {
                               console.log(err);
@@ -2075,6 +2971,7 @@ export default {
                                     questions_detail.length ==
                                     this.excelFile.length
                                   ) {
+                                    let num = 0;
                                     questions_detail.sort(function (a, b) {
                                       return a.sub_sequence - b.sub_sequence;
                                     });
@@ -2117,15 +3014,25 @@ export default {
                                                   c
                                                 ].start =
                                                   this.excelFile[a].sequence -
-                                                  1;
+                                                  1 -
+                                                  num;
                                                 ques_type[b].secondary[c].end =
                                                   this.excelFile[a].sequence -
-                                                  1;
+                                                  1 -
+                                                  num;
                                                 ques_type[b].start =
                                                   this.excelFile[a].sequence -
-                                                  1;
-                                              } else {
+                                                  1 -
+                                                  num;
+                                              } else if (
+                                                this.excelFile[a]
+                                                  .question_content_id !=
+                                                this.excelFile[a - 1]
+                                                  .question_content_id
+                                              ) {
                                                 ques_type[b].secondary[c].end++;
+                                              } else {
+                                                num++;
                                               }
                                             }
                                           }
@@ -2187,7 +3094,9 @@ export default {
                                             message: "导入成功",
                                             type: "success",
                                           });
-                                          this.exVisible = false;
+                                          loading.close();
+                                          this.importFile = false;
+                                          this.init();
                                         },
                                         (err) => {
                                           console.log(err);
@@ -2237,6 +3146,7 @@ export default {
                                         questions_detail.length ==
                                         this.excelFile.length
                                       ) {
+                                        let num = 0;
                                         questions_detail.sort(function (a, b) {
                                           return (
                                             a.sub_sequence - b.sub_sequence
@@ -2286,18 +3196,31 @@ export default {
                                                       c
                                                     ].start =
                                                       this.excelFile[a]
-                                                        .sequence - 1;
+                                                        .sequence -
+                                                      1 -
+                                                      num;
                                                     ques_type[b].secondary[
                                                       c
                                                     ].end =
                                                       this.excelFile[a]
-                                                        .sequence - 1;
+                                                        .sequence -
+                                                      1 -
+                                                      num;
                                                     ques_type[b].start =
                                                       this.excelFile[a]
-                                                        .sequence - 1;
-                                                  } else {
+                                                        .sequence -
+                                                      1 -
+                                                      num;
+                                                  } else if (
+                                                    this.excelFile[a]
+                                                      .question_content_id !=
+                                                    this.excelFile[a - 1]
+                                                      .question_content_id
+                                                  ) {
                                                     ques_type[b].secondary[c]
                                                       .end++;
+                                                  } else {
+                                                    num++;
                                                   }
                                                 }
                                               }
@@ -2375,7 +3298,9 @@ export default {
                                                 message: "导入成功",
                                                 type: "success",
                                               });
-                                              this.exVisible = false;
+                                              loading.close();
+                                              this.importFile = false;
+                                              this.init();
                                             },
                                             (err) => {
                                               console.log(err);
@@ -2468,5 +3393,11 @@ export default {
 .paper .move .el-button + .el-button,
 .paperCatalog .move .el-button + .el-button {
   margin-left: 0px;
+}
+.paper .out {
+  margin-top: 20px;
+}
+.paper .out .el-select {
+  width: 558px;
 }
 </style>
