@@ -14,6 +14,7 @@ import questionCatalog from '@/views/make_out/question/questionCatalog.vue'
 import paperCatalog from '@/views/make_out/paper/paperCatalog.vue'
 import ques_checkEdit from '@/views/make_out/question/ques_checkEdit.vue'
 import addQuestion from '@/views/make_out/question/addQuestion.vue'
+// import autoQues from '@/views/make_out/question/autoQues.vue'
 // import paper from '@/components/paperDetail.vue'
 import mcreatePaper from '@/views/make_out/paper/mcreatePaper.vue'
 import home from '@/views/home.vue'
@@ -133,6 +134,11 @@ export default new Router({
             name: 'addQuestion',
             component: addQuestion
         },
+        // {
+        //     path: '/autoQues',
+        //     name: 'autoQues',
+        //     component: autoQues
+        // },
         {
             path: '/mcreatePaper',
             name: 'mcreatePaper',

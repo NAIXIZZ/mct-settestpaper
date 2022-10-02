@@ -14,6 +14,19 @@
         @select="queryKg(queryNode)"
         @clear="drawWordCloud()"
       ></el-autocomplete>
+      <!-- <el-select
+              v-model="queryNum"
+              placeholder="请选择"
+              clearable
+            >
+              <el-option
+                v-for="item in options"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              >
+              </el-option>
+            </el-select> -->
       <el-button
         type="success"
         icon="el-icon-search"
@@ -70,7 +83,7 @@ export default {
       var myCharts = document.getElementsByClassName('cloud');
       for (let i = 0; i < myCharts.length; i++) {
         let word_cloud = new BaaS.TableObject("word_cloud")
-        console.log(this.title[i])
+        // console.log(this.title[i])
         let cloudData = new Array()
         let query = new BaaS.Query()
         query.compare('category', '=', this.title[i])
@@ -84,7 +97,7 @@ export default {
         }, err => {
           console.log(err)
         })
-        console.log(cloudData)
+        // console.log(cloudData)
         setTimeout(() => {
           var myCloud = this.$echarts.init(myCharts[i]);
           var option;
@@ -116,6 +129,13 @@ export default {
                   var colors = ['#fda67e', '#81cacc', '#cca8ba', "#88cc81", "#82a0c5", '#fddb7e', '#735ba1', '#bda29a', '#6e7074', '#546570', '#c4ccd3'];
                   return colors[parseInt(Math.random() * 10)];
                 },
+                // color: function () {
+                //   return 'rgb(' + [
+                //     Math.round(Math.random() * 255),
+                //     Math.round(Math.random() * 255),
+                //     Math.round(Math.random() * 255)
+                //   ].join(',') + ')';
+                // },
                 emphasis: {
                   shadowBlur: 10,
                   shadowColor: '#333'

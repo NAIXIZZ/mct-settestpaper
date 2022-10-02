@@ -166,21 +166,28 @@
                     :src="item.content"
                     controls="controls"
                   ></audio>
-                  <p class="ques-content">{{ item.sub_sequence }}.</p>
                   <div
-                    v-for="s in item.options"
-                    :key="s.index"
+                    v-for="ques in item.info"
+                    :key="ques.id"
                   >
-                    <p class="options">{{ s.index }}.{{ s.content }}</p>
+                    <p class="ques-content">{{ ques.sub_sequence }}.</p>
+                    <div
+                      v-for="s in ques.options"
+                      :key="s.index"
+                    >
+                      <p class="options">{{ s.index }}.{{ s.content }}</p>
+                    </div>
+                    <p
+                      class="answer"
+                      v-if="showAnswer"
+                    >答案：{{ ques.answer }}</p>
+                    <p
+                      class="analysis"
+                      v-if="showAnalysis"
+                    >解析：{{ ques.analysis }}</p>
+
                   </div>
-                  <p
-                    class="answer"
-                    v-if="showAnswer"
-                  >答案：{{ item.answer }}</p>
-                  <p
-                    class="analysis"
-                    v-if="showAnalysis"
-                  >解析：{{ item.analysis }}</p>
+
                 </div>
               </div>
             </div>
@@ -194,21 +201,26 @@
                   :key="item.id"
                 >
                   <p class="ques-content">{{ item.content }}</p>
-                  <p class="options">{{ item.sub_sequence }}.</p>
                   <div
-                    v-for="s in item.options"
-                    :key="s.index"
+                    v-for="ques in item.info"
+                    :key="ques.id"
                   >
-                    <p class="options">{{ s.index }}.{{ s.content }}</p>
+                    <p class="options">{{ ques.sub_sequence }}.</p>
+                    <div
+                      v-for="s in ques.options"
+                      :key="s.index"
+                    >
+                      <p class="options">{{ s.index }}.{{ s.content }}</p>
+                    </div>
+                    <p
+                      class="answer"
+                      v-if="showAnswer"
+                    >答案：{{ ques.answer }}</p>
+                    <p
+                      class="analysis"
+                      v-if="showAnalysis"
+                    >解析：{{ ques.analysis }}</p>
                   </div>
-                  <p
-                    class="answer"
-                    v-if="showAnswer"
-                  >答案：{{ item.answer }}</p>
-                  <p
-                    class="analysis"
-                    v-if="showAnalysis"
-                  >解析：{{ item.analysis }}</p>
                 </div>
               </div>
 
@@ -243,21 +255,26 @@
                   :key="item.id"
                 >
                   <img :src="item.content">
-                  <p class="ques-content">{{ item.sub_sequence }}.{{ item.question }}</p>
                   <div
-                    v-for="s in item.options"
-                    :key="s.index"
+                    v-for="ques in item.info"
+                    :key="ques.id"
                   >
-                    <p class="options">{{ s.index }}.{{ s.content }}</p>
+                    <p class="ques-content">{{ ques.sub_sequence }}.{{ ques.question }}</p>
+                    <div
+                      v-for="s in ques.options"
+                      :key="s.index"
+                    >
+                      <p class="options">{{ s.index }}.{{ s.content }}</p>
+                    </div>
+                    <p
+                      class="answer"
+                      v-if="showAnswer"
+                    >答案：{{ ques.answer }}</p>
+                    <p
+                      class="analysis"
+                      v-if="showAnalysis"
+                    >解析：{{ ques.analysis }}</p>
                   </div>
-                  <p
-                    class="answer"
-                    v-if="showAnswer"
-                  >答案：{{ item.answer }}</p>
-                  <p
-                    class="analysis"
-                    v-if="showAnalysis"
-                  >解析：{{ item.analysis }}</p>
                 </div>
               </div>
 
@@ -268,21 +285,26 @@
                   :key="item.id"
                 >
                   <p class="ques-content">{{ item.content }}</p>
-                  <p class="options">{{ item.sub_sequence }}.</p>
                   <div
-                    v-for="s in item.options"
-                    :key="s.index"
+                    v-for="ques in item.info"
+                    :key="ques.id"
                   >
-                    <p class="options">{{ s.index }}.{{ s.content }}</p>
+                    <p class="options">{{ ques.sub_sequence }}.{{ ques.question }}</p>
+                    <div
+                      v-for="s in ques.options"
+                      :key="s.index"
+                    >
+                      <p class="options">{{ s.index }}.{{ s.content }}</p>
+                    </div>
+                    <p
+                      class="answer"
+                      v-if="showAnswer"
+                    >答案：{{ ques.answer }}</p>
+                    <p
+                      class="analysis"
+                      v-if="showAnalysis"
+                    >解析：{{ ques.analysis }}</p>
                   </div>
-                  <p
-                    class="answer"
-                    v-if="showAnswer"
-                  >答案：{{ item.answer }}</p>
-                  <p
-                    class="analysis"
-                    v-if="showAnalysis"
-                  >解析：{{ item.analysis }}</p>
                 </div>
               </div>
             </div>
@@ -331,8 +353,8 @@ export default {
   props: {},
   data () {
     return {
-      isAnswer: false,
-      isAnalysis: false,
+      isAnswer: true,
+      isAnalysis: true,
       showAnswer: true,
       showAnalysis: true,
       paper_message: {
@@ -393,7 +415,7 @@ export default {
         for (let i = 0; i < res.data.objects[0].questions_id.length; i++) {
           this.questions_id[i] = res.data.objects[0].questions_id[i]
         }
-        console.log(this.questions_detail)
+        // console.log(this.questions_detail)
         let questions_information = new BaaS.TableObject("questions_information")
         for (let i = 0; i < this.questions_detail.length; i++) {
           let queryId = new BaaS.Query()
@@ -457,16 +479,31 @@ export default {
               listen_essay_info.options = obj
               listen_essay_info.score = this.questions_detail[i].score
               listen_essay_info.sub_sequence = this.questions_detail[i].sub_sequence
-              let queryContentId = new BaaS.Query()
-              queryContentId.compare('id', '=', listen_essay_info.question_content_id)
-              question_content.setQuery(queryContentId).find().then(res => {
-                listen_essay_info.content = res.data.objects[0].file_url.path
-                this.$forceUpdate();
-              }, err => {
-                console.log(err)
-              })
-              this.listen_essay.push(listen_essay_info)
-              this.listen_essay.sort(sortBy('sub_sequence'))
+              var isExist = false
+              for (let i = 0; i < this.listen_essay.length; i++) {
+                if (res.data.objects[0].question_content_id == this.listen_essay[i].question_content_id) {
+                  isExist = true
+                  this.listen_essay[i].info.push(listen_essay_info)
+                  this.listen_essay[i].info.sort(sortBy('sub_sequence'))
+                }
+              }
+              var temp_listen_essay_info = {}
+              var info = []
+              if (!isExist) {
+                temp_listen_essay_info.question_content_id = res.data.objects[0].question_content_id
+                let queryContentId = new BaaS.Query()
+                queryContentId.compare('id', '=', res.data.objects[0].question_content_id)
+                question_content.setQuery(queryContentId).find().then(res => {
+                  temp_listen_essay_info.content = res.data.objects[0].file_url.path
+                  this.$forceUpdate();
+                }, err => {
+                  console.log(err)
+                })
+                info.push(listen_essay_info)
+                info.sort(sortBy('sub_sequence'))
+                temp_listen_essay_info.info = info
+                this.listen_essay.push(temp_listen_essay_info)
+              }
             } else if (res.data.objects[0].secondary_ques_type == '选择正确的词语填空') {
               var read_word_info = {}
               read_word_info = res.data.objects[0]
@@ -474,16 +511,31 @@ export default {
               read_word_info.options = obj
               read_word_info.score = this.questions_detail[i].score
               read_word_info.sub_sequence = this.questions_detail[i].sub_sequence
-              let queryContentId = new BaaS.Query()
-              queryContentId.compare('id', '=', read_word_info.question_content_id)
-              question_content.setQuery(queryContentId).find().then(res => {
-                read_word_info.content = res.data.objects[0].content
-                this.$forceUpdate();
-              }, err => {
-                console.log(err)
-              })
-              this.read_word.push(read_word_info)
-              this.read_word.sort(sortBy('sub_sequence'))
+              var isExist = false
+              for (let i = 0; i < this.read_word.length; i++) {
+                if (res.data.objects[0].question_content_id == this.read_word[i].question_content_id) {
+                  isExist = true
+                  this.read_word[i].info.push(read_word_info)
+                  this.read_word[i].info.sort(sortBy('sub_sequence'))
+                }
+              }
+              var temp_read_word_info = {}
+              var info = []
+              if (!isExist) {
+                temp_read_word_info.question_content_id = res.data.objects[0].question_content_id
+                let queryContentId = new BaaS.Query()
+                queryContentId.compare('id', '=', res.data.objects[0].question_content_id)
+                question_content.setQuery(queryContentId).find().then(res => {
+                  temp_read_word_info.content = res.data.objects[0].content
+                  this.$forceUpdate();
+                }, err => {
+                  console.log(err)
+                })
+                info.push(read_word_info)
+                info.sort(sortBy('sub_sequence'))
+                temp_read_word_info.info = info
+                this.read_word.push(temp_read_word_info)
+              }
             } else if (res.data.objects[0].secondary_ques_type == '阅读语段，选择与语段意思一致的一项') {
               var read_phrase_info = {}
               read_phrase_info = res.data.objects[0]
@@ -508,16 +560,31 @@ export default {
               read_material_info.options = obj
               read_material_info.score = this.questions_detail[i].score
               read_material_info.sub_sequence = this.questions_detail[i].sub_sequence
-              let queryContentId = new BaaS.Query()
-              queryContentId.compare('id', '=', read_material_info.question_content_id)
-              question_content.setQuery(queryContentId).find().then(res => {
-                read_material_info.content = res.data.objects[0].file_url.path
-                this.$forceUpdate();
-              }, err => {
-                console.log(err)
-              })
-              this.read_material.push(read_material_info)
-              this.read_material.sort(sortBy('sub_sequence'))
+              var isExist = false
+              for (let i = 0; i < this.read_material.length; i++) {
+                if (res.data.objects[0].question_content_id == this.read_material[i].question_content_id) {
+                  isExist = true
+                  this.read_material[i].info.push(read_material_info)
+                  this.read_material[i].info.sort(sortBy('sub_sequence'))
+                }
+              }
+              var temp_read_material_info = {}
+              var info = []
+              if (!isExist) {
+                temp_read_material_info.question_content_id = res.data.objects[0].question_content_id
+                let queryContentId = new BaaS.Query()
+                queryContentId.compare('id', '=', res.data.objects[0].question_content_id)
+                question_content.setQuery(queryContentId).find().then(res => {
+                  temp_read_material_info.content = res.data.objects[0].file_url.path
+                  this.$forceUpdate();
+                }, err => {
+                  console.log(err)
+                })
+                info.push(read_material_info)
+                info.sort(sortBy('sub_sequence'))
+                temp_read_material_info.info = info
+                this.read_material.push(temp_read_material_info)
+              }
             } else if (res.data.objects[0].secondary_ques_type == '阅读短文，选择正确答案') {
               var read_essay_info = {}
               read_essay_info = res.data.objects[0]
@@ -525,16 +592,31 @@ export default {
               read_essay_info.options = obj
               read_essay_info.score = this.questions_detail[i].score
               read_essay_info.sub_sequence = this.questions_detail[i].sub_sequence
-              let queryContentId = new BaaS.Query()
-              queryContentId.compare('id', '=', read_essay_info.question_content_id)
-              question_content.setQuery(queryContentId).find().then(res => {
-                read_essay_info.content = res.data.objects[0].content
-                this.$forceUpdate();
-              }, err => {
-                console.log(err)
-              })
-              this.read_essay.push(read_essay_info)
-              this.read_essay.sort(sortBy('sub_sequence'))
+              var isExist = false
+              for (let i = 0; i < this.read_essay.length; i++) {
+                if (res.data.objects[0].question_content_id == this.read_essay[i].question_content_id) {
+                  isExist = true
+                  this.read_essay[i].info.push(read_essay_info)
+                  this.read_essay[i].info.sort(sortBy('sub_sequence'))
+                }
+              }
+              var temp_read_essay_info = {}
+              var info = []
+              if (!isExist) {
+                temp_read_essay_info.question_content_id = res.data.objects[0].question_content_id
+                let queryContentId = new BaaS.Query()
+                queryContentId.compare('id', '=', res.data.objects[0].question_content_id)
+                question_content.setQuery(queryContentId).find().then(res => {
+                  temp_read_essay_info.content = res.data.objects[0].content
+                  this.$forceUpdate();
+                }, err => {
+                  console.log(err)
+                })
+                info.push(read_essay_info)
+                info.sort(sortBy('sub_sequence'))
+                temp_read_essay_info.info = info
+                this.read_essay.push(temp_read_essay_info)
+              }
             } else if (res.data.objects[0].secondary_ques_type == '根据一段长对话写门诊病历记录') {
               var write_info = {}
               write_info = res.data.objects[0]
@@ -555,53 +637,98 @@ export default {
             console.log(err)
           })
         }
+        // console.log(this.listen_sentence)
+        // console.log(this.listen_sdialogue)
+        // console.log(this.listen_ldialogue)
+        // console.log(this.listen_essay)
+        // console.log(this.read_word)
+        // console.log(this.read_phrase)
+        // console.log(this.read_material)
+        // console.log(this.read_essay)
+        // console.log(this.write)
       }, err => {
         console.log(err)
       })
     },
     // 导出word
-    base64DataURLToArrayBuffer (dataURL) {
-      const base64Regex = /^data:image\/(png|jpg|svg|svg\+xml);base64,/;
-      if (!base64Regex.test(dataURL)) {
-        return false;
-      }
-      const stringBase64 = dataURL.replace(base64Regex, "");
-      let binaryString;
-      if (typeof window !== "undefined") {
-        binaryString = window.atob(stringBase64);
-      } else {
-        binaryString = new Buffer(stringBase64, "base64").toString("binary");
-      }
-      const len = binaryString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
-        const ascii = binaryString.charCodeAt(i);
-        bytes[i] = ascii;
-      }
-      return bytes.buffer;
-    },
+    // getBase64 (imgUrl) {
+    //   return new Promise((resolve, reject) => {
+    //     window.URL = window.URL || window.webkitURL;
+    //     var xhr = new XMLHttpRequest();
+    //     xhr.open('get', imgUrl, true); // 至关重要
+    //     xhr.responseType = 'blob';
+    //     xhr.onload = function () {
+    //       if (this.status == 200) {
+    //         //得到一个blob对象
+    //         var blob = this.response;
+    //         console.log('blob', blob); // 至关重要
+    //         let oFileReader = new FileReader();
+    //         oFileReader.onloadend = function (e) {
+    //           // 此处拿到的已经是 base64的图片了
+    //           resolve(e.target.result);
+    //         };
+    //         oFileReader.onerror = reject;
+    //         oFileReader.readAsDataURL(blob);
+    //       }
+    //     };
+    //     xhr.send();
+    //   })
+    // },
+    // base64DataURLToArrayBuffer (dataURL) {
+    //   const base64Regex = /^data:image\/(png|jpg|svg|svg\+xml);base64,/;
+    //   if (!base64Regex.test(dataURL)) {
+    //     return false;
+    //   }
+    //   const stringBase64 = dataURL.replace(base64Regex, "");
+    //   let binaryString;
+    //   if (typeof window !== "undefined") {
+    //     binaryString = window.atob(stringBase64);
+    //   } else {
+    //     binaryString = new Buffer(stringBase64, "base64").toString("binary");
+    //   }
+    //   const len = binaryString.length;
+    //   const bytes = new Uint8Array(len);
+    //   for (let i = 0; i < len; i++) {
+    //     const ascii = binaryString.charCodeAt(i);
+    //     bytes[i] = ascii;
+    //   }
+    //   return bytes.buffer;
+    // },
     loadFile (url, callback) {
       PizZipUtils.getBinaryContent(url, callback);
     },
     generate () {
-      var ImageModule = require('open-docxtemplater-image-module');
+      // var ImageModule = require('open-docxtemplater-image-module');
       // 点击导出word
       var that = this;
-      this.loadFile("word.docx", function (error, content) {
+      var wordName
+      if (!this.isAnswer && !this.isAnalysis) {//无答案无解析
+        wordName = "word0.docx"
+      }
+      else if (this.isAnswer && !this.isAnalysis) {//有答案无解析
+        wordName = "word1.docx"
+      }
+      else if (!this.isAnswer && this.isAnalysis) {//无答案有解析
+        wordName = "word2.docx"
+      }
+      else if (this.isAnswer && this.isAnalysis) {//有答案有解析
+        wordName = "word3.docx"
+      }
+      this.loadFile(wordName, function (error, content) {
         if (error) {
           throw error
         };
-        let opts = {}
-        opts.centered = true;  // 图片居中，在word模板中定义方式为{%%image}
-        opts.fileType = "docx";
-        opts.getImage = function (chartId) {
-          return that.base64DataURLToArrayBuffer(chartId);
-        }
-        opts.getSize = function () {
-          return [600, 300]
-        }
 
-        let imageModule = new ImageModule(opts);
+        // let opts = {}
+        // opts.centered = true;  // 图片居中，在word模板中定义方式为{%%image}
+        // opts.fileType = "docx";
+        // opts.getImage = function (chartId) {
+        //   return that.base64DataURLToArrayBuffer(chartId);
+        // }
+        // opts.getSize = function () {
+        //   return [600, 300]
+        // }
+        // let imageModule = new ImageModule(opts);
 
         var zip = new PizZip(content);
         var doc = new window.docxtemplater().loadZip(zip)
@@ -617,6 +744,9 @@ export default {
           read_material: that.read_material,
           read_essay: that.read_essay,
           write: that.write,
+          // isAnswer: that.isAnswer,
+          // isAnalysis: that.isAnalysis
+          // image: that.getBase64(that.read_material[0].content)
         });
         try {
           // render the document (replace all occurences of {first_name} by John, {last_name} by Doe, ...)

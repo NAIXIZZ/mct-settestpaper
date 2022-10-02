@@ -32,7 +32,7 @@
               label="实体1"
             >
             </el-table-column>
-            <el-table-column
+            <!-- <el-table-column
               prop="pinyin"
               label="拼音"
             >
@@ -41,7 +41,7 @@
               prop="english"
               label="英语"
             >
-            </el-table-column>
+            </el-table-column> -->
             <el-table-column
               prop="relation"
               label="关系"
@@ -114,14 +114,17 @@ export default {
       var categories = new Array()
       let query = new BaaS.Query()
       query.compare('entity1', '=', kgWord)
-      var node = new Object()
-      node['id'] = 0
-      node['name'] = kgWord
-      node['category'] = "MCT词汇"
-      nodes.push(node)
-      categories.push("MCT词汇")
-      kg.limit(1000).setQuery(query).select(['entity1', 'entity2', 'relation']).find().then(res => {
+      kg.limit(1000).setQuery(query).select(['entity1', 'entity2', 'relation', 'pinyin', 'english']).find().then(res => {
+        // console.log(res.data.objects)
         this.tableData = res.data.objects
+        var node = new Object()
+        node['id'] = 0
+        node['name'] = kgWord
+        node['category'] = "MCT词汇"
+        node['pinyin'] = res.data.objects[0].pinyin
+        node['english'] = res.data.objects[0].english
+        nodes.push(node)
+        categories.push("MCT词汇")
         for (let i = 0; i < res.data.objects.length; i++) {
           var node = new Object()
           node['id'] = i + 1
@@ -163,7 +166,12 @@ export default {
           },
           tooltip: {
             formatter: function (x) {
-              return x.data.name;
+              if (x.data.pinyin != undefined) {
+                return x.data.name + '，拼音：' + x.data.pinyin + '，英语：' + x.data.english;
+              }
+              else {
+                return x.data.name;
+              }
             },
           },
           toolbox: {

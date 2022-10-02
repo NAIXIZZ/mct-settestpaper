@@ -27,9 +27,24 @@
         <audio
           :src="file_url"
           controls="controls"
-          v-if="(file_url != null) & (question.primary_ques_type == '听力')"
+          v-if="
+            file_url != null &&
+            (file_url.search('.mp3') != -1 ||
+              file_url.search('.ogg') != -1 ||
+              file_url.search('.wav') != -1)
+          "
         ></audio>
-        <img :src="file_url" alt="" style="height: 250px" v-else />
+        <img
+          :src="file_url"
+          alt=""
+          style="height: 250px"
+          v-if="
+            file_url != null &&
+            (file_url.search('.png') != -1 ||
+              file_url.search('.jpg') != -1 ||
+              file_url.search('.gif') != -1)
+          "
+        />
         <div class="details">
           <p class="details_ques_content">
             {{ content }}
@@ -98,88 +113,33 @@
         </div>
       </div>
       <div v-show="question">
-        <!-- <div class="file">
-          <audio
-            :src="question.file_url.path"
-            controls="controls"
-            v-if="question.primary_ques_type == '听力' && change_file == false"
-          ></audio>
-          <audio
-            :src="question.file_url.path"
-            controls="controls"
-            v-if="question.primary_ques_type == '听力' && change_file == true"
-          ></audio>
-          <img
-            :src="question.file_url.path"
-            alt=""
-            v-if="
-              question.primary_ques_type != '听力' &&
-              question.file_url != null &&
-              change_file == false
-            "
-          />
-          <img ref="img" :src="image" alt="" />
-          <input type="file" id="file" @click="file" />
-        </div> -->
         <div class="edit_ques_content">
-          题干：
-          <div id="material">
-            <p v-if="content != null">{{ content }}</p>
-            <img :src="file_url" alt="" height="250px" />
-            <audio
-              :src="file_url"
-              controls="controls"
-              v-if="question.primary_ques_type == '听力'"
-            ></audio>
+          <div class="material">
+            题干：
+            <div id="material">
+              <p v-if="content != null">{{ content }}</p>
+              <img :src="file_url" alt="" height="250px" />
+            </div>
           </div>
-          <!-- <el-input
-            type="textarea"
-            :autosize="{ minRows: 4 }"
-            placeholder="请输入题干"
-            v-model="question.question_content"
+          <el-upload
+            ref="upload"
+            action=""
+            class="upload-demo"
+            :multiple="false"
+            accept=".mp3,.wav,.ogg"
+            :before-upload="beforeAvatarUpload"
+            :auto-upload="false"
+            :on-change="handleChange"
+            :on-exceed="handleExceed"
+            :on-remove="handleRemove"
+            :limit="1"
+            :file-list="fileList"
           >
-          </el-input> -->
+            <el-button>上传音频</el-button>
+          </el-upload>
+          <audio :src="audio" controls="controls" v-if="audio != ''"></audio>
         </div>
         <p class="warn">选项：答案选中项为正确答案标示。</p>
-        <!-- <div class="edit_sub_ques" v-if="question.sub_ques != null">
-          <div
-            v-for="(sub, index) in sub_question"
-            :key="sub.id"
-            class="edit_sub_ques_content"
-          >
-            <div class="edit_sub_ques_title">
-              {{ sub.sub_sequence }}.<el-input
-                v-model="sub.ques_content"
-                placeholder="请输入题目内容"
-              ></el-input>
-              <i class="el-icon-circle-plus-outline"></i>
-              <i class="el-icon-remove-outline"></i>
-              <i class="el-icon-arrow-up"></i>
-              <i class="el-icon-arrow-down"></i>
-            </div>
-            <div v-for="s in sub.options" :key="s.id" class="input_options">
-              <el-input v-model="s.content" placeholder="请输入选项">
-                <el-radio
-                  slot="prepend"
-                  v-model="sub.answer"
-                  :label="s.index"
-                  border
-                ></el-radio>
-              </el-input>
-            </div>
-            <div class="ques_analysis">
-              <el-checkbox v-model="checkboxGroup[index]">解析：</el-checkbox>
-              <el-input
-                type="textarea"
-                :autosize="{ minRows: 4 }"
-                placeholder="请输入解析"
-                v-model="sub.analysis"
-                v-show="checkboxGroup[index]"
-              >
-              </el-input>
-            </div>
-          </div>
-        </div> -->
         <div style="border-bottom: 1px dashed #c0c4cc">
           <div class="question">
             问题：
@@ -187,12 +147,6 @@
               <p>{{ question.question }}</p>
             </div>
           </div>
-          <!-- <el-input
-            v-model="question.question"
-            placeholder="请输入问题"
-            class="input_options"
-          >
-          </el-input> -->
           <div class="write_answer" v-if="question.primary_ques_type == '写作'">
             答案：
             <div id="answer">
@@ -213,11 +167,6 @@
             class="edit_ques_options"
             v-show="question.secondary_ques_type != '听句子，判断对错'"
           >
-            <!-- <el-input
-              v-model="s.content"
-              placeholder="请输入选项"
-              class="input_options"
-            > -->
             <el-radio
               slot="prepend"
               v-model="question.answer"
@@ -229,17 +178,8 @@
               <p>{{ s.content }}</p>
             </div>
           </div>
-          <!-- <div :id="question.options[0].index"></div> -->
           <div class="ques_analysis">
             解析：
-            <!-- <el-input
-              type="textarea"
-              :autosize="{ minRows: 4 }"
-              placeholder="请输入解析"
-              v-model="question.analysis"
-              v-show="checked"
-            >
-            </el-input> -->
             <div id="analysis">
               <p>{{ question.analysis }}</p>
             </div>
@@ -257,25 +197,6 @@
             </el-option>
           </el-select>
         </div>
-        <!-- <div class="knowledge" v-if="knowledge">
-          知识点：
-          <el-select
-            v-model="knowledge_value"
-            multiple
-            filterable
-            allow-create
-            default-first-option
-            placeholder="请搜索或添加知识点"
-          >
-            <el-option
-              v-for="item in knowledge"
-              :key="item.id"
-              :label="item.knowledge_point"
-              :value="item.id"
-            >
-            </el-option>
-          </el-select>
-        </div> -->
         <div class="knowledge">
           等级标准：
           <el-cascader
@@ -356,44 +277,6 @@
             </el-option>
           </el-select>
         </div>
-        <!-- <div class="knowledge">
-          考点：
-          <el-select
-            v-model="test_value"
-            multiple
-            filterable
-            allow-create
-            default-first-option
-            placeholder="请搜索或添加考点"
-          >
-            <el-option
-              v-for="item in test"
-              :key="item.id"
-              :label="item.test"
-              :value="item.id"
-            >
-            </el-option>
-          </el-select>
-        </div> -->
-        <!-- <div class="knowledge">
-          来源：
-          <el-select
-            v-model="source_value"
-            multiple
-            filterable
-            allow-create
-            default-first-option
-            placeholder="请搜索或添加来源"
-          >
-            <el-option
-              v-for="item in source"
-              :key="item.id"
-              :label="item.source"
-              :value="item.id"
-            >
-            </el-option>
-          </el-select>
-        </div> -->
         <div class="knowledge">
           题目类型：
           <el-select v-model="qclass_value" placeholder="请选择题目类型">
@@ -461,6 +344,9 @@
 import Cookie from "js-cookie";
 import Cookies from "js-cookie";
 import E from "wangeditor";
+var BaaS = require("minapp-sdk");
+let clientID = "395062a19e209a770059";
+BaaS.init(clientID);
 
 export default {
   name: "",
@@ -468,6 +354,9 @@ export default {
   props: {},
   data() {
     return {
+      audior: "",
+      audio: "",
+      fileList: [],
       option: ["A", "B", "C", "D"],
       selectQues: "",
       editor: [],
@@ -793,12 +682,90 @@ export default {
       author: "",
       author_org: "",
       time_created: "",
+      initial_content: "",
+      initial_file: "",
+      initail_audio: "",
     };
   },
   watch: {},
   computed: {},
   methods: {
+    beforeAvatarUpload(file) {
+      let isFile =
+        file.name.split(".")[file.name.split(".").length - 1] == "mp3" ||
+        file.name.split(".")[file.name.split(".").length - 1] == "wav" ||
+        file.name.split(".")[file.name.split(".").length - 1] == "ogg";
+      if (!isFile) {
+        this.$message.error("导入文件格式不正确");
+      }
+      return isFile;
+    },
+    handleChange(file, fileList) {
+      this.fileList.push(file);
+      if (
+        /\.(mp3)$/.test(this.fileList[0].raw.name) ||
+        /\.(wav)$/.test(this.fileList[0].raw.name) ||
+        /\.(ogg)$/.test(this.fileList[0].raw.name)
+      ) {
+        var reader = new FileReader();
+        reader.readAsDataURL(this.fileList[0].raw);
+        reader.onload = () => {
+          const result = this.dataURLtoFile(
+            reader.result,
+            this.fileList[0].raw.name
+          );
+          new Promise((resolve, reject) => {
+            this.audio = reader.result;
+            this.audior = result;
+          });
+        };
+      }
+    },
+    handleRemove(file, fileList) {
+      this.fileList = [];
+      this.audior = "";
+      this.audio = "";
+    },
+    handleExceed(files, fileList) {
+      this.$message.warning(
+        `当前限制选择 1 个文件，本次选择了 ${files.length} 个文件，共选择了 ${
+          files.length + fileList.length
+        } 个文件`
+      );
+    },
+    dataURLtoFile(dataURL, fileName, fileType) {
+      /**
+       * 注意：【不同文件不同类型】，例如【图片类型】就是`data:image/png;base64,${dataURL}`.split(',')
+       * 下面的是【excel文件(.xlsx尾缀)】的文件类型拼接，一个完整的 base64 应该
+       * 是这样的,例如： data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAMAAACelLz8AAAABGdBTUEAALGPC/xhBQAAACBjSFJN
+       */
+      // if (this.fileType == "xlsx") {
+      //   fileType =
+      //     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+      // } else if (this.fileType == "png") {
+      //   fileType = "image/png";
+      // } else if (this.fileType == "mp3") {
+      //   fileType = "audio/mp3";
+      // }
+      const arr = `data:${fileType};base64,${dataURL}`.split(",");
+      const mime = arr[0].match(/:(.*?);/)[1];
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      var name = fileName.split("/");
+      let blob = new File([u8arr], name[name.length - 1], { type: mime });
+      return blob;
+    },
     init() {
+      const loading = this.$loading({
+        lock: true,
+        text: "请稍后",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)",
+      });
       var BaaS = require("minapp-sdk");
       let clientID = "395062a19e209a770059";
       BaaS.init(clientID);
@@ -842,11 +809,15 @@ export default {
             if (this.question.time_created != null) {
               this.time_created = this.question.time_created;
             }
+            loading.close();
           },
           (err) => {
             console.log(err);
           }
         );
+      this.initial_content = this.content;
+      this.initial_file = this.file_url;
+      this.initail_audio = this.audio;
     },
     back() {
       Cookies.set("ques_checkEdit", "");
@@ -917,6 +888,7 @@ export default {
         .catch((_) => {});
     },
     async checkQues() {
+      this.file_url = "";
       var valid = true;
       if (this.level_value == "") {
         this.question.ques_level = null;
@@ -973,7 +945,7 @@ export default {
           break;
         }
         if (this.editor[i].toolbarSelector == "#material") {
-          if (this.editor[i].txt.text() == "") {
+          if (this.editor[i].txt.html() == "" && this.audio == "") {
             this.content = null;
             this.$message({
               message: "请填写题干",
@@ -982,6 +954,32 @@ export default {
             valid = false;
             break;
           } else {
+            if (
+              this.editor[i].txt.html().search("<img src=") != -1 &&
+              this.audio == ""
+            ) {
+              let src = "";
+              let a = this.editor[i].txt.html().search("<img src=");
+              let x = this.editor[i].txt.html();
+              for (let b = a + 10; b < x.length; b++) {
+                if (x[b] != '"') {
+                  src += x[b];
+                } else {
+                  break;
+                }
+              }
+              this.file_url = src;
+            } else if (
+              this.editor[i].txt.html().search("<img src=") != -1 &&
+              this.audio != ""
+            ) {
+              this.$message({
+                message: "图片和音频只支持一项，请修改",
+                type: "warning",
+              });
+              valid = false;
+              break;
+            }
             this.content = this.editor[i].txt.text();
           }
         }
@@ -1117,25 +1115,118 @@ export default {
       }
       return valid;
     },
+    dataURLtoFile(dataURL, fileName) {
+      /**
+       * 注意：【不同文件不同类型】，例如【图片类型】就是`data:image/png;base64,${dataURL}`.split(',')
+       * 下面的是【excel文件(.xlsx尾缀)】的文件类型拼接，一个完整的 base64 应该
+       * 是这样的,例如： data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAMAAACelLz8AAAABGdBTUEAALGPC/xhBQAAACBjSFJN
+       */
+      // if (this.fileType == "xlsx") {
+      //   fileType =
+      //     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+      // } else if (this.fileType == "png") {
+      //   fileType = "image/png";
+      // } else if (this.fileType == "mp3") {
+      //   fileType = "audio/mp3";
+      // }
+      const arr = dataURL.split(",");
+      const mime = arr[0].match(/:(.*?);/)[1];
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      var name = fileName.split("/");
+      let blob = new File([u8arr], name[name.length - 1], { type: mime });
+      return blob;
+    },
     saveQues() {
+      const loading = this.$loading({
+        lock: true,
+        text: "正在保存中，请稍后",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)",
+      });
       this.dialogVisible = false;
-      var BaaS = require("minapp-sdk");
-      let clientID = "395062a19e209a770059";
-      BaaS.init(clientID);
-      let saveContent = new BaaS.TableObject("question_content");
-      let content = saveContent.getWithoutData(
-        this.question.question_content_id
-      );
-      content.set("content", this.content);
-      content.update().then(
-        (res) => {
-          this.question.question_content_id = res.data.id;
-          Cookies.set("question_content", this.content);
-        },
-        (err) => {
-          console.log(err);
+      if (this.content != this.initial_content) {
+        if (this.file_url != "" && this.file_url != this.initial_file) {
+          const result = this.dataURLtoFile(this.file_url, "图片.png");
+          let addFile = new BaaS.File();
+          let file = { fileObj: result };
+          addFile.upload(file).then(
+            (res) => {
+              let saveContent = new BaaS.TableObject("question_content");
+              let content = saveContent.getWithoutData(
+                this.question.question_content_id
+              );
+              content.set({
+                content: this.content,
+                file_url: res.data.file,
+                catalog: null,
+                is_delete: false,
+              });
+              content.update().then(
+                (res) => {
+                  this.question.question_content_id = res.data.id;
+                  Cookies.set("question_file", res.data.file_url.path);
+                },
+                (err) => {
+                  console.log(err);
+                }
+              );
+            },
+            (err) => {
+              console.log(err);
+            }
+          );
+        } else if (this.audio != "" && this.audio != this.initail_audio) {
+          let addFile = new BaaS.File();
+          let file = { fileObj: this.audior };
+          addFile.upload(file).then(
+            (res) => {
+              let saveContent = new BaaS.TableObject("question_content");
+              let content = saveContent.getWithoutData(
+                this.question.question_content_id
+              );
+              content.set({
+                content: this.content,
+                file_url: res.data.file,
+                catalog: null,
+                is_delete: false,
+              });
+              content.update().then(
+                (res) => {
+                  this.question.question_content_id = res.data.id;
+                  Cookies.set("question_file", res.data.file_url.path);
+                },
+                (err) => {
+                  console.log(err);
+                }
+              );
+            },
+            (err) => {
+              console.log(err);
+            }
+          );
+        } else {
+          let saveContent = new BaaS.TableObject("question_content");
+          let content = saveContent.getWithoutData(
+            this.question.question_content_id
+          );
+          content.set("content", this.content);
+          content.update().then(
+            (res) => {
+              this.question.question_content_id = res.data.id;
+              Cookies.set("question_content", this.content);
+            },
+            (err) => {
+              console.log(err);
+            }
+          );
         }
-      );
+      }
+
       if (this.question.options != null) {
         this.question.options = JSON.stringify(this.question.options);
       }
@@ -1152,6 +1243,7 @@ export default {
             message: "题目保存成功",
             type: "success",
           });
+          loading.close();
           this.quesCheck();
         },
         (err) => {
@@ -1165,12 +1257,14 @@ export default {
     },
     createEdit() {
       const material = new E("#material");
+      material.config.uploadImgShowBase64 = true;
       material.config.height = 200;
       material.config.zIndex = 7;
       material.config.placeholder = "请输入题干";
       material.create();
       this.editor.push(material);
       const question = new E("#question");
+      question.config.uploadImgShowBase64 = true;
       question.config.height = 50;
       question.config.zIndex = 6;
       question.config.placeholder = "请输入问题";
@@ -1180,6 +1274,7 @@ export default {
         for (let i = 1; i <= this.question.options.length; i++) {
           var alphabet = String.fromCharCode(64 + parseInt(i));
           var option = new E("#" + alphabet);
+          option.config.uploadImgShowBase64 = true;
           option.config.height = 50;
           option.config.zIndex = 6 - i;
           option.config.placeholder = "请输入选项";
@@ -1189,6 +1284,7 @@ export default {
       }
       if (this.question.primary_ques_type == "写作") {
         const answer = new E("#answer");
+        answer.config.uploadImgShowBase64 = true;
         answer.config.height = 100;
         answer.config.zIndex = 1;
         answer.config.placeholder = "请输入答案";
@@ -1196,6 +1292,7 @@ export default {
         this.editor.push(answer);
       }
       const analysis = new E("#analysis");
+      analysis.config.uploadImgShowBase64 = true;
       analysis.config.height = 100;
       analysis.config.zIndex = 0;
       analysis.config.placeholder = "请输入解析";
@@ -1206,9 +1303,17 @@ export default {
   created() {},
   mounted() {
     this.selectQues = Cookie.get("selectQues");
-    this.init();
     this.content = Cookie.get("question_content");
     this.file_url = Cookie.get("question_file");
+    if (
+      this.file_url.search(".mp3") != -1 ||
+      this.file_url.search(".wav") != -1 ||
+      this.file_url.search("ogg") != -1
+    ) {
+      this.audio = this.file_url;
+      this.fileList.push({ name: this.audio, url: this.audio });
+    }
+    this.init();
   },
 };
 </script>

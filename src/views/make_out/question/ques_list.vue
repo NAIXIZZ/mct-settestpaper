@@ -138,23 +138,17 @@
           >
             <template slot-scope="scope">
               <audio
-                :src="scope.row.question_content_id"
+                :src="scope.row.file"
                 controls="controls"
-                v-if="
-                  scope.row.question_content_id &&
-                  scope.row.question_content_id.search('.mp3') != -1
-                "
+                v-if="scope.row.file && scope.row.file.search('.mp3') != -1"
                 style="width: 250px"
               ></audio>
               <el-image
                 :preview-src-list="srcList"
-                :src="scope.row.question_content_id"
-                v-else-if="
-                  scope.row.question_content_id &&
-                  scope.row.question_content_id.search('.png') != -1
-                "
+                :src="scope.row.file"
+                v-if="scope.row.file && scope.row.file.search('.png') != -1"
               ></el-image>
-              <p v-else>{{ scope.row.question_content_id }}</p>
+              <p>{{ scope.row.question_content_id }}</p>
             </template>
           </el-table-column>
           <el-table-column prop="primary_ques_type" label="一级题型">
@@ -173,7 +167,11 @@
                   type="success"
                   plain
                   @click="
-                    check_edit(scope.row.id, scope.row.question_content_id)
+                    check_edit(
+                      scope.row.id,
+                      scope.row.question_content_id,
+                      scope.row.file
+                    )
                   "
                   >查看/编辑</el-button
                 >
@@ -184,7 +182,7 @@
                   type="danger"
                   plain
                   v-if="!scope.row.have"
-                  @click="delQues(scope.row)"
+                  @click="delQues(scope.$index,scope.row)"
                   >删除</el-button
                 >
                 <div style="margin: 0 10px" v-else>
@@ -245,89 +243,32 @@
         >回收站</el-button
       >
     </div>
-    <el-dialog title="自动出题" :visible.sync="dialogFormVisible">
+    <el-dialog
+      title="自动出题"
+      :visible.sync="dialogFormVisible"
+      class="autoQP"
+    >
       <el-form :model="form">
-        <el-form-item label="等级：" :label-width="formLabelWidth">
-          <el-cascader
-            :options="ques_select"
-            :props="{
-              multiple: true,
-              checkStrictly: true,
-              expandTrigger: 'hover',
-            }"
-            clearable
-            placeholder="请选择等级"
-          ></el-cascader>
-        </el-form-item>
-        <el-form-item label="等级标准：" :label-width="formLabelWidth">
-          <el-cascader
-            :options="ques_select"
-            :props="{
-              multiple: true,
-              checkStrictly: true,
-              expandTrigger: 'hover',
-            }"
-            clearable
-            placeholder="请选择等级标准"
-          ></el-cascader>
-        </el-form-item>
-        <el-form-item label="话题大纲：" :label-width="formLabelWidth">
-          <el-cascader
-            :options="ques_select"
-            :props="{
-              multiple: true,
-              checkStrictly: true,
-              expandTrigger: 'hover',
-            }"
-            clearable
-            placeholder="请选择话题大纲"
-          ></el-cascader>
-        </el-form-item>
-        <el-form-item label="任务大纲：" :label-width="formLabelWidth">
-          <el-cascader
-            :options="ques_select"
-            :props="{
-              multiple: true,
-              checkStrictly: true,
-              expandTrigger: 'hover',
-            }"
-            clearable
-            placeholder="请选择任务大纲"
-          ></el-cascader>
-        </el-form-item>
-        <el-form-item label="系统：" :label-width="formLabelWidth">
-          <el-cascader
-            :options="ques_select"
-            :props="{
-              multiple: true,
-              checkStrictly: true,
-              expandTrigger: 'hover',
-            }"
-            clearable
-            placeholder="请选择系统"
-          ></el-cascader>
-        </el-form-item>
-        <el-form-item label="选择题干材料：" :label-width="formLabelWidth">
-          <el-select
-            v-model="form.title"
+        <el-form-item label="题干材料：" :label-width="formLabelWidth">
+          <el-input
+            type="textarea"
+            :rows="3"
+            v-model="form.ques_con"
+            placeholder="请输入题干材料"
             autocomplete="off"
-            clearable
-            placeholder="请选择题干材料"
-          >
-            <el-option
-              v-for="item in material"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            >
-            </el-option>
-          </el-select>
+          ></el-input>
         </el-form-item>
         <el-form-item label="题目数量：" :label-width="formLabelWidth">
-          <el-input v-model="form.quesnum" autocomplete="off"></el-input>
+          <el-input
+            type="number"
+            v-model="form.ques_num"
+            placeholder="请输入题目数量"
+            autocomplete="off"
+          ></el-input>
         </el-form-item>
         <el-form-item label="题目类型：" :label-width="formLabelWidth">
           <el-cascader
+            v-model="form.ques_type"
             :options="ques_select"
             :props="{
               multiple: true,
@@ -336,18 +277,6 @@
             }"
             clearable
             placeholder="请选择题型"
-          ></el-cascader>
-        </el-form-item>
-        <el-form-item label="五何类型：" :label-width="formLabelWidth">
-          <el-cascader
-            :options="ques_select"
-            :props="{
-              multiple: true,
-              checkStrictly: true,
-              expandTrigger: 'hover',
-            }"
-            clearable
-            placeholder="请选择五何类型"
           ></el-cascader>
         </el-form-item>
       </el-form>
@@ -517,8 +446,9 @@ export default {
       preMove: [],
       dialogFormVisible: false,
       form: {
-        title: "",
-        quesnum: "",
+        ques_con: "",
+        ques_num: 1,
+        ques_type: "",
       },
       formLabelWidth: "120px",
       material: [
@@ -541,6 +471,7 @@ export default {
       catalog: [],
       moveVisible: false,
       loading: true,
+      file: "",
     };
   },
   watch: {},
@@ -559,7 +490,7 @@ export default {
     async componentImport() {
       const loading = this.$loading({
         lock: true,
-        text: "正在组卷中，请稍后",
+        text: "正在导入中，请稍后",
         spinner: "el-icon-loading",
         background: "rgba(0, 0, 0, 0.7)",
       });
@@ -581,7 +512,6 @@ export default {
             // this.fileType = "png";
             let base = await zip.file(zipData.files[key].name).async("base64"); // 以base64输出文本内容
             const result = this.dataURLtoFile(base, zipData.files[key].name);
-            // console.log(result);
             await new Promise((resolve, reject) => {
               let File = new BaaS.File();
               let audio = { fileObj: result };
@@ -772,11 +702,18 @@ export default {
                           message: "导入成功",
                           type: "success",
                         });
-                        this.init()
+                        this.init();
                         this.importFile = false;
                       }
                     },
                     (err) => {
+                      loading.close();
+                      this.$message({
+                        message: "导入失败",
+                        type: "warning",
+                      });
+                      this.init();
+                      this.importFile = false;
                       console.log(err);
                     }
                   );
@@ -833,11 +770,18 @@ export default {
                                       message: "导入成功",
                                       type: "success",
                                     });
-                                    this.init()
+                                    this.init();
                                     this.importFile = false;
                                   }
                                 },
                                 (err) => {
+                                  loading.close();
+                                  this.$message({
+                                    message: "导入失败",
+                                    type: "warning",
+                                  });
+                                  this.init();
+                                  this.importFile = false;
                                   console.log(err);
                                 }
                               );
@@ -877,11 +821,18 @@ export default {
                                           message: "导入成功",
                                           type: "success",
                                         });
-                                        this.init()
+                                        this.init();
                                         this.importFile = false;
                                       }
                                     },
                                     (err) => {
+                                      loading.close();
+                                      this.$message({
+                                        message: "导入失败",
+                                        type: "warning",
+                                      });
+                                      this.init();
+                                      this.importFile = false;
                                       console.log(err);
                                     }
                                   );
@@ -1013,10 +964,12 @@ export default {
                       if (res.data.objects[0].content != null) {
                         element.question_content_id =
                           res.data.objects[0].content;
-                      } else if (res.data.objects[0].file_url != null) {
-                        element.question_content_id =
-                          res.data.objects[0].file_url.path;
-                        this.srcList.push(element.question_content_id);
+                      } else {
+                        element.question_content_id = "";
+                      }
+                      if (res.data.objects[0].file_url != null) {
+                        element.file = res.data.objects[0].file_url.path;
+                        this.srcList.push(element.file);
                       }
                     },
                     (err) => {
@@ -1320,6 +1273,12 @@ export default {
       this.previousName = "";
     },
     delCatalog(index, row) {
+      const loading = this.$loading({
+        lock: true,
+        text: "正在删除，请稍后",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)",
+      });
       let findCata = new BaaS.TableObject("questions_information");
       let findc = new BaaS.Query();
       let q2 = new BaaS.Query();
@@ -1338,6 +1297,7 @@ export default {
               cata.update().then(
                 (res) => {
                   console.log(res);
+                  loading.close();
                   this.$message({
                     message: "文件夹删除成功",
                     type: "success",
@@ -1355,6 +1315,11 @@ export default {
                   }
                 },
                 (err) => {
+                  loading.close();
+                  this.$message({
+                    message: "文件夹删除失败",
+                    type: "warning",
+                  });
                   console.log(err);
                 }
               );
@@ -1376,7 +1341,13 @@ export default {
       Cookies.set("catalogall", JSON.stringify(this.catalog));
       this.$router.push("/questionCatalog");
     },
-    delQues(val) {
+    delQues(index,val) {
+      const loading = this.$loading({
+        lock: true,
+        text: "正在删除中，请稍后",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)",
+      });
       let Ques = new BaaS.TableObject("questions_information");
       let ques = Ques.getWithoutData(val.id);
       ques.set("is_delete", true);
@@ -1387,14 +1358,28 @@ export default {
             message: "删除成功",
             type: "success",
           });
-          this.init();
+          // this.init();
+          this.tableData.splice(index, 1);
+          loading.close();
         },
         (err) => {
+          loading.close();
+          this.$message({
+            message: "删除失败",
+            type: "warning",
+          });
+          this.init();
           console.log(err);
         }
       );
     },
     copy(val) {
+      const loading = this.$loading({
+        lock: true,
+        text: "正在复制中，请稍后",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)",
+      });
       let findQ = new BaaS.TableObject("questions_information");
       findQ.get(val.id).then(
         (res) => {
@@ -1427,6 +1412,7 @@ export default {
             .then(
               (res) => {
                 console.log(res);
+                loading.close();
                 this.$message({
                   message: "复制成功",
                   type: "success",
@@ -1434,6 +1420,12 @@ export default {
                 this.init();
               },
               (err) => {
+                loading.close();
+                this.$message({
+                  message: "复制失败",
+                  type: "success",
+                });
+                this.init();
                 console.log(err);
               }
             );
@@ -1581,17 +1573,11 @@ export default {
       console.log(`当前页: ${val}`);
       this.currentPage = val;
     },
-    check_edit(id, question) {
+    check_edit(id, question, file) {
       Cookies.set("make_out", "second");
       Cookies.set("ques_checkEdit", id);
-      if (
-        (question && question.search(".png") != -1) ||
-        question.search(".mp3") != -1
-      ) {
-        Cookies.set("question_file", question);
-      } else {
-        Cookies.set("question_content", question);
-      }
+      Cookies.set("question_file", file);
+      Cookies.set("question_content", question);
       Cookies.set("selectQues", false);
       this.$router.push("/ques_checkEdit");
     },

@@ -14,6 +14,19 @@
         @select="queryKg(queryNode)"
         @clear="drawWordCloud()"
       ></el-autocomplete>
+      <!-- <el-select
+              v-model="queryNum"
+              placeholder="请选择"
+              clearable
+            >
+              <el-option
+                v-for="item in options"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              >
+              </el-option>
+            </el-select> -->
       <el-button
         type="success"
         icon="el-icon-search"

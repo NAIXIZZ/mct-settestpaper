@@ -30,7 +30,7 @@
       </div>
     </div>
     <el-table
-    v-loading="loading"
+      v-loading="loading"
       ref="multipleTable"
       :data="
         tableData.slice((currentPage - 1) * pageSize, currentPage * pageSize)
@@ -149,7 +149,7 @@ export default {
   props: {},
   data() {
     return {
-      loading:true,
+      loading: true,
       questionsCatalog: [],
       type: "",
       dialogVisible: false,
@@ -268,7 +268,7 @@ export default {
                   );
               }
             });
-            this.loading=false
+            this.loading = false;
             this.tableData = res.data.objects;
             this.initial = res.data.objects;
           },
@@ -342,12 +342,19 @@ export default {
       this.dialogVisible = true;
     },
     delContent() {
+      const loading = this.$loading({
+        lock: true,
+        text: "正在删除，请稍后",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)",
+      });
       for (let i = 0; i < this.preMove.length; i++) {
         let findCata = new BaaS.TableObject("questions_information");
         findCata.delete(this.preMove[i]).then(
           (res) => {
             console.log(res);
             if (i == this.preMove.length - 1) {
+              loading.close();
               this.$message({
                 message: "删除成功",
                 type: "success",
@@ -357,6 +364,13 @@ export default {
             }
           },
           (err) => {
+            loading.close();
+            this.$message({
+              message: "删除失败",
+              type: "warning",
+            });
+            this.init();
+            this.dialogVisible = false;
             console.log(err);
           }
         );
@@ -389,6 +403,12 @@ export default {
       }
     },
     to() {
+      const loading = this.$loading({
+        lock: true,
+        text: "正在还原，请稍后",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)",
+      });
       for (let i = 0; i < this.preMove.length; i++) {
         console.log(this.preMove[i]);
         let Catalog = new BaaS.TableObject("questions_information");
@@ -397,6 +417,7 @@ export default {
         cata.update().then(
           (res) => {
             console.log(res);
+            loading.close();
             this.$message({
               message: "还原成功",
               type: "success",
@@ -412,6 +433,13 @@ export default {
             this.moveVisible = false;
           },
           (err) => {
+            loading.close();
+            this.$message({
+              message: "还原失败",
+              type: "warning",
+            });
+            this.init();
+            this.moveVisible = false;
             console.log(err);
           }
         );

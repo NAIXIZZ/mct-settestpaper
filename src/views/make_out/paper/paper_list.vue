@@ -130,7 +130,7 @@
                 <el-button type="warning" plain @click="copy(scope.row)"
                   >复制</el-button
                 >
-                <el-button type="danger" plain @click="delPaper(scope.row)"
+                <el-button type="danger" plain @click="delPaper(scope.$index,scope.row)"
                   >删除</el-button
                 >
                 <el-button type="primary" plain @click="moveTo(scope.row.id, 1)"
@@ -218,6 +218,7 @@
               <el-input
                 type="number"
                 v-model="listenForm.listen_sentence"
+                min="0"
                 placeholder="请输入题目数量"
               ></el-input>
             </el-form-item>
@@ -225,6 +226,7 @@
               <el-input
                 type="number"
                 v-model="listenForm.listen_sdialog"
+                min="0"
                 placeholder="请输入题目数量"
               ></el-input>
             </el-form-item>
@@ -232,6 +234,7 @@
               <el-input
                 type="number"
                 v-model="listenForm.listen_ldialog"
+                min="0"
                 placeholder="请输入题目数量"
               ></el-input>
             </el-form-item>
@@ -239,6 +242,7 @@
               <el-input
                 type="number"
                 v-model="listenForm.listen_essay"
+                min="0"
                 placeholder="请输入题目数量"
               ></el-input>
             </el-form-item>
@@ -259,6 +263,7 @@
               <el-input
                 type="number"
                 v-model="readForm.read_word"
+                min="0"
                 placeholder="请输入题目数量"
               ></el-input>
             </el-form-item>
@@ -269,6 +274,7 @@
               <el-input
                 type="number"
                 v-model="readForm.read_dialog"
+                min="0"
                 placeholder="请输入题目数量"
               ></el-input>
             </el-form-item>
@@ -276,6 +282,7 @@
               <el-input
                 type="number"
                 v-model="readForm.read_material"
+                min="0"
                 placeholder="请输入题目数量"
               ></el-input>
             </el-form-item>
@@ -283,6 +290,7 @@
               <el-input
                 type="number"
                 v-model="readForm.read_essay"
+                min="0"
                 placeholder="请输入题目数量"
               ></el-input>
             </el-form-item>
@@ -303,6 +311,7 @@
               <el-input
                 type="number"
                 v-model="writeForm.write"
+                min="0"
                 placeholder="请输入题目数量"
               ></el-input>
             </el-form-item>
@@ -759,6 +768,12 @@ export default {
       this.previousName = "";
     },
     delCatalog(index, row) {
+      const loading = this.$loading({
+        lock: true,
+        text: "正在删除，请稍后",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)",
+      });
       let findCata = new BaaS.TableObject("test_paper");
       let findc = new BaaS.Query();
       let q2 = new BaaS.Query();
@@ -777,6 +792,7 @@ export default {
               cata.update().then(
                 (res) => {
                   console.log(res);
+                  loading.close();
                   this.$message({
                     message: "文件夹删除成功",
                     type: "success",
@@ -794,6 +810,11 @@ export default {
                   }
                 },
                 (err) => {
+                  loading.close();
+                  this.$message({
+                    message: "文件夹删除失败",
+                    type: "warning",
+                  });
                   console.log(err);
                 }
               );
@@ -1436,8 +1457,9 @@ export default {
                               p.sort(function (a, b) {
                                 return b - a;
                               });
-                              for (let q = p[0]; q >= p[p.length - 1]; q--) {
-                                ques_type.splice(q, 1);
+                              console.log(p);
+                              for (let q = 0; q < p.length; q++) {
+                                ques_type.splice(p[q], 1);
                               }
                               for (let q = 0; q < ques_type.length; q++) {
                                 let t = {
@@ -1473,6 +1495,7 @@ export default {
                                   );
                                 }
                               }
+                              console.log(questions, ques_type);
                               sessionStorage.setItem(
                                 "questions",
                                 JSON.stringify(questions)
@@ -1554,6 +1577,15 @@ export default {
       this.currentPage = val;
     },
     preview(val) {
+      const loading = this.$loading({
+        lock: true,
+        text: "请稍后",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)",
+      });
+      Cookies.set("paper_id", val.id);
+      Cookies.set("paper_title", val.paper_title);
+      Cookies.set("questions_detail", val.questions_detail);
       let ques = JSON.parse(val.questions_detail);
       ques.sort(function (a, b) {
         return a.sub_sequence - b.sub_sequence;
@@ -1640,12 +1672,30 @@ export default {
                       total_score: score,
                       saveQ: true,
                       saveT: true,
+                      audio: "",
+                      file_url: "",
+                      fileList: [],
                     };
                     if (con.data.file_url != null) {
-                      question.question_content = con.data.file_url.path;
-                    } else {
-                      question.question_content = con.data.content;
+                      if (
+                        con.data.file_url.path.search(".png") != -1 ||
+                        con.data.file_url.path.search(".jpg") != -1 ||
+                        con.data.file_url.path.search(".gif") != -1
+                      ) {
+                        question.file_url = con.data.file_url.path;
+                      } else if (
+                        con.data.file_url.path.search(".mp3") != -1 ||
+                        con.data.file_url.path.search(".wav") != -1 ||
+                        con.data.file_url.path.search(".ogg") != -1
+                      ) {
+                        question.audio = con.data.file_url.path;
+                        question.fileList.push({
+                          name: con.data.file_url.name,
+                          url: con.data.file_url.path,
+                        });
+                      }
                     }
+                    question.question_content = con.data.content;
                     question.sub_question = sub;
                     questions.push(question);
                     if (questions.length == qc.length) {
@@ -1682,6 +1732,7 @@ export default {
                       Cookies.set("paperEdit", true);
                       Cookies.set("paperInfo", val.id);
                       Cookies.set("make_out", "third");
+                      loading.close();
                       this.$router.push("/mcreatePaper");
                     }
                   },
@@ -1759,6 +1810,12 @@ export default {
       }
     },
     copy(val) {
+      const loading = this.$loading({
+        lock: true,
+        text: "正在复制，请稍后",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)",
+      });
       let addQ = new BaaS.TableObject("test_paper");
       let add = addQ.create();
       let temp = {
@@ -1777,6 +1834,7 @@ export default {
         .then(
           (res) => {
             console.log(res);
+            loading.close();
             this.$message({
               message: "复制成功",
               type: "success",
@@ -1784,24 +1842,43 @@ export default {
             this.init();
           },
           (err) => {
+            loading.close();
+            this.$message({
+              message: "复制失败",
+              type: "warning",
+            });
+            this.init();
             console.log(err);
           }
         );
     },
-    delPaper(val) {
+    delPaper(index,val) {
+      const loading = this.$loading({
+        lock: true,
+        text: "正在删除，请稍后",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)",
+      });
       let Ques = new BaaS.TableObject("test_paper");
       let ques = Ques.getWithoutData(val.id);
       ques.set("is_delete", true);
       ques.update().then(
         (res) => {
           console.log(res);
+          loading.close();
           this.$message({
             message: "删除成功",
             type: "success",
           });
-          this.init();
+          this.tableData.splice(index,1)
         },
         (err) => {
+          loading.close();
+          this.$message({
+            message: "删除失败",
+            type: "warning",
+          });
+          this.init();
           console.log(err);
         }
       );
@@ -2451,7 +2528,7 @@ export default {
     async componentImport() {
       const loading = this.$loading({
         lock: true,
-        text: "正在组卷中，请稍后",
+        text: "正在导入中，请稍后",
         spinner: "el-icon-loading",
         background: "rgba(0, 0, 0, 0.7)",
       });

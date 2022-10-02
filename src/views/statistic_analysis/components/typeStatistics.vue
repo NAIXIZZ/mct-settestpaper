@@ -8,6 +8,8 @@
           clearable
           placeholder="全部"
           class="select"
+          @change="selectChanged"
+          @clear="clearSelect"
         >
           <el-option
             v-for="item in options"
@@ -19,7 +21,14 @@
         </el-select>
       </el-col>
       <el-col :span="12">
-        <el-button type="success">导出表格数据</el-button>
+        <download-excel
+          class="export-excel-wrapper"
+          :data="quesData"
+          :fields="json_fields"
+          name="题型统计数据.xls"
+        >
+          <el-button type="success">导出表格数据</el-button>
+        </download-excel>
       </el-col>
     </el-row>
 
@@ -68,6 +77,11 @@ export default {
       quesData: [],
       options: [],
       selectYear: '',
+      pieChart: Object,
+      json_fields: {
+        "题型": 'type',
+        "数量": 'number',
+      },
     };
   },
   mounted () {
@@ -85,13 +99,13 @@ export default {
       let type_statistics = new BaaS.TableObject("type_statistics")
       type_statistics.setQuery(queryYear).select(['type', 'number']).find().then(res => {
         this.quesData = res.data.objects
-        // console.log(res.data.objects)
+        // console.log(this.quesData)
       }, err => {
         // console.log(err)
       })
     },
     drawPie () {
-      var pieChart = this.$echarts.init(document.getElementById('pieChart'))
+      this.pieChart = this.$echarts.init(document.getElementById('pieChart'))
       var BaaS = require("minapp-sdk");
       let clientID = "395062a19e209a770059";
       BaaS.init(clientID);
@@ -108,7 +122,7 @@ export default {
           obj.value = pieData[i].number;
           getData[i] = obj;
         }
-        pieChart.setOption({
+        this.pieChart.setOption({
           title: { text: '' },
           tooltip: {},
           series: [{
@@ -145,7 +159,7 @@ export default {
       })
     },
     changeOption () {
-      console.log(this.selectYear)
+      // console.log(this.selectYear)
       var BaaS = require("minapp-sdk");
       let clientID = "395062a19e209a770059";
       BaaS.init(clientID);
@@ -155,6 +169,69 @@ export default {
       type_statistics.setQuery(queryYear).select(['type', 'number']).find().then(res => {
         this.quesData = res.data.objects
         // console.log(res.data.objects)
+      }, err => {
+        // console.log(err)
+      })
+    },
+    selectChanged (value) {
+      // console.log(value)
+      if (value != '') {
+        var BaaS = require("minapp-sdk");
+        let clientID = "395062a19e209a770059";
+        BaaS.init(clientID);
+        let queryYear = new BaaS.Query()
+        queryYear.compare('year', '=', value)
+        let type_statistics = new BaaS.TableObject("type_statistics")
+        var pieData = []
+        type_statistics.setQuery(queryYear).select(['type', 'number']).find().then(res => {
+          this.quesData = res.data.objects
+          pieData = res.data.objects
+          var getData = [];
+          for (let i = 0; i < pieData.length; i++) {
+            var obj = new Object();
+            obj.name = pieData[i].type;
+            obj.value = pieData[i].number;
+            getData[i] = obj;
+          }
+          this.pieChart.setOption({
+            title: { text: '' },
+            tooltip: {},
+            series: [{
+              type: 'pie',
+              data: getData,
+            }]
+          });
+        }, err => {
+          // console.log(err)
+        })
+      }
+    },
+    clearSelect (val) {
+      this.getData()
+      var BaaS = require("minapp-sdk");
+      let clientID = "395062a19e209a770059";
+      BaaS.init(clientID);
+      let queryYear = new BaaS.Query()
+      queryYear.compare('year', '=', -1)
+      let type_statistics = new BaaS.TableObject("type_statistics")
+      var pieData = []
+      type_statistics.setQuery(queryYear).select(['type', 'number']).find().then(res => {
+        pieData = res.data.objects
+        var getData = [];
+        for (let i = 0; i < pieData.length; i++) {
+          var obj = new Object();
+          obj.name = pieData[i].type;
+          obj.value = pieData[i].number;
+          getData[i] = obj;
+        }
+        this.pieChart.setOption({
+          title: { text: '' },
+          tooltip: {},
+          series: [{
+            type: 'pie',
+            data: getData,
+          }]
+        });
       }, err => {
         // console.log(err)
       })

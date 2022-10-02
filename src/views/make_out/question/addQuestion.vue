@@ -67,10 +67,29 @@
       </div>
       <div>
         <div class="edit_ques_content">
-          题干：
-          <div id="material">
-            <p>{{ questions.question_content }}</p>
+          <div class="material">
+            题干：
+            <div id="material">
+              <p>{{ questions.question_content }}</p>
+            </div>
           </div>
+          <el-upload
+            ref="upload"
+            action=""
+            class="upload-demo"
+            :multiple="false"
+            accept=".mp3,.wav,.ogg"
+            :before-upload="beforeAvatarUpload"
+            :auto-upload="false"
+            :on-change="handleChange"
+            :on-exceed="handleExceed"
+            :on-remove="handleRemove"
+            :limit="1"
+            :file-list="fileList"
+          >
+            <el-button>上传音频</el-button>
+          </el-upload>
+          <audio :src="audio" controls="controls" v-if="audio != ''"></audio>
         </div>
         <el-collapse v-model="activeNames">
           <el-collapse-item
@@ -333,6 +352,7 @@
   </div>
 </template>
 
+<script src="//cdn.jsdelivr.net/npm/xgplayer@2.9.6/browser/index.js" type="text/javascript"></script>
 <script>
 // import Cookie from "js-cookie";
 // import Cookies from "js-cookie";
@@ -346,6 +366,9 @@ export default {
   props: {},
   data() {
     return {
+      audior: "",
+      audio: "",
+      fileList: [],
       currentSubQues: 1,
       questions: {
         primary_ques_type: "",
@@ -657,11 +680,81 @@ export default {
       ],
       task_value: [],
       dialogVisible: false,
+      file_url: "",
     };
   },
   watch: {},
   computed: {},
   methods: {
+    beforeAvatarUpload(file) {
+      let isFile =
+        file.name.split(".")[file.name.split(".").length - 1] == "mp3" ||
+        file.name.split(".")[file.name.split(".").length - 1] == "wav" ||
+        file.name.split(".")[file.name.split(".").length - 1] == "ogg";
+      if (!isFile) {
+        this.$message.error("导入文件格式不正确");
+      }
+      return isFile;
+    },
+    handleChange(file, fileList) {
+      this.fileList.push(file);
+      if (
+        /\.(mp3)$/.test(this.fileList[0].raw.name) ||
+        /\.(wav)$/.test(this.fileList[0].raw.name) ||
+        /\.(ogg)$/.test(this.fileList[0].raw.name)
+      ) {
+        var reader = new FileReader();
+        reader.readAsDataURL(this.fileList[0].raw);
+        reader.onload = () => {
+          const result = this.dataURLtoFile(
+            reader.result,
+            this.fileList[0].raw.name
+          );
+          new Promise((resolve, reject) => {
+            this.audio = reader.result;
+            this.audior = result;
+          });
+        };
+      }
+    },
+    handleRemove(file, fileList) {
+      this.fileList = [];
+      this.audior = "";
+      this.audio = "";
+    },
+    handleExceed(files, fileList) {
+      this.$message.warning(
+        `当前限制选择 1 个文件，本次选择了 ${files.length} 个文件，共选择了 ${
+          files.length + fileList.length
+        } 个文件`
+      );
+    },
+    dataURLtoFile(dataURL, fileName, fileType) {
+      /**
+       * 注意：【不同文件不同类型】，例如【图片类型】就是`data:image/png;base64,${dataURL}`.split(',')
+       * 下面的是【excel文件(.xlsx尾缀)】的文件类型拼接，一个完整的 base64 应该
+       * 是这样的,例如： data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAMAAACelLz8AAAABGdBTUEAALGPC/xhBQAAACBjSFJN
+       */
+      // if (this.fileType == "xlsx") {
+      //   fileType =
+      //     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+      // } else if (this.fileType == "png") {
+      //   fileType = "image/png";
+      // } else if (this.fileType == "mp3") {
+      //   fileType = "audio/mp3";
+      // }
+      const arr = `data:${fileType};base64,${dataURL}`.split(",");
+      const mime = arr[0].match(/:(.*?);/)[1];
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      var name = fileName.split("/");
+      let blob = new File([u8arr], name[name.length - 1], { type: mime });
+      return blob;
+    },
     async init() {
       var sub = {
         sub_sequence: 1,
@@ -690,10 +783,38 @@ export default {
     back() {
       this.$router.go(-1);
     },
+    dataURLtoFile(dataURL, fileName) {
+      /**
+       * 注意：【不同文件不同类型】，例如【图片类型】就是`data:image/png;base64,${dataURL}`.split(',')
+       * 下面的是【excel文件(.xlsx尾缀)】的文件类型拼接，一个完整的 base64 应该
+       * 是这样的,例如： data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAMAAACelLz8AAAABGdBTUEAALGPC/xhBQAAACBjSFJN
+       */
+      // if (this.fileType == "xlsx") {
+      //   fileType =
+      //     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+      // } else if (this.fileType == "png") {
+      //   fileType = "image/png";
+      // } else if (this.fileType == "mp3") {
+      //   fileType = "audio/mp3";
+      // }
+      const arr = dataURL.split(",");
+      const mime = arr[0].match(/:(.*?);/)[1];
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      var name = fileName.split("/");
+      let blob = new File([u8arr], name[name.length - 1], { type: mime });
+      return blob;
+    },
     createEdit() {
       const material = new E("#material");
-      material.config.uploadImgServer = "@/assets/UploadImage.php";
+      // material.config.uploadImgServer = "/upload";
+      material.config.uploadImgShowBase64 = true;
       material.config.uploadVideoServer = "/api/upload-video";
+      material.config.uploadVideoAccept = ["mp3"];
       material.config.height = 200;
       material.config.zIndex = 4;
       material.config.placeholder = "请输入题干";
@@ -701,7 +822,7 @@ export default {
       this.editor.push(material);
       for (let i = 1; i <= this.currentSubQues; i++) {
         const question = new E("#question" + i);
-        question.config.uploadImgServer = "/upload-img";
+        question.config.uploadImgShowBase64 = true;
         question.config.uploadVideoServer = "/api/upload-video";
         question.config.height = 50;
         question.config.zIndex = 5;
@@ -711,7 +832,7 @@ export default {
         for (let j = 1; j <= this.option.length; j++) {
           var alphabet = String.fromCharCode(64 + parseInt(j));
           var option = new E("#" + alphabet + i);
-          option.config.uploadImgServer = "/upload-img";
+          option.config.uploadImgShowBase64 = true;
           option.config.uploadVideoServer = "/api/upload-video";
           option.config.height = 50;
           option.config.zIndex = 9 - j;
@@ -720,7 +841,7 @@ export default {
           this.editor.push(option);
         }
         const answer = new E("#answer" + i);
-        answer.config.uploadImgServer = "/upload-img";
+        answer.config.uploadImgShowBase64 = true;
         answer.config.uploadVideoServer = "/api/upload-video";
         answer.config.height = 100;
         answer.config.zIndex = 9;
@@ -728,7 +849,7 @@ export default {
         answer.create();
         this.editor.push(answer);
         const analysis = new E("#analysis" + i);
-        analysis.config.uploadImgServer = "/upload-img";
+        analysis.config.uploadImgShowBase64 = true;
         analysis.config.uploadVideoServer = "/api/upload-video";
         analysis.config.height = 100;
         analysis.config.zIndex = 10;
@@ -762,7 +883,7 @@ export default {
       await this.questions.sub_question.push(sub);
       this.currentSubQues += 1;
       const question = new E("#question" + this.currentSubQues);
-      question.config.uploadImgServer = "/upload-img";
+      question.config.uploadImgShowBase64 = true;
       question.config.uploadVideoServer = "/api/upload-video";
       question.config.height = 50;
       question.config.zIndex = 5;
@@ -772,7 +893,7 @@ export default {
       for (let i = 1; i <= this.option.length; i++) {
         var alphabet = String.fromCharCode(64 + parseInt(i));
         var option = new E("#" + alphabet + this.currentSubQues);
-        option.config.uploadImgServer = "/upload-img";
+        option.config.uploadImgShowBase64 = true;
         option.config.uploadVideoServer = "/api/upload-video";
         option.config.height = 50;
         option.config.zIndex = 9 - i;
@@ -781,7 +902,7 @@ export default {
         this.editor.push(option);
       }
       const answer = new E("#answer" + this.currentSubQues);
-      answer.config.uploadImgServer = "/upload-img";
+      answer.config.uploadImgShowBase64 = true;
       answer.config.uploadVideoServer = "/api/upload-video";
       answer.config.height = 100;
       answer.config.zIndex = 9;
@@ -789,7 +910,7 @@ export default {
       answer.create();
       this.editor.push(answer);
       const analysis = new E("#analysis" + this.currentSubQues);
-      analysis.config.uploadImgServer = "/upload-img";
+      analysis.config.uploadImgShowBase64 = true;
       analysis.config.uploadVideoServer = "/api/upload-video";
       analysis.config.height = 100;
       analysis.config.zIndex = 10;
@@ -798,6 +919,7 @@ export default {
       this.editor.push(analysis);
     },
     async checkQues() {
+      this.file_url = "";
       var valid = true;
       for (let j = 1; j <= this.currentSubQues; j++) {
         if (this.questions.sub_question[j - 1].level_value == "") {
@@ -836,7 +958,7 @@ export default {
             break;
           }
           if (this.editor[i].toolbarSelector == "#material") {
-            if (this.editor[i].txt.text() == "") {
+            if (this.editor[i].txt.html() == "" && this.audio == "") {
               this.questions.question_content = null;
               this.$message({
                 message: "请填写题干",
@@ -845,6 +967,32 @@ export default {
               valid = false;
               break;
             } else {
+              if (
+                this.editor[i].txt.html().search("<img src=") != -1 &&
+                this.audio == ""
+              ) {
+                let src = "";
+                let a = this.editor[i].txt.html().search("<img src=");
+                let x = this.editor[i].txt.html();
+                for (let b = a + 10; b < x.length; b++) {
+                  if (x[b] != '"') {
+                    src += x[b];
+                  } else {
+                    break;
+                  }
+                }
+                this.file_url = src;
+              } else if (
+                this.editor[i].txt.html().search("<img src=") != -1 &&
+                this.audio != ""
+              ) {
+                this.$message({
+                  message: "图片和音频只支持一项，请修改",
+                  type: "warning",
+                });
+                valid = false;
+                break;
+              }
               this.questions.question_content = this.editor[i].txt.text();
             }
           }
@@ -1081,344 +1229,513 @@ export default {
       }
     },
     saveQues() {
+      const loading = this.$loading({
+        lock: true,
+        text: "正在保存中，请稍后",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)",
+      });
       this.dialogVisible = false;
-      let findContent = new BaaS.TableObject("question_content");
-      let findc = new BaaS.Query();
-      findc.compare("content", "=", this.questions.question_content);
-      let q2 = new BaaS.Query();
-      q2.compare("is_delete", "=", false);
-      let andQuery = BaaS.Query.and(findc, q2);
-      findContent
-        .setQuery(andQuery)
-        .find()
-        .then(
+      if (this.file_url != "" && this.audio == "") {
+        const result = this.dataURLtoFile(this.file_url, "图片.png");
+        let addFile = new BaaS.File();
+        let file = { fileObj: result };
+        addFile.upload(file).then(
           (res) => {
-            if (res.data.objects.length == 0) {
-              let saveContent = new BaaS.TableObject("question_content");
-              let savec = saveContent.create();
-              savec.set({
-                content: this.questions.question_content,
-                file_url: null,
-                catalog: null,
-                is_delete: false,
-              });
-              savec.save().then(
-                (res) => {
-                  console.log(res);
-                  this.questions.question_content = res.data.id;
-                  for (let i = 0; i < this.questions.sub_question.length; i++) {
-                    let saveQ = new BaaS.TableObject("questions_information");
-                    let saveq = saveQ.create();
-                    let temp = {
-                      question_content_id: this.questions.question_content,
-                      primary_ques_type: this.questions.primary_ques_type,
-                      secondary_ques_type: this.questions.secondary_ques_type,
-                      question: this.questions.sub_question[i].question,
-                      options: JSON.stringify(
-                        this.questions.sub_question[i].options
-                      ),
-                      answer: this.questions.sub_question[i].answer,
-                      analysis: this.questions.sub_question[i].analysis,
-                      department:
-                        this.questions.sub_question[i].department_value,
-                      is_delete: false,
-                      catalog: null,
-                      ques_level: this.questions.sub_question[i].level_value,
-                      question_class:
-                        this.questions.sub_question[i].qclass_value,
-                      question_type_5he:
-                        this.questions.sub_question[i].fivehe_value,
-                      author: this.questions.sub_question[i].author,
-                      author_org: this.questions.sub_question[i].author_org,
-                      time_created: this.questions.sub_question[i].time_created,
-                      topic_outline: this.questions.sub_question[i].topic_value,
-                      grade_standard:
-                        this.questions.sub_question[i].grade_value,
-                      task_outline: this.questions.sub_question[i].task_value,
-                    };
-                    saveq
-                      .set(temp)
-                      .save()
-                      .then(
-                        (res) => {
-                          console.log(res);
-                          this.$message({
-                            message: "第" + (i + 1) + "题保存成功",
-                            type: "success",
-                          });
-                          if (i == this.questions.sub_question.length - 1) {
-                            this.back();
-                          }
-                        },
-                        (err) => {
-                          console.log(err);
-                        }
-                      );
-                  }
-                },
-                (err) => {
-                  console.log(err);
-                }
-              );
-            } else {
-              this.questions.question_content = res.data.objects[0].id;
-              for (let i = 0; i < this.questions.sub_question.length; i++) {
-                let findQ = new BaaS.TableObject("questions_information");
-                let q1 = new BaaS.Query();
-                let q2 = new BaaS.Query();
-                let q3 = new BaaS.Query();
-                let q4 = new BaaS.Query();
-                let q5 = new BaaS.Query();
-                let q6 = new BaaS.Query();
-                let q7 = new BaaS.Query();
-                let q8 = new BaaS.Query();
-                let q9 = new BaaS.Query();
-                // let q10 = new BaaS.Query();
-                let q11 = new BaaS.Query();
-                let q12 = new BaaS.Query();
-                let q13 = new BaaS.Query();
-                let q14 = new BaaS.Query();
-                let q15 = new BaaS.Query();
-                let q16 = new BaaS.Query();
-                let q17 = new BaaS.Query();
-                let q18 = new BaaS.Query();
-                let q19 = new BaaS.Query();
-                q1.compare(
-                  "question_content_id",
-                  "=",
-                  this.questions.question_content
-                );
-                q2.compare(
-                  "primary_ques_type",
-                  "=",
-                  this.questions.primary_ques_type
-                );
-                q3.compare(
-                  "secondary_ques_type",
-                  "=",
-                  this.questions.secondary_ques_type
-                );
-                if (this.questions.sub_question[i].question == null) {
-                  q4.isNull("question");
-                } else {
-                  q4.compare(
-                    "question",
-                    "=",
-                    this.questions.sub_question[i].question
-                  );
-                }
-                q5.compare(
-                  "options",
-                  "=",
-                  JSON.stringify(this.questions.sub_question[i].options)
-                );
-                q6.compare(
-                  "answer",
-                  "=",
-                  this.questions.sub_question[i].answer
-                );
-                if (this.questions.sub_question[i].analysis == null) {
-                  q7.isNull("analysis");
-                } else {
-                  q7.compare(
-                    "analysis",
-                    "=",
-                    this.questions.sub_question[i].analysis
-                  );
-                }
-                if (this.questions.sub_question[i].department_value == null) {
-                  q8.isNull("department");
-                } else {
-                  q8.compare(
-                    "department",
-                    "=",
-                    this.questions.sub_question[i].department_value
-                  );
-                }
-                q9.compare("is_delete", "=", false);
-                if (this.questions.sub_question[i].level_value == null) {
-                  q11.isNull("ques_level");
-                } else {
-                  q11.compare(
-                    "ques_level",
-                    "=",
-                    this.questions.sub_question[i].level_value
-                  );
-                }
-                if (this.questions.sub_question[i].qclass_value == null) {
-                  q12.isNull("question_class");
-                } else {
-                  q12.compare(
-                    "question_class",
-                    "=",
-                    this.questions.sub_question[i].qclass_value
-                  );
-                }
-                if (this.questions.sub_question[i].fivehe_value == null) {
-                  q13.isNull("question_type_5he");
-                } else {
-                  q13.compare(
-                    "question_type_5he",
-                    "=",
-                    this.questions.sub_question[i].fivehe_value
-                  );
-                }
-                if (this.questions.sub_question[i].author == null) {
-                  q14.isNull("author");
-                } else {
-                  q14.compare(
-                    "author",
-                    "=",
-                    this.questions.sub_question[i].author
-                  );
-                }
-                if (this.questions.sub_question[i].author_org == null) {
-                  q15.isNull("author_org");
-                } else {
-                  q15.compare(
-                    "author_org",
-                    "=",
-                    this.questions.sub_question[i].author_org
-                  );
-                }
-                if (this.questions.sub_question[i].time_created == null) {
-                  q16.isNull("time_created");
-                } else {
-                  q16.compare(
-                    "time_created",
-                    "=",
-                    this.questions.sub_question[i].time_created
-                  );
-                }
-                if (this.questions.sub_question[i].topic_value == null) {
-                  q17.isNull("topic_outline");
-                } else {
-                  q17.compare(
-                    "topic_outline",
-                    "=",
-                    this.questions.sub_question[i].topic_value
-                  );
-                }
-                if (this.questions.sub_question[i].grade_value == null) {
-                  q18.isNull("grade_standard");
-                } else {
-                  q18.compare(
-                    "grade_standard",
-                    "=",
-                    this.questions.sub_question[i].grade_value
-                  );
-                }
-                if (this.questions.sub_question[i].task_value == null) {
-                  q19.isNull("task_outline");
-                } else {
-                  q19.compare(
-                    "task_outline",
-                    "=",
-                    this.questions.sub_question[i].task_value
-                  );
-                }
-                let andQuery = BaaS.Query.and(
-                  q1,
-                  q2,
-                  q3,
-                  q4,
-                  q5,
-                  q6,
-                  q7,
-                  q8,
-                  q9,
-                  // q10,
-                  q11,
-                  q12,
-                  q13,
-                  q14,
-                  q15,
-                  q16,
-                  q17,
-                  q18,
-                  q19
-                );
-                findQ
-                  .setQuery(andQuery)
-                  .find()
-                  .then(
-                    (res) => {
-                      if (res.data.objects.length == 0) {
-                        let saveQ = new BaaS.TableObject(
-                          "questions_information"
-                        );
-                        let saveq = saveQ.create();
-                        let temp = {
-                          question_content_id: this.questions.question_content,
-                          primary_ques_type: this.questions.primary_ques_type,
-                          secondary_ques_type:
-                            this.questions.secondary_ques_type,
-                          question: this.questions.sub_question[i].question,
-                          options: JSON.stringify(
-                            this.questions.sub_question[i].options
-                          ),
-                          answer: this.questions.sub_question[i].answer,
-                          analysis: this.questions.sub_question[i].analysis,
-                          department:
-                            this.questions.sub_question[i].department_value,
-                          is_delete: false,
-                          catalog: null,
-                          ques_level:
-                            this.questions.sub_question[i].level_value,
-                          question_class:
-                            this.questions.sub_question[i].qclass_value,
-                          question_type_5he:
-                            this.questions.sub_question[i].fivehe_value,
-                          author: this.questions.sub_question[i].author,
-                          author_org: this.questions.sub_question[i].author_org,
-                          time_created:
-                            this.questions.sub_question[i].time_created,
-                          topic_outline:
-                            this.questions.sub_question[i].topic_value,
-                          grade_standard:
-                            this.questions.sub_question[i].grade_value,
-                          task_outline:
-                            this.questions.sub_question[i].task_value,
-                        };
-                        saveq
-                          .set(temp)
-                          .save()
-                          .then(
-                            (res) => {
-                              console.log(res);
-                              this.$message({
-                                message: "第" + (i + 1) + "题保存成功",
-                                type: "success",
-                              });
-                              if (i == this.questions.sub_question.length - 1) {
-                                this.back();
-                              }
-                            },
-                            (err) => {
-                              console.log(err);
-                            }
-                          );
-                      } else {
+            let saveContent = new BaaS.TableObject("question_content");
+            let savec = saveContent.create();
+            savec.set({
+              content: this.questions.question_content,
+              file_url: res.data.file,
+              catalog: null,
+              is_delete: false,
+            });
+            savec.save().then(
+              (res) => {
+                this.questions.question_content = res.data.id;
+                for (let i = 0; i < this.questions.sub_question.length; i++) {
+                  let saveQ = new BaaS.TableObject("questions_information");
+                  let saveq = saveQ.create();
+                  let temp = {
+                    question_content_id: this.questions.question_content,
+                    primary_ques_type: this.questions.primary_ques_type,
+                    secondary_ques_type: this.questions.secondary_ques_type,
+                    question: this.questions.sub_question[i].question,
+                    options: JSON.stringify(
+                      this.questions.sub_question[i].options
+                    ),
+                    answer: this.questions.sub_question[i].answer,
+                    analysis: this.questions.sub_question[i].analysis,
+                    department: this.questions.sub_question[i].department_value,
+                    is_delete: false,
+                    catalog: null,
+                    ques_level: this.questions.sub_question[i].level_value,
+                    question_class: this.questions.sub_question[i].qclass_value,
+                    question_type_5he:
+                      this.questions.sub_question[i].fivehe_value,
+                    author: this.questions.sub_question[i].author,
+                    author_org: this.questions.sub_question[i].author_org,
+                    time_created: this.questions.sub_question[i].time_created,
+                    topic_outline: this.questions.sub_question[i].topic_value,
+                    grade_standard: this.questions.sub_question[i].grade_value,
+                    task_outline: this.questions.sub_question[i].task_value,
+                  };
+                  saveq
+                    .set(temp)
+                    .save()
+                    .then(
+                      (res) => {
+                        console.log(res);
                         this.$message({
-                          message: "第" + (i + 1) + "题已存在",
-                          type: "warning",
+                          message: "第" + (i + 1) + "题保存成功",
+                          type: "success",
                         });
                         if (i == this.questions.sub_question.length - 1) {
+                          loading.close();
                           this.back();
                         }
+                      },
+                      (err) => {
+                        console.log(err);
                       }
-                    },
-                    (err) => {
-                      console.log(err);
-                    }
-                  );
+                    );
+                }
+              },
+              (err) => {
+                console.log(err);
               }
-            }
+            );
           },
           (err) => {
             console.log(err);
           }
         );
+      } else if (this.file_url == "" && this.audio != "") {
+        let addFile = new BaaS.File();
+        let file = { fileObj: this.audior };
+        addFile.upload(file).then(
+          (res) => {
+            let saveContent = new BaaS.TableObject("question_content");
+            let savec = saveContent.create();
+            savec.set({
+              content: this.questions.question_content,
+              file_url: res.data.file,
+              catalog: null,
+              is_delete: false,
+            });
+            savec.save().then(
+              (res) => {
+                this.questions.question_content = res.data.id;
+                for (let i = 0; i < this.questions.sub_question.length; i++) {
+                  let saveQ = new BaaS.TableObject("questions_information");
+                  let saveq = saveQ.create();
+                  let temp = {
+                    question_content_id: this.questions.question_content,
+                    primary_ques_type: this.questions.primary_ques_type,
+                    secondary_ques_type: this.questions.secondary_ques_type,
+                    question: this.questions.sub_question[i].question,
+                    options: JSON.stringify(
+                      this.questions.sub_question[i].options
+                    ),
+                    answer: this.questions.sub_question[i].answer,
+                    analysis: this.questions.sub_question[i].analysis,
+                    department: this.questions.sub_question[i].department_value,
+                    is_delete: false,
+                    catalog: null,
+                    ques_level: this.questions.sub_question[i].level_value,
+                    question_class: this.questions.sub_question[i].qclass_value,
+                    question_type_5he:
+                      this.questions.sub_question[i].fivehe_value,
+                    author: this.questions.sub_question[i].author,
+                    author_org: this.questions.sub_question[i].author_org,
+                    time_created: this.questions.sub_question[i].time_created,
+                    topic_outline: this.questions.sub_question[i].topic_value,
+                    grade_standard: this.questions.sub_question[i].grade_value,
+                    task_outline: this.questions.sub_question[i].task_value,
+                  };
+                  saveq
+                    .set(temp)
+                    .save()
+                    .then(
+                      (res) => {
+                        console.log(res);
+                        this.$message({
+                          message: "第" + (i + 1) + "题保存成功",
+                          type: "success",
+                        });
+                        if (i == this.questions.sub_question.length - 1) {
+                          loading.close();
+                          this.back();
+                        }
+                      },
+                      (err) => {
+                        console.log(err);
+                      }
+                    );
+                }
+              },
+              (err) => {
+                console.log(err);
+              }
+            );
+          },
+          (err) => {
+            console.log(err);
+          }
+        );
+      } else {
+        let findContent = new BaaS.TableObject("question_content");
+        let findc = new BaaS.Query();
+        findc.compare("content", "=", this.questions.question_content);
+        let q2 = new BaaS.Query();
+        q2.compare("is_delete", "=", false);
+        let andQuery = BaaS.Query.and(findc, q2);
+        findContent
+          .setQuery(andQuery)
+          .find()
+          .then(
+            (res) => {
+              if (res.data.objects.length == 0) {
+                let saveContent = new BaaS.TableObject("question_content");
+                let savec = saveContent.create();
+                savec.set({
+                  content: this.questions.question_content,
+                  file_url: null,
+                  catalog: null,
+                  is_delete: false,
+                });
+                savec.save().then(
+                  (res) => {
+                    console.log(res);
+                    this.questions.question_content = res.data.id;
+                    for (
+                      let i = 0;
+                      i < this.questions.sub_question.length;
+                      i++
+                    ) {
+                      let saveQ = new BaaS.TableObject("questions_information");
+                      let saveq = saveQ.create();
+                      let temp = {
+                        question_content_id: this.questions.question_content,
+                        primary_ques_type: this.questions.primary_ques_type,
+                        secondary_ques_type: this.questions.secondary_ques_type,
+                        question: this.questions.sub_question[i].question,
+                        options: JSON.stringify(
+                          this.questions.sub_question[i].options
+                        ),
+                        answer: this.questions.sub_question[i].answer,
+                        analysis: this.questions.sub_question[i].analysis,
+                        department:
+                          this.questions.sub_question[i].department_value,
+                        is_delete: false,
+                        catalog: null,
+                        ques_level: this.questions.sub_question[i].level_value,
+                        question_class:
+                          this.questions.sub_question[i].qclass_value,
+                        question_type_5he:
+                          this.questions.sub_question[i].fivehe_value,
+                        author: this.questions.sub_question[i].author,
+                        author_org: this.questions.sub_question[i].author_org,
+                        time_created:
+                          this.questions.sub_question[i].time_created,
+                        topic_outline:
+                          this.questions.sub_question[i].topic_value,
+                        grade_standard:
+                          this.questions.sub_question[i].grade_value,
+                        task_outline: this.questions.sub_question[i].task_value,
+                      };
+                      saveq
+                        .set(temp)
+                        .save()
+                        .then(
+                          (res) => {
+                            console.log(res);
+                            this.$message({
+                              message: "第" + (i + 1) + "题保存成功",
+                              type: "success",
+                            });
+                            if (i == this.questions.sub_question.length - 1) {
+                              loading.close();
+                              this.back();
+                            }
+                          },
+                          (err) => {
+                            console.log(err);
+                          }
+                        );
+                    }
+                  },
+                  (err) => {
+                    console.log(err);
+                  }
+                );
+              } else {
+                this.questions.question_content = res.data.objects[0].id;
+                for (let i = 0; i < this.questions.sub_question.length; i++) {
+                  let findQ = new BaaS.TableObject("questions_information");
+                  let q1 = new BaaS.Query();
+                  let q2 = new BaaS.Query();
+                  let q3 = new BaaS.Query();
+                  let q4 = new BaaS.Query();
+                  let q5 = new BaaS.Query();
+                  let q6 = new BaaS.Query();
+                  let q7 = new BaaS.Query();
+                  let q8 = new BaaS.Query();
+                  let q9 = new BaaS.Query();
+                  // let q10 = new BaaS.Query();
+                  let q11 = new BaaS.Query();
+                  let q12 = new BaaS.Query();
+                  let q13 = new BaaS.Query();
+                  let q14 = new BaaS.Query();
+                  let q15 = new BaaS.Query();
+                  let q16 = new BaaS.Query();
+                  let q17 = new BaaS.Query();
+                  let q18 = new BaaS.Query();
+                  let q19 = new BaaS.Query();
+                  q1.compare(
+                    "question_content_id",
+                    "=",
+                    this.questions.question_content
+                  );
+                  q2.compare(
+                    "primary_ques_type",
+                    "=",
+                    this.questions.primary_ques_type
+                  );
+                  q3.compare(
+                    "secondary_ques_type",
+                    "=",
+                    this.questions.secondary_ques_type
+                  );
+                  if (this.questions.sub_question[i].question == null) {
+                    q4.isNull("question");
+                  } else {
+                    q4.compare(
+                      "question",
+                      "=",
+                      this.questions.sub_question[i].question
+                    );
+                  }
+                  q5.compare(
+                    "options",
+                    "=",
+                    JSON.stringify(this.questions.sub_question[i].options)
+                  );
+                  q6.compare(
+                    "answer",
+                    "=",
+                    this.questions.sub_question[i].answer
+                  );
+                  if (this.questions.sub_question[i].analysis == null) {
+                    q7.isNull("analysis");
+                  } else {
+                    q7.compare(
+                      "analysis",
+                      "=",
+                      this.questions.sub_question[i].analysis
+                    );
+                  }
+                  if (this.questions.sub_question[i].department_value == null) {
+                    q8.isNull("department");
+                  } else {
+                    q8.compare(
+                      "department",
+                      "=",
+                      this.questions.sub_question[i].department_value
+                    );
+                  }
+                  q9.compare("is_delete", "=", false);
+                  if (this.questions.sub_question[i].level_value == null) {
+                    q11.isNull("ques_level");
+                  } else {
+                    q11.compare(
+                      "ques_level",
+                      "=",
+                      this.questions.sub_question[i].level_value
+                    );
+                  }
+                  if (this.questions.sub_question[i].qclass_value == null) {
+                    q12.isNull("question_class");
+                  } else {
+                    q12.compare(
+                      "question_class",
+                      "=",
+                      this.questions.sub_question[i].qclass_value
+                    );
+                  }
+                  if (this.questions.sub_question[i].fivehe_value == null) {
+                    q13.isNull("question_type_5he");
+                  } else {
+                    q13.compare(
+                      "question_type_5he",
+                      "=",
+                      this.questions.sub_question[i].fivehe_value
+                    );
+                  }
+                  if (this.questions.sub_question[i].author == null) {
+                    q14.isNull("author");
+                  } else {
+                    q14.compare(
+                      "author",
+                      "=",
+                      this.questions.sub_question[i].author
+                    );
+                  }
+                  if (this.questions.sub_question[i].author_org == null) {
+                    q15.isNull("author_org");
+                  } else {
+                    q15.compare(
+                      "author_org",
+                      "=",
+                      this.questions.sub_question[i].author_org
+                    );
+                  }
+                  if (this.questions.sub_question[i].time_created == null) {
+                    q16.isNull("time_created");
+                  } else {
+                    q16.compare(
+                      "time_created",
+                      "=",
+                      this.questions.sub_question[i].time_created
+                    );
+                  }
+                  if (this.questions.sub_question[i].topic_value == null) {
+                    q17.isNull("topic_outline");
+                  } else {
+                    q17.compare(
+                      "topic_outline",
+                      "=",
+                      this.questions.sub_question[i].topic_value
+                    );
+                  }
+                  if (this.questions.sub_question[i].grade_value == null) {
+                    q18.isNull("grade_standard");
+                  } else {
+                    q18.compare(
+                      "grade_standard",
+                      "=",
+                      this.questions.sub_question[i].grade_value
+                    );
+                  }
+                  if (this.questions.sub_question[i].task_value == null) {
+                    q19.isNull("task_outline");
+                  } else {
+                    q19.compare(
+                      "task_outline",
+                      "=",
+                      this.questions.sub_question[i].task_value
+                    );
+                  }
+                  let andQuery = BaaS.Query.and(
+                    q1,
+                    q2,
+                    q3,
+                    q4,
+                    q5,
+                    q6,
+                    q7,
+                    q8,
+                    q9,
+                    // q10,
+                    q11,
+                    q12,
+                    q13,
+                    q14,
+                    q15,
+                    q16,
+                    q17,
+                    q18,
+                    q19
+                  );
+                  findQ
+                    .setQuery(andQuery)
+                    .find()
+                    .then(
+                      (res) => {
+                        if (res.data.objects.length == 0) {
+                          let saveQ = new BaaS.TableObject(
+                            "questions_information"
+                          );
+                          let saveq = saveQ.create();
+                          let temp = {
+                            question_content_id:
+                              this.questions.question_content,
+                            primary_ques_type: this.questions.primary_ques_type,
+                            secondary_ques_type:
+                              this.questions.secondary_ques_type,
+                            question: this.questions.sub_question[i].question,
+                            options: JSON.stringify(
+                              this.questions.sub_question[i].options
+                            ),
+                            answer: this.questions.sub_question[i].answer,
+                            analysis: this.questions.sub_question[i].analysis,
+                            department:
+                              this.questions.sub_question[i].department_value,
+                            is_delete: false,
+                            catalog: null,
+                            ques_level:
+                              this.questions.sub_question[i].level_value,
+                            question_class:
+                              this.questions.sub_question[i].qclass_value,
+                            question_type_5he:
+                              this.questions.sub_question[i].fivehe_value,
+                            author: this.questions.sub_question[i].author,
+                            author_org:
+                              this.questions.sub_question[i].author_org,
+                            time_created:
+                              this.questions.sub_question[i].time_created,
+                            topic_outline:
+                              this.questions.sub_question[i].topic_value,
+                            grade_standard:
+                              this.questions.sub_question[i].grade_value,
+                            task_outline:
+                              this.questions.sub_question[i].task_value,
+                          };
+                          saveq
+                            .set(temp)
+                            .save()
+                            .then(
+                              (res) => {
+                                console.log(res);
+                                this.$message({
+                                  message: "第" + (i + 1) + "题保存成功",
+                                  type: "success",
+                                });
+                                if (
+                                  i ==
+                                  this.questions.sub_question.length - 1
+                                ) {
+                                  loading.close();
+                                  this.back();
+                                }
+                              },
+                              (err) => {
+                                console.log(err);
+                              }
+                            );
+                        } else {
+                          this.$message({
+                            message: "第" + (i + 1) + "题已存在",
+                            type: "warning",
+                          });
+                          if (i == this.questions.sub_question.length - 1) {
+                            loading.close();
+                            this.back();
+                          }
+                        }
+                      },
+                      (err) => {
+                        console.log(err);
+                      }
+                    );
+                }
+              }
+            },
+            (err) => {
+              console.log(err);
+            }
+          );
+      }
     },
   },
   created() {},
@@ -1517,11 +1834,16 @@ export default {
 }
 .edit_ques_content {
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  border-bottom: 1px dashed #c0c4cc;
+}
+.edit_ques_content .material {
+  display: flex;
   flex-direction: row;
   align-items: center;
-  margin: 10px 0;
-  padding-bottom: 10px;
-  border-bottom: 1px dashed #c0c4cc;
+  width: 100%;
+  margin-bottom: 10px;
 }
 .edit_ques_content #material,
 .ques_analysis #analysis {

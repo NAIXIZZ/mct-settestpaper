@@ -36,7 +36,7 @@
       </div>
     </div>
     <el-table
-    v-loading="loading"
+      v-loading="loading"
       ref="multipleTable"
       :data="
         tableData.slice((currentPage - 1) * pageSize, currentPage * pageSize)
@@ -129,8 +129,8 @@ export default {
   props: {},
   data() {
     return {
-      loading:true,
-      paperCatalog:[],
+      loading: true,
+      paperCatalog: [],
       use: [
         {
           value: "练习",
@@ -185,7 +185,7 @@ export default {
         .find()
         .then(
           (res) => {
-            this.loading=false
+            this.loading = false;
             this.tableData = res.data.objects;
             this.initial = res.data.objects;
           },
@@ -290,12 +290,19 @@ export default {
       this.dialogVisible = true;
     },
     delContent() {
+      const loading = this.$loading({
+        lock: true,
+        text: "正在删除，请稍后",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)",
+      });
       for (let i = 0; i < this.preMove.length; i++) {
         let findCata = new BaaS.TableObject("test_paper");
         findCata.delete(this.preMove[i]).then(
           (res) => {
             console.log(res);
             if (i == this.preMove.length - 1) {
+              loading.close();
               this.$message({
                 message: "删除成功",
                 type: "success",
@@ -305,6 +312,13 @@ export default {
             }
           },
           (err) => {
+            loading.close();
+            this.$message({
+              message: "删除失败",
+              type: "warning",
+            });
+            this.init();
+            this.dialogVisible = false;
             console.log(err);
           }
         );
@@ -337,6 +351,12 @@ export default {
       }
     },
     to() {
+      const loading = this.$loading({
+        lock: true,
+        text: "正在还原，请稍后",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)",
+      });
       for (let i = 0; i < this.preMove.length; i++) {
         console.log(this.preMove[i]);
         let Catalog = new BaaS.TableObject("test_paper");
@@ -345,21 +365,29 @@ export default {
         cata.update().then(
           (res) => {
             console.log(res);
+            loading.close();
             this.$message({
               message: "还原成功",
               type: "success",
             });
             this.init();
             let temp = {
-              have:false,
-              finish:true,
-              rename:false,
-              catalog:res.data.catalog
-            }
-            this.paperCatalog.push(temp)
+              have: false,
+              finish: true,
+              rename: false,
+              catalog: res.data.catalog,
+            };
+            this.paperCatalog.push(temp);
             this.moveVisible = false;
           },
           (err) => {
+            loading.close();
+            this.$message({
+              message: "还原失败",
+              type: "warning",
+            });
+            this.init();
+            this.moveVisible = false;
             console.log(err);
           }
         );
@@ -387,12 +415,10 @@ export default {
         });
       } else {
         let cata = "";
-        let c=[]
+        let c = [];
         for (let i = 0; i < this.multipleSelection.length; i++) {
-          if (
-            this.multipleSelection[i].paper_title == null
-          ) {
-            c.push(this.multipleSelection[i])
+          if (this.multipleSelection[i].paper_title == null) {
+            c.push(this.multipleSelection[i]);
             for (let j = 0; j < this.paperCatalog.length; j++) {
               if (
                 this.multipleSelection[i].catalog ==
@@ -404,14 +430,16 @@ export default {
             }
           }
         }
-        const map = new Map()
-        const qc = c.filter(key=>!map.has(key.catalog)&&map.set(key.catalog,1))
-        if(qc.length!=c.length){
+        const map = new Map();
+        const qc = c.filter(
+          (key) => !map.has(key.catalog) && map.set(key.catalog, 1)
+        );
+        if (qc.length != c.length) {
           this.$message({
             message: "不能还原多个同名空文件夹",
             type: "warning",
           });
-        }else if (cata != "") {
+        } else if (cata != "") {
           this.$message({
             message: cata + "文件夹已存在，请改名或取消还原",
             type: "warning",
@@ -592,7 +620,7 @@ export default {
   },
   created() {},
   mounted() {
-    this.paperCatalog = JSON.parse(sessionStorage.getItem("paperCatalog"))
+    this.paperCatalog = JSON.parse(sessionStorage.getItem("paperCatalog"));
     this.init();
   },
 };

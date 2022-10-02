@@ -1,8 +1,17 @@
 <template>
   <div>
     <el-row>
-      <span class="title1">试卷统计数据</span>
-      <el-button type="success">导出表格数据</el-button>
+      <el-col :span="12"><span class="title1">试卷统计数据</span></el-col>
+      <el-col :span="12">
+        <download-excel
+          class="export-excel-wrapper"
+          :data="paperData"
+          :fields="json_fields"
+          name="试卷统计数据.xls"
+        >
+          <el-button type="success">导出表格数据</el-button>
+        </download-excel>
+      </el-col>
     </el-row>
     <el-row class="card">
       <el-col :span="4">
@@ -58,6 +67,10 @@ export default {
     return {
       number: "",
       paperData: [],
+      json_fields: {
+        "年份": 'year',
+        "数量": 'number',
+      },
     };
   },
   mounted () {
@@ -73,13 +86,14 @@ export default {
       released_paper.count().then(num => {
         this.number = num
       }, err => {
-        // console.log(err)
+        console.log(err)
       })
       let paper_statistics = new BaaS.TableObject("paper_statistics")
       paper_statistics.select(['year', 'number']).find().then(res => {
         this.paperData = res.data.objects
+        // console.log(this.paperData)
       }, err => {
-        // console.log(err)
+        console.log(err)
       })
     },
     drawPieChart () {
@@ -118,7 +132,7 @@ export default {
 .title1 {
   font-size: 20px;
   font-weight: bold;
-  margin-right: 80%;
+  margin-right: 75%;
 }
 .card {
   margin-left: 10%;

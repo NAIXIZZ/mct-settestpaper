@@ -558,23 +558,23 @@
               >
                 <div class="question">
                   <audio
-                    :src="item.question_content"
+                    :src="item.audio"
                     controls="controls"
-                    v-if="
-                      item.question_content.search('.mp3') != -1 ||
-                      item.question_content.search('.wav') != -1 ||
-                      item.question_content.search('.ogg') != -1
+                    v-if="item.audio!=''&&(
+                      item.audio.search('.mp3') != -1 ||
+                      item.audio.search('.wav') != -1 ||
+                      item.audio.search('.ogg') != -1)
                     "
                   ></audio>
                   <img
-                    :src="item.question_content"
-                    v-else-if="
-                      item.question_content.search('.png') != -1 ||
-                      item.question_content.search('.jpg') != -1 ||
-                      item.question_content.search('.gif') != -1
+                    :src="item.file_url"
+                    v-if="item.file_url!=''&&(
+                      item.file_url.search('.png') != -1 ||
+                      item.file_url.search('.jpg') != -1 ||
+                      item.file_url.search('.gif') != -1)
                     "
                   />
-                  <p v-else>{{ item.question_content }}</p>
+                  <p>{{ item.question_content }}</p>
                   <div v-for="s in item.sub_question" :key="s.actual_sequence">
                     <div>{{ s.actual_sequence }}.{{ s.question }}</div>
                     <div v-for="o in s.options" :key="o.index">

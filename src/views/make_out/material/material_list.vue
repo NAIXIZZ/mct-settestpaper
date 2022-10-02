@@ -107,13 +107,13 @@
               >查看题目/试卷</el-button
             >
             <el-button type="warning" plain @click="handleSet(scope.row.id)"
-              >出题/出卷</el-button
+              >自动出题</el-button
             >
             <el-button
               type="danger"
               plain
               v-if="!scope.row.have"
-              @click="delContent(scope.row)"
+              @click="delContent(scope.$index,scope.row)"
               >删除</el-button
             >
             <div style="margin: 0 10px" v-else>
@@ -175,51 +175,38 @@
         >回收站</el-button
       >
     </div>
-    <el-dialog title="自动出题/出卷" :visible.sync="dialogFormVisible" class="autoQP">
-      <el-tabs>
-        <el-tab-pane label="自动出题">
-          <el-form :model="form">
-            <el-form-item label="题目数量：" :label-width="formLabelWidth">
-              <el-input v-model="form.quesnum" autocomplete="off"></el-input>
-            </el-form-item>
-            <el-form-item label="题目类型：" :label-width="formLabelWidth">
-              <el-cascader
-                :options="ques_select"
-                :props="{
-                  multiple: true,
-                  checkStrictly: true,
-                  expandTrigger: 'hover',
-                }"
-                clearable
-                placeholder="请选择题型"
-              ></el-cascader>
-            </el-form-item>
-          </el-form>
-        </el-tab-pane>
-        <el-tab-pane label="自动出卷"
-          ><el-form :model="form">
-            <el-form-item label="题目数量：" :label-width="formLabelWidth">
-              <el-input v-model="form.quesnum" autocomplete="off"></el-input>
-            </el-form-item>
-            <el-form-item label="题目类型：" :label-width="formLabelWidth">
-              <el-cascader
-                :options="ques_select"
-                :props="{
-                  multiple: true,
-                  checkStrictly: true,
-                  expandTrigger: 'hover',
-                }"
-                clearable
-                placeholder="请选择题型"
-              ></el-cascader>
-            </el-form-item>
-          </el-form>
-        </el-tab-pane>
-      </el-tabs>
-          <div slot="footer" class="dialog-footer">
-            <el-button type="primary" @click="setQues">保存到题库</el-button>
-            <el-button @click="dialogFormVisible = false">取 消</el-button>
-          </div>
+    <el-dialog
+      title="自动出题"
+      :visible.sync="dialogFormVisible"
+      class="autoQP"
+    >
+      <el-form :model="form">
+        <el-form-item label="题目数量：" :label-width="formLabelWidth">
+          <el-input
+            type="number"
+            v-model="form.ques_num"
+            placeholder="请输入题目数量"
+            autocomplete="off"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="题目类型：" :label-width="formLabelWidth">
+          <el-cascader
+            v-model="form.ques_type"
+            :options="ques_select"
+            :props="{
+              multiple: true,
+              checkStrictly: true,
+              expandTrigger: 'hover',
+            }"
+            clearable
+            placeholder="请选择题型"
+          ></el-cascader>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="setQues">保存到题库</el-button>
+        <el-button @click="dialogFormVisible = false">取 消</el-button>
+      </div>
     </el-dialog>
     <el-dialog
       title="移动到"
@@ -260,7 +247,8 @@ export default {
       initial: [],
       dialogFormVisible: false,
       form: {
-        quesnum: "",
+        ques_num: 1,
+        ques_type: "",
       },
       formLabelWidth: "120px",
       srcList: [],
@@ -320,7 +308,7 @@ export default {
             {
               value: "根据一段长对话写门诊病历记录",
               label: "根据一段长对话写门诊病历记录",
-            }
+            },
           ],
         },
       ],
@@ -628,6 +616,12 @@ export default {
         );
     },
     delCatalog(index, row) {
+      const loading = this.$loading({
+        lock: true,
+        text: "正在删除，请稍后",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)",
+      });
       let findCata = new BaaS.TableObject("question_content");
       let findc = new BaaS.Query();
       let q2 = new BaaS.Query();
@@ -645,6 +639,7 @@ export default {
             cata.update().then(
               (res) => {
                 console.log(res);
+                loading.close();
                 this.$message({
                   message: "文件夹删除成功",
                   type: "success",
@@ -662,6 +657,11 @@ export default {
                 }
               },
               (err) => {
+                loading.close();
+                this.$message({
+                  message: "文件夹删除失败",
+                  type: "warning",
+                });
                 console.log(err);
               }
             );
@@ -671,7 +671,13 @@ export default {
           }
         );
     },
-    delContent(row) {
+    delContent(index,row) {
+      const loading = this.$loading({
+        lock: true,
+        text: "正在删除，请稍后",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)",
+      });
       let Catalog = new BaaS.TableObject("question_content");
       let cata = Catalog.getWithoutData(row.id);
       cata.set("is_delete", true);
@@ -682,7 +688,8 @@ export default {
             message: "删除成功",
             type: "success",
           });
-          this.init();
+          this.tableData.splice(index,1)
+          loading.close();
         },
         (err) => {
           console.log(err);
@@ -763,6 +770,8 @@ export default {
       this.dialogFormVisible = true;
     },
     setQues() {
+      console.log(this.form);
+
       this.dialogFormVisible = false;
     },
     trash() {
@@ -865,7 +874,7 @@ export default {
 .material .move .el-button + .el-button {
   margin-left: 0px;
 }
-.material .autoQP .el-dialog__body{
+.material .autoQP .el-dialog__body {
   padding: 0 20px;
 }
 </style>
