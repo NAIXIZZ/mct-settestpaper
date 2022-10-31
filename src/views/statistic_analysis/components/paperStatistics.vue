@@ -22,7 +22,7 @@
           <div>
             <span class="number1">{{ number }}</span>
             <el-divider></el-divider>
-            <span class="text-size">试卷总数</span>
+            <span class="text-size">我的试卷总数</span>
           </div>
         </el-card>
       </el-col>
@@ -57,6 +57,9 @@
 
 <script src="https://dl.ifanr.cn/hydrogen/sdk/sdk-web-latest.js"></script>
 <script>
+import '@/util/format.js'
+import Cookies from "js-cookie";
+let myChart = null
 export default {
   name: '',
   components: {
@@ -71,49 +74,69 @@ export default {
         "年份": 'year',
         "数量": 'number',
       },
+      paper_list: []
     };
   },
   mounted () {
     this.getData()
     this.drawPieChart()
   },
+  destroyed () {
+    this.myChart.clear()
+  },
   methods: {
     getData () {
       var BaaS = require("minapp-sdk");
       let clientID = "395062a19e209a770059";
       BaaS.init(clientID);
-      let released_paper = new BaaS.TableObject("released_paper")
-      released_paper.count().then(num => {
-        this.number = num
+      let query_id = new BaaS.Query()
+      query_id.compare('created_by', '=', Cookies.get('user_id') * 1)
+      let test_paper = new BaaS.TableObject("test_paper")
+      var nowDate = new Date()
+      var nowYear = nowDate.getFullYear()
+      var startYear = 2020
+      test_paper.limit(1000).setQuery(query_id).find().then(res => {
+        this.number = res.data.objects.length
+        this.paper_list = res.data.objects
+        for (let j = 1; j < 10; j++) {
+          test_paper.limit(1000).offset(j * 1000).setQuery(query_id).find().then(res => {
+            this.number = this.number + res.data.objects.length
+            Object.assign(this.paper_list, res.data.objects)
+          }, err => {
+            console.log(err)
+          })
+        }
+        for (let i = nowYear; i >= startYear; i--) {
+          var num = 0
+          for (let j = 0; j < this.paper_list.length; j++) {
+            var created_at = new Date(this.paper_list[j].created_at * 1000)
+            created_at = created_at.Format("yyyy-MM-dd HH:mm:ss")
+            var reg = RegExp(i)
+            if (reg.test(created_at)) {
+              num = num + 1
+            }
+          }
+          var obj = new Object()
+          obj.year = i
+          obj.number = num
+          this.paperData.push(obj)
+        }
       }, err => {
         console.log(err)
       })
-      let paper_statistics = new BaaS.TableObject("paper_statistics")
-      paper_statistics.select(['year', 'number']).find().then(res => {
-        this.paperData = res.data.objects
-        // console.log(this.paperData)
-      }, err => {
-        console.log(err)
-      })
+      // console.log(this.paperData)
     },
     drawPieChart () {
-      var myChart = this.$echarts.init(document.getElementById('myChart'))
-      var BaaS = require("minapp-sdk");
-      let clientID = "395062a19e209a770059";
-      BaaS.init(clientID);
-      let paper_statistics = new BaaS.TableObject("paper_statistics")
-      var pieData = []
-      paper_statistics.select(['year', 'number']).find().then(res => {
-        pieData = res.data.objects
-        // console.log(pieData)
-        var getData = [];
-        for (let i = 0; i < pieData.length; i++) {
+      this.myChart = this.$echarts.init(document.getElementById('myChart'))
+      var getData = [];
+      setTimeout(() => {
+        for (let i = 0; i < this.paperData.length; i++) {
           var obj = new Object();
-          obj.name = pieData[i].year;
-          obj.value = pieData[i].number;
+          obj.name = this.paperData[i].year;
+          obj.value = this.paperData[i].number;
           getData[i] = obj;
         }
-        myChart.setOption({
+        this.myChart.setOption({
           title: { text: '' },
           tooltip: {},
           series: [{
@@ -121,9 +144,7 @@ export default {
             data: getData,
           }]
         });
-      }, err => {
-        // console.log(err)
-      })
+      }, 500) // 0.5秒后执行代码
     },
   },
 };

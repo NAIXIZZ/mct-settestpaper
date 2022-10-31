@@ -22,12 +22,6 @@
         >
           <typeStatistics />
         </el-tab-pane>
-        <!-- <el-tab-pane
-          label="试卷分析"
-          name="third"
-        >
-          <paperAnalysis />
-        </el-tab-pane> -->
       </el-tabs>
     </el-row>
   </div>
@@ -37,14 +31,12 @@
 import Heads from '@/components/heads.vue';
 import paperStatistics from './components/paperStatistics.vue';
 import typeStatistics from './components/typeStatistics.vue';
-// import paperAnalysis from './components/paperAnalysis.vue';
 export default {
   name: '',
   components: {
     Heads,
     paperStatistics,
     typeStatistics,
-    // paperAnalysis
   },
   props: {},
   data () {

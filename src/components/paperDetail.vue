@@ -47,7 +47,7 @@
               style="margin-left:34%"
             >
               <span style="font-size:15px">
-                创建人：{{ paper_message.created_user_id }}
+                创建人：{{ paper_message.created_by }}
                 <el-divider direction="vertical"></el-divider>
                 题量：{{ paper_message.questions_num }}
                 <el-divider direction="vertical"></el-divider>
@@ -82,7 +82,7 @@
                     :src="item.content"
                     controls="controls"
                   ></audio>
-                  <p class="ques-content">{{ item.sub_sequence }}.{{ item.question }}</p>
+                  <p class="ques-content">{{ item.sub_sequence }}.{{ item.question }}（{{ item.score }}分）</p>
                   <div
                     v-for="s in item.options"
                     :key="s.index"
@@ -110,7 +110,7 @@
                     :src="item.content"
                     controls="controls"
                   ></audio>
-                  <p class="ques-content">{{ item.sub_sequence }}.{{ item.question }}</p>
+                  <p class="ques-content">{{ item.sub_sequence }}.{{ item.question }}（{{ item.score }}分）</p>
                   <div
                     v-for="s in item.options"
                     :key="s.index"
@@ -138,7 +138,7 @@
                     :src="item.content"
                     controls="controls"
                   ></audio>
-                  <p class="ques-content">{{ item.sub_sequence }}.</p>
+                  <p class="ques-content">{{ item.sub_sequence }}.（{{ item.score }}分）</p>
                   <div
                     v-for="s in item.options"
                     :key="s.index"
@@ -170,7 +170,7 @@
                     v-for="ques in item.info"
                     :key="ques.id"
                   >
-                    <p class="ques-content">{{ ques.sub_sequence }}.</p>
+                    <p class="ques-content">{{ ques.sub_sequence }}.（{{ ques.score }}分）</p>
                     <div
                       v-for="s in ques.options"
                       :key="s.index"
@@ -205,7 +205,7 @@
                     v-for="ques in item.info"
                     :key="ques.id"
                   >
-                    <p class="options">{{ ques.sub_sequence }}.</p>
+                    <p class="options">{{ ques.sub_sequence }}.（{{ ques.score }}分）</p>
                     <div
                       v-for="s in ques.options"
                       :key="s.index"
@@ -230,7 +230,7 @@
                   v-for="item in read_phrase"
                   :key="item.id"
                 >
-                  <p class="ques-content">{{ item.sub_sequence }}.{{ item.content }}</p>
+                  <p class="ques-content">{{ item.sub_sequence }}.{{ item.content }}（{{ item.score }}分）</p>
                   <div
                     v-for="s in item.options"
                     :key="s.index"
@@ -259,7 +259,7 @@
                     v-for="ques in item.info"
                     :key="ques.id"
                   >
-                    <p class="ques-content">{{ ques.sub_sequence }}.{{ ques.question }}</p>
+                    <p class="ques-content">{{ ques.sub_sequence }}.{{ ques.question }}（{{ ques.score }}分）</p>
                     <div
                       v-for="s in ques.options"
                       :key="s.index"
@@ -289,7 +289,7 @@
                     v-for="ques in item.info"
                     :key="ques.id"
                   >
-                    <p class="options">{{ ques.sub_sequence }}.{{ ques.question }}</p>
+                    <p class="options">{{ ques.sub_sequence }}.{{ ques.question }}（{{ ques.score }}分）</p>
                     <div
                       v-for="s in ques.options"
                       :key="s.index"
@@ -317,7 +317,7 @@
                   v-for="item in write"
                   :key="item.id"
                 >
-                  <p class="ques-content">{{ item.sub_sequence }}.{{ item.content }}</p>
+                  <p class="ques-content">{{ item.sub_sequence }}.{{ item.content }}（{{ item.score }}分）</p>
                   <p
                     class="answer"
                     v-if="showAnswer"
@@ -394,28 +394,17 @@ export default {
       var BaaS = require("minapp-sdk");
       let clientID = "395062a19e209a770059";
       BaaS.init(clientID);
-      let released_paper = new BaaS.TableObject("released_paper")
       let question_content = new BaaS.TableObject("question_content")
-      let queryReleased = new BaaS.Query()
-      queryReleased.compare('id', '=', Cookies.get('home_released_paper_id'))
-      released_paper.setQuery(queryReleased).select(['paper_title']).find().then(res => {
-        this.paper_message.paper_title = res.data.objects[0].paper_title
-      }, err => {
-        console.log(err)
-      })
       let test_paper = new BaaS.TableObject("test_paper")
       let queryTest = new BaaS.Query()
-      queryTest.compare('id', '=', Cookies.get('home_test_paper_id'))
-      test_paper.setQuery(queryTest).select(['paper_title', 'created_user_id', 'questions_num', 'questions_id', 'points', 'questions_detail']).find().then(res => {
-        this.paper_message.created_user_id = res.data.objects[0].created_user_id
+      queryTest.compare('id', '=', Cookies.get('home_paper_id'))
+      test_paper.setQuery(queryTest).find().then(res => {
+        this.paper_message.paper_title = res.data.objects[0].paper_title
         this.paper_message.questions_num = res.data.objects[0].questions_num
         this.paper_message.points = res.data.objects[0].points
+        this.paper_message.created_by = 'huadazhiyu'
         var detail_obj = JSON.parse(res.data.objects[0].questions_detail)
         this.questions_detail = detail_obj
-        for (let i = 0; i < res.data.objects[0].questions_id.length; i++) {
-          this.questions_id[i] = res.data.objects[0].questions_id[i]
-        }
-        // console.log(this.questions_detail)
         let questions_information = new BaaS.TableObject("questions_information")
         for (let i = 0; i < this.questions_detail.length; i++) {
           let queryId = new BaaS.Query()
@@ -650,55 +639,10 @@ export default {
         console.log(err)
       })
     },
-    // 导出word
-    // getBase64 (imgUrl) {
-    //   return new Promise((resolve, reject) => {
-    //     window.URL = window.URL || window.webkitURL;
-    //     var xhr = new XMLHttpRequest();
-    //     xhr.open('get', imgUrl, true); // 至关重要
-    //     xhr.responseType = 'blob';
-    //     xhr.onload = function () {
-    //       if (this.status == 200) {
-    //         //得到一个blob对象
-    //         var blob = this.response;
-    //         console.log('blob', blob); // 至关重要
-    //         let oFileReader = new FileReader();
-    //         oFileReader.onloadend = function (e) {
-    //           // 此处拿到的已经是 base64的图片了
-    //           resolve(e.target.result);
-    //         };
-    //         oFileReader.onerror = reject;
-    //         oFileReader.readAsDataURL(blob);
-    //       }
-    //     };
-    //     xhr.send();
-    //   })
-    // },
-    // base64DataURLToArrayBuffer (dataURL) {
-    //   const base64Regex = /^data:image\/(png|jpg|svg|svg\+xml);base64,/;
-    //   if (!base64Regex.test(dataURL)) {
-    //     return false;
-    //   }
-    //   const stringBase64 = dataURL.replace(base64Regex, "");
-    //   let binaryString;
-    //   if (typeof window !== "undefined") {
-    //     binaryString = window.atob(stringBase64);
-    //   } else {
-    //     binaryString = new Buffer(stringBase64, "base64").toString("binary");
-    //   }
-    //   const len = binaryString.length;
-    //   const bytes = new Uint8Array(len);
-    //   for (let i = 0; i < len; i++) {
-    //     const ascii = binaryString.charCodeAt(i);
-    //     bytes[i] = ascii;
-    //   }
-    //   return bytes.buffer;
-    // },
     loadFile (url, callback) {
       PizZipUtils.getBinaryContent(url, callback);
     },
     generate () {
-      // var ImageModule = require('open-docxtemplater-image-module');
       // 点击导出word
       var that = this;
       var wordName
@@ -718,21 +662,8 @@ export default {
         if (error) {
           throw error
         };
-
-        // let opts = {}
-        // opts.centered = true;  // 图片居中，在word模板中定义方式为{%%image}
-        // opts.fileType = "docx";
-        // opts.getImage = function (chartId) {
-        //   return that.base64DataURLToArrayBuffer(chartId);
-        // }
-        // opts.getSize = function () {
-        //   return [600, 300]
-        // }
-        // let imageModule = new ImageModule(opts);
-
         var zip = new PizZip(content);
         var doc = new window.docxtemplater().loadZip(zip)
-        // doc.attachModule(imageModule);
         doc.setData({
           ...that.paper_message,
           listen_sentence: that.listen_sentence,
@@ -744,9 +675,6 @@ export default {
           read_material: that.read_material,
           read_essay: that.read_essay,
           write: that.write,
-          // isAnswer: that.isAnswer,
-          // isAnalysis: that.isAnalysis
-          // image: that.getBase64(that.read_material[0].content)
         });
         try {
           // render the document (replace all occurences of {first_name} by John, {last_name} by Doe, ...)

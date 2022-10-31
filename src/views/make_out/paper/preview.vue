@@ -2,10 +2,11 @@
   <div class="preview">
     <div class="top">
       <h1 class="title">试卷预览</h1>
-      <!-- <el-col :span="2" style="margin-left: 50%">
-          <el-button type="success" @click="generate()">试卷导出</el-button>
-        </el-col>
-        <el-col :span="2">
+      <el-button type="success" plain @click="exp">导出试卷</el-button>
+      <!-- <el-col :span="2" style="margin-left: 50%"> -->
+      <!-- <el-button type="success" @click="generate()">试卷导出</el-button> -->
+      <!-- </el-col> -->
+      <!-- <el-col :span="2">
           <template>
             <el-checkbox v-model="isAnswer" style="margin-top: 10px"
               >包含答案</el-checkbox
@@ -560,18 +561,20 @@
                   <audio
                     :src="item.audio"
                     controls="controls"
-                    v-if="item.audio!=''&&(
-                      item.audio.search('.mp3') != -1 ||
-                      item.audio.search('.wav') != -1 ||
-                      item.audio.search('.ogg') != -1)
+                    v-if="
+                      item.audio != '' &&
+                      (item.audio.search('.mp3') != -1 ||
+                        item.audio.search('.wav') != -1 ||
+                        item.audio.search('.ogg') != -1)
                     "
                   ></audio>
                   <img
                     :src="item.file_url"
-                    v-if="item.file_url!=''&&(
-                      item.file_url.search('.png') != -1 ||
-                      item.file_url.search('.jpg') != -1 ||
-                      item.file_url.search('.gif') != -1)
+                    v-if="
+                      item.file_url != '' &&
+                      (item.file_url.search('.png') != -1 ||
+                        item.file_url.search('.jpg') != -1 ||
+                        item.file_url.search('.gif') != -1)
                     "
                   />
                   <p>{{ item.question_content }}</p>
@@ -601,11 +604,27 @@
       </div>
     </el-card>
     <!-- </el-row> -->
+    <el-dialog title="导出" :visible.sync="exVisible" width="30%">
+      <el-radio v-model="ex" label="1">导出为excel</el-radio>
+      <el-radio v-model="ex" label="2">导出为word</el-radio>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="exVisible = false">取 消</el-button>
+        <el-button type="primary" @click="derive">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
 <script src="https://dl.ifanr.cn/hydrogen/sdk/sdk-web-latest.js"></script>
+<script lang="javascript" src="dist/xlsx.full.min.js"></script>
 <script>
+import {
+  export_json_to_excel_zip,
+  downloadZip,
+  downloadWordZip,
+} from "@/util/Export2Excel.js";
+const JSZip = require("jszip");
+var XLSX = require("xlsx");
 import Cookies from "js-cookie";
 import Cookie from "js-cookie";
 import "docxtemplater/build/docxtemplater.js";
@@ -618,6 +637,8 @@ export default {
   props: {},
   data() {
     return {
+      ex: "1",
+      exVisible: false,
       isAnswer: false,
       isAnalysis: false,
       showAnswer: true,
@@ -655,6 +676,7 @@ export default {
   },
   methods: {
     returnHome() {
+      sessionStorage.clear();
       this.$router.go(-1);
     },
     getData() {
@@ -884,6 +906,505 @@ export default {
             }
           }
         }
+      }
+    },
+    exp() {
+      if (sessionStorage.getItem("paperCheck") == "true") {
+        this.exVisible = true;
+      } else {
+        this.$message.warning("请先保存试卷");
+      }
+    },
+    derive() {
+      const loading = this.$loading({
+        lock: true,
+        text: "正在导出，请稍等",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)",
+      });
+      let final = [];
+      let ques = [];
+      for (let i = 0; i < this.questions.length; i++) {
+        let content;
+        if (this.questions[i].audio != "") {
+          content = this.questions[i].audio;
+        } else if (this.questions[i].file_url != "") {
+          content = this.questions[i].file_url;
+        } else {
+          content = this.questions[i].question_content;
+        }
+        for (let j = 0; j < this.questions[i].sub_question.length; j++) {
+          let str = "";
+          if (
+            this.questions[i].sub_question[j].options != null ||
+            this.questions[i].sub_question[j].options != "" ||
+            this.questions[i].sub_question[j].options.length != 0
+          ) {
+            for (
+              let k = 0;
+              k < this.questions[i].sub_question[j].options.length;
+              k++
+            ) {
+              str +=
+                this.questions[i].sub_question[j].options[k].index +
+                "." +
+                this.questions[i].sub_question[j].options[k].content +
+                " ";
+            }
+          }
+          let q = {
+            primary_ques_type: this.questions[i].primary_ques_type,
+            secondary_ques_type: this.questions[i].secondary_ques_type,
+            question_content_id: content,
+            sequence: this.questions[i].sub_question[j].actual_sequence,
+            score: this.questions[i].sub_question[j].score,
+            question: this.questions[i].sub_question[j].question,
+            options: str,
+            answer: this.questions[i].sub_question[j].answer,
+            analysis: this.questions[i].sub_question[j].analysis,
+            grade_standard: this.questions[i].sub_question[j].grade_value,
+            topic_outline: this.questions[i].sub_question[j].topic_value,
+            task_outline: this.questions[i].sub_question[j].task_value,
+            department: this.questions[i].sub_question[j].department_value,
+            ques_level: this.questions[i].sub_question[j].level_value,
+            question_class: this.questions[i].sub_question[j].qclass_value,
+            question_type_5he: this.questions[i].sub_question[j].fivehe_value,
+            author: this.questions[i].sub_question[j].author,
+            author_org: this.questions[i].sub_question[j].author_org,
+            time_created: this.questions[i].sub_question[j].time_created,
+          };
+          ques.push(q);
+          if (ques.length == this.paper_message.questions_num) {
+            let type = "";
+            if (this.exam == true) {
+              type = "模考";
+            } else {
+              type = "练习";
+            }
+            let f = {
+              paper_title: this.paper_message.paper_title,
+              paper_type: type,
+              questions_num: this.paper_message.questions_num,
+              points: this.paper_message.points,
+              catalog: null,
+              questions_detail: ques,
+            };
+            final.push(f);
+          }
+        }
+      }
+      if (this.ex == 1) {
+        setTimeout(() => {
+          let files = [];
+          for (let i = 0; i < final.length; i++) {
+            let temp = [];
+            let t = {
+              catalog: final[i].catalog,
+              paper_title: final[i].paper_title,
+              paper_type: final[i].paper_type,
+              questions_num: final[i].questions_num,
+              points: final[i].points,
+            };
+            temp.push(t);
+            for (let j = 0; j < final[i].questions_detail.length; j++) {
+              temp.push(final[i].questions_detail[j]);
+            }
+            temp.sort(function (a, b) {
+              return a.sequence - b.sequence;
+            });
+            const testData = {
+              试卷或题目文件夹: "catalog",
+              试卷标题: "paper_title",
+              试卷类型: "paper_type",
+              题量: "questions_num",
+              总分: "points",
+              题号: "sequence",
+              分数: "score",
+              一级题型: "primary_ques_type",
+              二级题型: "secondary_ques_type",
+              题干材料: "question_content_id",
+              题目: "question",
+              选项: "options",
+              答案: "answer",
+              解析: "analysis",
+              等级标准: "grade_standard",
+              话题大纲: "topic_outline",
+              任务大纲: "task_outline",
+              科室: "department",
+              题目等级: "ques_level",
+              题目类型: "question_class",
+              五何类型: "question_type_5he",
+              作者: "author",
+              作者单位: "author_org",
+              出题时间: "time_created",
+            };
+            const header = Object.keys(testData);
+            const data = temp.map((user) => {
+              const userArr = [];
+              for (const Key in testData) {
+                const newKey = testData[Key];
+                userArr.push(user[newKey]);
+              }
+              return userArr;
+            });
+            let a = {
+              fileName: final[i].paper_title,
+              file: export_json_to_excel_zip({
+                header,
+                data,
+              }),
+            };
+            files.push(a);
+          }
+          downloadZip(files);
+          loading.close();
+          this.exVisible = false;
+          this.$message({
+            message: "导出成功",
+            type: "success",
+          });
+        }, 3000);
+      } else if (this.ex == 2) {
+        setTimeout(() => {
+          let f = [];
+          for (let i = 0; i < final.length; i++) {
+            final[i].questions_detail.sort(function (a, b) {
+              return a.sequence - b.sequence;
+            });
+            let b = [
+              {
+                primary: "听力",
+                secondary: [
+                  {
+                    type: "听句子，判断对错",
+                    ques: [],
+                    start: -1,
+                  },
+                  {
+                    type: "听短对话，选择正确答案",
+                    ques: [],
+                    start: -1,
+                  },
+                  {
+                    type: "听长对话，选择正确答案",
+                    ques: [],
+                    start: -1,
+                  },
+                  {
+                    type: "听短文，选择正确答案",
+                    ques: [],
+                    start: -1,
+                  },
+                ],
+                start: -1,
+              },
+              {
+                primary: "阅读",
+                secondary: [
+                  {
+                    type: "选择正确的词语填空",
+                    ques: [],
+                    start: -1,
+                  },
+                  {
+                    type: "阅读语段，选择与语段意思一致的一项",
+                    ques: [],
+                    start: -1,
+                  },
+                  {
+                    type: "阅读材料，选择正确答案",
+                    ques: [],
+                    start: -1,
+                  },
+                  {
+                    type: "阅读短文，选择正确答案",
+                    ques: [],
+                    start: -1,
+                  },
+                ],
+                start: -1,
+              },
+              {
+                primary: "写作",
+                secondary: [
+                  {
+                    type: "根据一段长对话写门诊病历记录",
+                    ques: [],
+                    start: -1,
+                  },
+                ],
+                start: -1,
+              },
+            ];
+            for (let j = 0; j < final[i].questions_detail.length; j++) {
+              let date = new Date(
+                final[i].questions_detail[j].created_at * 1000
+              );
+              let Y = date.getFullYear() + "-";
+              let M =
+                date.getMonth() + 1 < 10
+                  ? "0" + (date.getMonth() + 1) + "-"
+                  : date.getMonth() + 1 + "-";
+              let D =
+                date.getDate() < 10
+                  ? "0" + date.getDate() + " "
+                  : date.getDate() + " ";
+              let h =
+                date.getHours() < 10
+                  ? "0" + date.getHours() + ":"
+                  : date.getHours() + ":";
+              let m =
+                date.getMinutes() < 10
+                  ? "0" + date.getMinutes() + ":"
+                  : date.getMinutes() + ":";
+              let s =
+                date.getSeconds() < 10
+                  ? "0" + date.getSeconds()
+                  : date.getSeconds();
+              final[i].questions_detail[j].created_at = Y + M + D + h + m + s;
+              if (
+                final[i].questions_detail[j].question == null ||
+                final[i].questions_detail[j].question == undefined ||
+                final[i].questions_detail[j].question == "" ||
+                final[i].questions_detail[j].question == "null" ||
+                final[i].questions_detail[j].question == "undefined"
+              ) {
+                final[i].questions_detail[j].question = "/";
+              }
+              if (
+                final[i].questions_detail[j].options == null ||
+                final[i].questions_detail[j].options == undefined ||
+                final[i].questions_detail[j].options == "" ||
+                final[i].questions_detail[j].options == "null" ||
+                final[i].questions_detail[j].options == "undefined"
+              ) {
+                final[i].questions_detail[j].options = "/";
+              }
+              if (
+                final[i].questions_detail[j].analysis == null ||
+                final[i].questions_detail[j].analysis == undefined ||
+                final[i].questions_detail[j].analysis == "" ||
+                final[i].questions_detail[j].analysis == "null" ||
+                final[i].questions_detail[j].analysis == "undefined"
+              ) {
+                final[i].questions_detail[j].analysis = "/";
+              }
+              if (
+                final[i].questions_detail[j].catalog == null ||
+                final[i].questions_detail[j].catalog == undefined ||
+                final[i].questions_detail[j].catalog == "" ||
+                final[i].questions_detail[j].catalog == "null" ||
+                final[i].questions_detail[j].catalog == "undefined"
+              ) {
+                final[i].questions_detail[j].catalog = "/";
+              }
+              if (
+                final[i].questions_detail[j].ques_level == null ||
+                final[i].questions_detail[j].ques_level == undefined ||
+                final[i].questions_detail[j].ques_level == "" ||
+                final[i].questions_detail[j].ques_level == "null" ||
+                final[i].questions_detail[j].ques_level == "undefined"
+              ) {
+                final[i].questions_detail[j].ques_level = "/";
+              }
+              if (
+                final[i].questions_detail[j].grade_standard == null ||
+                final[i].questions_detail[j].grade_standard == undefined ||
+                final[i].questions_detail[j].grade_standard == "" ||
+                final[i].questions_detail[j].grade_standard == "null" ||
+                final[i].questions_detail[j].grade_standard == "undefined"
+              ) {
+                final[i].questions_detail[j].grade_standard = "/";
+              }
+              if (
+                final[i].questions_detail[j].topic_outline == null ||
+                final[i].questions_detail[j].topic_outline == undefined ||
+                final[i].questions_detail[j].topic_outline == "" ||
+                final[i].questions_detail[j].topic_outline == "null" ||
+                final[i].questions_detail[j].topic_outline == "undefined"
+              ) {
+                final[i].questions_detail[j].topic_outline = "/";
+              }
+              if (
+                final[i].questions_detail[j].task_outline == null ||
+                final[i].questions_detail[j].task_outline == undefined ||
+                final[i].questions_detail[j].task_outline == "" ||
+                final[i].questions_detail[j].task_outline == "null" ||
+                final[i].questions_detail[j].task_outline == "undefined"
+              ) {
+                final[i].questions_detail[j].task_outline = "/";
+              }
+              if (
+                final[i].questions_detail[j].department == null ||
+                final[i].questions_detail[j].department == undefined ||
+                final[i].questions_detail[j].department == "" ||
+                final[i].questions_detail[j].department == "null" ||
+                final[i].questions_detail[j].department == "undefined"
+              ) {
+                final[i].questions_detail[j].department = "/";
+              }
+              if (
+                final[i].questions_detail[j].question_class == null ||
+                final[i].questions_detail[j].question_class == undefined ||
+                final[i].questions_detail[j].question_class == "" ||
+                final[i].questions_detail[j].question_class == "null" ||
+                final[i].questions_detail[j].question_class == "undefined"
+              ) {
+                final[i].questions_detail[j].question_class = "/";
+              }
+              if (
+                final[i].questions_detail[j].question_type_5he == null ||
+                final[i].questions_detail[j].question_type_5he == undefined ||
+                final[i].questions_detail[j].question_type_5he == "" ||
+                final[i].questions_detail[j].question_type_5he == "null" ||
+                final[i].questions_detail[j].question_type_5he == "undefined"
+              ) {
+                final[i].questions_detail[j].question_type_5he = "/";
+              }
+              if (
+                final[i].questions_detail[j].author == null ||
+                final[i].questions_detail[j].author == undefined ||
+                final[i].questions_detail[j].author == "" ||
+                final[i].questions_detail[j].author == "null" ||
+                final[i].questions_detail[j].author == "undefined"
+              ) {
+                final[i].questions_detail[j].author = "/";
+              }
+              if (
+                final[i].questions_detail[j].author_org == null ||
+                final[i].questions_detail[j].author_org == undefined ||
+                final[i].questions_detail[j].author_org == "" ||
+                final[i].questions_detail[j].author_org == "null" ||
+                final[i].questions_detail[j].author_org == "undefined"
+              ) {
+                final[i].questions_detail[j].author_org = "/";
+              }
+              if (
+                final[i].questions_detail[j].time_created == null ||
+                final[i].questions_detail[j].time_created == undefined ||
+                final[i].questions_detail[j].time_created == "" ||
+                final[i].questions_detail[j].time_created == "null" ||
+                final[i].questions_detail[j].time_created == "undefined"
+              ) {
+                final[i].questions_detail[j].time_created = "/";
+              }
+              for (let k = 0; k < b.length; k++) {
+                if (
+                  final[i].questions_detail[j].primary_ques_type == b[k].primary
+                ) {
+                  if (b[k].start == -1) {
+                    b[k].start = final[i].questions_detail[j].sequence;
+                  }
+                  for (let h = 0; h < b[k].secondary.length; h++) {
+                    if (
+                      final[i].questions_detail[j].secondary_ques_type ==
+                      b[k].secondary[h].type
+                    ) {
+                      b[k].secondary[h].ques.push(final[i].questions_detail[j]);
+                      if (b[k].secondary[h].start == -1) {
+                        b[k].secondary[h].start =
+                          final[i].questions_detail[j].sequence;
+                      }
+                      break;
+                    }
+                  }
+                  break;
+                }
+              }
+            }
+            for (let z = 0; z < b.length; z++) {
+              b[z].secondary.sort(function (c, d) {
+                return c.start - d.start;
+              });
+            }
+            b.sort(function (c, d) {
+              return c.start - d.start;
+            });
+            for (let a = 0; a < b.length; a++) {
+              if (b[a].start != -1) {
+                b.splice(0, a);
+                break;
+              }
+            }
+            for (let a = 0; a < b.length; a++) {
+              for (let c = 0; c < b[a].secondary.length; c++) {
+                if (b[a].secondary[c].start != -1) {
+                  b[a].secondary.splice(0, c);
+                  break;
+                }
+              }
+            }
+            var ImageModule = require("open-docxtemplater-image-module");
+            // 点击导出word
+            var that = this;
+            this.loadFile("export_paper.docx", function (error, content) {
+              if (error) {
+                throw error;
+              }
+              let opts = {};
+              opts.centered = true; // 图片居中，在word模板中定义方式为{%%image}
+              opts.fileType = "docx";
+              opts.getImage = function (chartId) {
+                return that.base64DataURLToArrayBuffer(chartId);
+              };
+              opts.getSize = function () {
+                return [600, 300];
+              };
+
+              let imageModule = new ImageModule(opts);
+
+              var zip = new PizZip(content);
+              var doc = new window.docxtemplater().loadZip(zip);
+              // doc.attachModule(imageModule);
+              doc.setData({
+                paper_title: final[i].paper_title,
+                paper_type: final[i].paper_type,
+                questions_num: final[i].questions_num,
+                points: final[i].points,
+                b: b,
+              });
+              try {
+                // render the document (replace all occurences of {first_name} by John, {last_name} by Doe, ...)
+                doc.render();
+              } catch (error) {
+                var e = {
+                  message: error.message,
+                  name: error.name,
+                  stack: error.stack,
+                  properties: error.properties,
+                };
+                console.log(
+                  JSON.stringify({
+                    error: e,
+                  })
+                );
+                // The error thrown here contains additional information when logged with JSON.stringify (it contains a property object).
+                throw error;
+              }
+              var out = doc.getZip().generate({
+                type: "blob",
+                mimeType:
+                  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+              }); //Output the document using Data-URI
+              let a = {
+                fileName: final[i].paper_title,
+                file: out,
+              };
+              f.push(a);
+              // saveAs(out, "试卷导出.docx");
+            });
+          }
+          setTimeout(() => {
+            console.log(f);
+            downloadWordZip(f);
+            loading.close();
+            this.exVisible = false;
+            this.$message({
+              message: "导出成功",
+              type: "success",
+            });
+          }, 3000 * 2);
+        }, 3000);
       }
     },
     // 导出word

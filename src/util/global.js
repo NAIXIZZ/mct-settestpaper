@@ -5,6 +5,7 @@ let totalSelect = []
 let contentCatalog = []
 let questionsCatalog = []
 let paperContent = []
+let auto = []
 export default{
     tableData,
     selectQuesCatalog,
@@ -12,5 +13,6 @@ export default{
     totalSelect,
     contentCatalog,
     questionsCatalog,
-    paperContent
+    paperContent,
+    auto
 }

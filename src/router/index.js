@@ -27,7 +27,7 @@ import statistic_analysis from '@/views/statistic_analysis/statistic_analysis.vu
 import hand_out from '@/views/hand_out/hand_out.vue'
 import paperDetail from '@/components/paperDetail.vue'
 import visitor_paperDetail from '@/components/visitor_paperDetail.vue'
-import detailAnalysis from '@/views/statistic_analysis/components/detailAnalysis.vue'
+// import detailAnalysis from '@/views/statistic_analysis/components/detailAnalysis.vue'
 import qtopic_outline from '@/views/make_out/question/qoutline/qtopic_outline.vue'
 import qtask_outline from '@/views/make_out/question/qoutline/qtask_outline.vue'
 import qoutline_select from '@/views/make_out/question/qoutline/qoutline_select.vue'
@@ -177,11 +177,11 @@ export default new Router({
             name: 'visitor_paperDetail',
             component: visitor_paperDetail
         },
-        {
-            path: '/detailAnalysis',
-            name: 'detailAnalysis',
-            component: detailAnalysis
-        },
+        // {
+        //     path: '/detailAnalysis',
+        //     name: 'detailAnalysis',
+        //     component: detailAnalysis
+        // },
         {
             path: '/qtopic_outline',
             name: 'qtopic_outline',

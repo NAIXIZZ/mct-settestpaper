@@ -24,29 +24,30 @@
         {{ question.primary_ques_type }}——{{ question.secondary_ques_type }}
       </div>
       <div class="ques_content_details">
-        <audio
-          :src="file_url"
-          controls="controls"
-          v-if="
-            file_url != null &&
-            (file_url.search('.mp3') != -1 ||
-              file_url.search('.ogg') != -1 ||
-              file_url.search('.wav') != -1)
-          "
-        ></audio>
+        <audio :src="audio" controls="controls" v-if="audio != ''"></audio>
         <img
           :src="file_url"
           alt=""
           style="height: 250px"
           v-if="
-            file_url != null &&
+            file_url != '' &&
             (file_url.search('.png') != -1 ||
               file_url.search('.jpg') != -1 ||
               file_url.search('.gif') != -1)
           "
         />
         <div class="details">
-          <p class="details_ques_content">
+          <p
+            class="details_ques_content"
+            v-if="
+              content.search('.png') == -1 &&
+              content.search('.jpg') == -1 &&
+              content.search('.gif') == -1 &&
+              content.search('.mp3') == -1 &&
+              content.search('.wav') == -1 &&
+              content.search('.ogg') == -1
+            "
+          >
             {{ content }}
           </p>
           <div>
@@ -117,11 +118,36 @@
           <div class="material">
             题干：
             <div id="material">
-              <p v-if="content != null">{{ content }}</p>
-              <img :src="file_url" alt="" height="250px" />
+              <p
+                v-if="
+                  content.search('.png') == -1 &&
+                  content.search('.jpg') == -1 &&
+                  content.search('.gif') == -1 &&
+                  content.search('.mp3') == -1 &&
+                  content.search('.wav') == -1 &&
+                  content.search('.ogg') == -1
+                "
+              >
+                {{ content }}
+              </p>
+              <img
+                :src="file_url"
+                alt=""
+                height="250px"
+                v-if="
+                  file_url != '' &&
+                  (file_url.search('.png') != -1 ||
+                    file_url.search('.jpg') != -1 ||
+                    file_url.search('.gif') != -1)
+                "
+              />
             </div>
           </div>
+          <p class="warn">
+            音频、表格和文本仅支持一项，表格上传请点击提示查看模板，保存后将生成图片。
+          </p>
           <el-upload
+            v-if="question.primary_ques_type == '听力'"
             ref="upload"
             action=""
             class="upload-demo"
@@ -137,7 +163,23 @@
           >
             <el-button>上传音频</el-button>
           </el-upload>
-          <audio :src="audio" controls="controls" v-if="audio != ''"></audio>
+          <audio :src="audio" controls="controls" v-if="audio != ''&&question.primary_ques_type=='听力'"></audio>
+          <el-upload
+            v-if="question.secondary_ques_type == '阅读材料，选择正确答案'"
+            ref="upload"
+            action=""
+            class="upload-demo"
+            :multiple="false"
+            accept=".xls,.xlsx"
+            :auto-upload="false"
+            :on-change="excelChange"
+            :on-exceed="handleExceed"
+            :on-remove="excelRemove"
+            :limit="1"
+            :file-list="excelfileList"
+          >
+            <el-button>上传表格</el-button>
+          </el-upload>
         </div>
         <p class="warn">选项：答案选中项为正确答案标示。</p>
         <div style="border-bottom: 1px dashed #c0c4cc">
@@ -185,7 +227,7 @@
             </div>
           </div>
         </div>
-        <div class="knowledge">
+        <!-- <div class="knowledge">
           等级：
           <el-select v-model="level_value" placeholder="请选择题目等级">
             <el-option
@@ -196,9 +238,9 @@
             >
             </el-option>
           </el-select>
-        </div>
+        </div> -->
         <div class="knowledge">
-          等级标准：
+          MCT等级：
           <el-cascader
             v-model="grade_value"
             :options="grade_standard"
@@ -471,91 +513,91 @@ export default {
       grade_value: [],
       grade_standard: [
         {
-          value: 1,
-          label: "医学汉语能力总体描述",
+          value: "医学汉语能力总体等级",
+          label: "医学汉语能力总体等级",
           children: [
             {
-              value: 2,
+              value: "一级",
               label: "一级",
             },
             {
-              value: 3,
+              value: "二级",
               label: "二级",
             },
             {
-              value: 4,
+              value: "三级",
               label: "三级",
             },
           ],
         },
         {
-          value: 5,
+          value: "医学汉语口头理解能力（听）",
           label: "医学汉语口头理解能力（听）",
           children: [
             {
-              value: 6,
+              value: "一级",
               label: "一级",
             },
             {
-              value: 7,
+              value: "二级",
               label: "二级",
             },
             {
-              value: 8,
+              value: "三级",
               label: "三级",
             },
           ],
         },
         {
-          value: 9,
+          value: "医学汉语口头理解能力（说）",
           label: "医学汉语口头理解能力（说）",
           children: [
             {
-              value: 10,
+              value: "一级",
               label: "一级",
             },
             {
-              value: 11,
+              value: "二级",
               label: "二级",
             },
             {
-              value: 12,
+              value: "三级",
               label: "三级",
             },
           ],
         },
         {
-          value: 13,
+          value: "医学汉语口头理解能力（读）",
           label: "医学汉语口头理解能力（读）",
           children: [
             {
-              value: 14,
+              value: "一级",
               label: "一级",
             },
             {
-              value: 15,
+              value: "二级",
               label: "二级",
             },
             {
-              value: 16,
+              value: "三级",
               label: "三级",
             },
           ],
         },
         {
-          value: 17,
+          value: "医学汉语口头理解能力（写）",
           label: "医学汉语口头理解能力（写）",
           children: [
             {
-              value: 18,
+              value: "一级",
               label: "一级",
             },
             {
-              value: 19,
+              value: "二级",
               label: "二级",
             },
             {
-              value: 20,
+              value: "三级",
               label: "三级",
             },
           ],
@@ -564,81 +606,81 @@ export default {
       topic_value: [],
       topic_outline: [
         {
-          value: 1,
+          value: "医生-医生",
           label: "医生-医生",
           children: [
             {
-              value: 2,
+              value: "询问",
               label: "询问",
             },
             {
-              value: 3,
+              value: "交流",
               label: "交流",
             },
             {
-              value: 4,
+              value: "指令",
               label: "指令",
             },
           ],
         },
         {
-          value: 5,
+          value: "医生-患者",
           label: "医生-患者",
           children: [
             {
-              value: 6,
+              value: "问诊",
               label: "问诊",
             },
             {
-              value: 7,
+              value: "诊断",
               label: "诊断",
             },
             {
-              value: 8,
+              value: "治疗",
               label: "治疗",
             },
             {
-              value: 9,
+              value: "主诉",
               label: "主诉",
             },
             {
-              value: 10,
+              value: "交流",
               label: "交流",
             },
             {
-              value: 11,
+              value: "指令",
               label: "指令",
             },
           ],
         },
         {
-          value: 12,
+          value: "医生-护士",
           label: "医生-护士",
           children: [
             {
-              value: 13,
+              value: "交流",
               label: "交流",
             },
             {
-              value: 14,
+              value: "指令",
               label: "指令",
             },
           ],
         },
         {
-          value: 15,
+          value: "患者-护士",
           label: "患者-护士",
           children: [
             {
-              value: 16,
+              value: "交流",
               label: "交流",
             },
             {
-              value: 17,
+              value: "指令",
               label: "指令",
             },
             {
-              value: 18,
+              value: "咨询",
               label: "咨询",
             },
           ],
@@ -685,6 +727,8 @@ export default {
       initial_content: "",
       initial_file: "",
       initail_audio: "",
+      excelfileList: [],
+      file_urlr: "",
     };
   },
   watch: {},
@@ -733,7 +777,7 @@ export default {
         } 个文件`
       );
     },
-    dataURLtoFile(dataURL, fileName, fileType) {
+    adataURLtoFile(dataURL, fileName, fileType) {
       /**
        * 注意：【不同文件不同类型】，例如【图片类型】就是`data:image/png;base64,${dataURL}`.split(',')
        * 下面的是【excel文件(.xlsx尾缀)】的文件类型拼接，一个完整的 base64 应该
@@ -779,9 +823,9 @@ export default {
             this.question = res.data.objects[0];
             this.question.options = JSON.parse(this.question.options);
             this.initial = res.data.objects[0];
-            if (this.question.ques_level != null) {
-              this.level_value = this.question.ques_level;
-            }
+            // if (this.question.ques_level != null) {
+            //   this.level_value = this.question.ques_level;
+            // }
             if (this.question.grade_standard != null) {
               this.grade_value = this.question.grade_standard;
             }
@@ -842,40 +886,6 @@ export default {
       this.check = true;
       // this.beforeDestroy()
     },
-    file() {
-      var BaaS = require("minapp-sdk");
-      let clientID = "395062a19e209a770059";
-      BaaS.init(clientID);
-      var f = document.getElementById("file");
-      f.addEventListener("change", function (e) {
-        let File = new BaaS.File();
-        let fileParams = { fileObj: e.target.files[0] };
-        File.upload(fileParams).then(
-          (res) => {
-            // this.image = res.data.file.path;
-            this.change_file = true;
-            this.$refs.image.src = res.data.file.path;
-            // this.$refs.img.src = this.image
-          },
-          (err) => {
-            // HError
-          }
-        );
-      });
-      // let File = new BaaS.File();
-      // let fileParams = this.dialogImageUrl;
-      // File.upload(fileParams).then(
-      //   (res) => {
-      //     console.log(res);
-      //     // this.image = res.data.file.path;
-      //     // this.change_file = true;
-      //   },
-      //   (err) => {
-      //     // HError
-      //   }
-      // );
-      // dialogImageUrl;
-    },
     handlePictureCardPreview(file) {
       this.dialogImageUrl = file.url;
       this.dialogVisible = true;
@@ -888,13 +898,18 @@ export default {
         .catch((_) => {});
     },
     async checkQues() {
-      this.file_url = "";
-      var valid = true;
-      if (this.level_value == "") {
-        this.question.ques_level = null;
-      } else {
-        this.question.ques_level = this.level_value;
+      if (this.question.primary_ques_type != "听力") {
+        this.handleRemove()
       }
+      if (this.question.secondary_ques_type != "阅读材料，选择正确答案") {
+        this.excelRemove()
+      }
+      var valid = true;
+      // if (this.level_value == "") {
+      //   this.question.ques_level = null;
+      // } else {
+      //   this.question.ques_level = this.level_value;
+      // }
       if (this.grade_value == "") {
         this.question.grade_standard = null;
       } else {
@@ -945,8 +960,12 @@ export default {
           break;
         }
         if (this.editor[i].toolbarSelector == "#material") {
-          if (this.editor[i].txt.html() == "" && this.audio == "") {
-            this.content = null;
+          if (
+            this.editor[i].txt.html() == "" &&
+            this.audio == "" &&
+            this.file_url == ""
+          ) {
+            this.content = "";
             this.$message({
               message: "请填写题干",
               type: "warning",
@@ -956,7 +975,8 @@ export default {
           } else {
             if (
               this.editor[i].txt.html().search("<img src=") != -1 &&
-              this.audio == ""
+              this.audio == "" &&
+              this.file_url == ""
             ) {
               let src = "";
               let a = this.editor[i].txt.html().search("<img src=");
@@ -970,11 +990,14 @@ export default {
               }
               this.file_url = src;
             } else if (
-              this.editor[i].txt.html().search("<img src=") != -1 &&
-              this.audio != ""
+              (this.editor[i].txt.html().search("<img src=") != -1 &&
+                this.audio != "") ||
+              (this.editor[i].txt.html().search("<img src=") != -1 &&
+                this.file_url != "") ||
+              (this.audio != "" && this.file_url != "")
             ) {
               this.$message({
-                message: "图片和音频只支持一项，请修改",
+                message: "音频、表格和文本只支持一项，请修改",
                 type: "warning",
               });
               valid = false;
@@ -1151,35 +1174,77 @@ export default {
       this.dialogVisible = false;
       if (this.content != this.initial_content) {
         if (this.file_url != "" && this.file_url != this.initial_file) {
-          const result = this.dataURLtoFile(this.file_url, "图片.png");
-          let addFile = new BaaS.File();
-          let file = { fileObj: result };
-          addFile.upload(file).then(
-            (res) => {
-              let saveContent = new BaaS.TableObject("question_content");
-              let content = saveContent.getWithoutData(
-                this.question.question_content_id
-              );
-              content.set({
-                content: this.content,
-                file_url: res.data.file,
-                catalog: null,
-                is_delete: false,
-              });
-              content.update().then(
-                (res) => {
-                  this.question.question_content_id = res.data.id;
-                  Cookies.set("question_file", res.data.file_url.path);
-                },
-                (err) => {
-                  console.log(err);
-                }
-              );
-            },
-            (err) => {
-              console.log(err);
-            }
-          );
+          if (
+            this.file_url.search("image") != -1 ||
+            this.file_url.search("mp3") != -1 ||
+            this.file_url.search("wav") != -1 ||
+            this.file_url.search("ogg") != -1
+          ) {
+            const result = this.dataURLtoFile(this.file_url, "图片.png");
+            let addFile = new BaaS.File();
+            let file = { fileObj: result };
+            addFile.upload(file).then(
+              (res) => {
+                let saveContent = new BaaS.TableObject("question_content");
+                let content = saveContent.getWithoutData(
+                  this.question.question_content_id
+                );
+                content.set({
+                  content: this.content,
+                  file_url: res.data.file,
+                  catalog: null,
+                  is_delete: false,
+                });
+                content.update().then(
+                  (res) => {
+                    this.question.question_content_id = res.data.id;
+                    Cookies.set("question_file", res.data.file_url.path);
+                  },
+                  (err) => {
+                    console.log(err);
+                  }
+                );
+              },
+              (err) => {
+                console.log(err);
+              }
+            );
+          } else if (
+            this.file_url.search("sheet") != -1 ||
+            this.file_url.search("xls") != -1 ||
+            this.file_url.search("xlsx") != -1
+          ) {
+            const result = this.dataURLtoFile(this.file_url, "表格.xlsx");
+            let addFile = new BaaS.File();
+            let file = { fileObj: result };
+            addFile.upload(file).then(
+              (res) => {
+                let saveContent = new BaaS.TableObject("question_content");
+                let content = saveContent.getWithoutData(
+                  this.question.question_content_id
+                );
+                content.set({
+                  content: this.content,
+                  file_url: res.data.file,
+                  excel: res.data.file,
+                  catalog: null,
+                  is_delete: false,
+                });
+                content.update().then(
+                  (res) => {
+                    this.question.question_content_id = res.data.id;
+                    Cookies.set("question_file", res.data.file_url.path);
+                  },
+                  (err) => {
+                    console.log(err);
+                  }
+                );
+              },
+              (err) => {
+                console.log(err);
+              }
+            );
+          }
         } else if (this.audio != "" && this.audio != this.initail_audio) {
           let addFile = new BaaS.File();
           let file = { fileObj: this.audior };
@@ -1226,7 +1291,6 @@ export default {
           );
         }
       }
-
       if (this.question.options != null) {
         this.question.options = JSON.stringify(this.question.options);
       }
@@ -1252,6 +1316,7 @@ export default {
             message: "题目保存失败",
             type: "danger",
           });
+          loading.close();
         }
       );
     },
@@ -1299,6 +1364,25 @@ export default {
       analysis.create();
       this.editor.push(analysis);
     },
+    excelChange(file, fileList) {
+      this.excelfileList.push(file);
+      if (/\.(xls)$/.test(file.raw.name) || /\.(xlsx)$/.test(file.raw.name)) {
+        var reader = new FileReader();
+        reader.readAsDataURL(file.raw);
+        reader.onload = () => {
+          const result = this.dataURLtoFile(reader.result, file.raw.name);
+          new Promise((resolve, reject) => {
+            this.file_url = reader.result;
+            this.file_urlr = result;
+          });
+        };
+      }
+    },
+    excelRemove(file, fileList) {
+      this.excelfileList = [];
+      this.file_url = "";
+      this.file_urlr = "";
+    },
   },
   created() {},
   mounted() {
@@ -1311,6 +1395,7 @@ export default {
       this.file_url.search("ogg") != -1
     ) {
       this.audio = this.file_url;
+      this.file_url = "";
       this.fileList.push({ name: this.audio, url: this.audio });
     }
     this.init();

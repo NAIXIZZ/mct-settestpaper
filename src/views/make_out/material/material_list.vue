@@ -106,14 +106,14 @@
             <el-button type="success" plain @click="checkQuesP(scope.row.id)"
               >查看题目/试卷</el-button
             >
-            <el-button type="warning" plain @click="handleSet(scope.row.id)"
+            <el-button type="warning" plain @click="handleSet(scope.row)"
               >自动出题</el-button
             >
             <el-button
               type="danger"
               plain
               v-if="!scope.row.have"
-              @click="delContent(scope.$index,scope.row)"
+              @click="delContent(scope.$index, scope.row)"
               >删除</el-button
             >
             <div style="margin: 0 10px" v-else>
@@ -178,34 +178,156 @@
     <el-dialog
       title="自动出题"
       :visible.sync="dialogFormVisible"
+      :before-close="autoClose"
       class="autoQP"
     >
       <el-form :model="form">
-        <el-form-item label="题目数量：" :label-width="formLabelWidth">
-          <el-input
-            type="number"
-            v-model="form.ques_num"
-            placeholder="请输入题目数量"
-            autocomplete="off"
-          ></el-input>
+        <el-form-item label="题干材料：" :label-width="formLabelWidth">
+          <p>{{ form.ques_con }}</p>
+          <img
+            :src="form.ques_file"
+            alt=""
+            v-if="
+              form.ques_file != '' &&
+              (form.ques_file.search('.png') != -1 ||
+                form.ques_file.search('.jpg') != -1 ||
+                form.ques_file.search('.gif') != -1)
+            "
+            style="width: 400px"
+          />
+          <audio
+            :src="form.ques_file"
+            v-if="
+              form.ques_file != '' &&
+              (form.ques_file.search('.mp3') != -1 ||
+                form.ques_file.search('.wav') != -1 ||
+                form.ques_file.search('.ogg') != -1)
+            "
+            controls="controls"
+          ></audio>
         </el-form-item>
-        <el-form-item label="题目类型：" :label-width="formLabelWidth">
-          <el-cascader
-            v-model="form.ques_type"
-            :options="ques_select"
-            :props="{
-              multiple: true,
-              checkStrictly: true,
-              expandTrigger: 'hover',
-            }"
-            clearable
-            placeholder="请选择题型"
-          ></el-cascader>
-        </el-form-item>
+        <div v-for="(x, index) in form.type" :key="x.index" class="autoType">
+          <el-form-item label="题目类型：" :label-width="formLabelWidth">
+            <el-cascader
+              v-if="
+                form.ques_file != '' &&
+                (form.ques_file.search('.png') != -1 ||
+                  form.ques_file.search('.jpg') != -1 ||
+                  form.ques_file.search('.gif') != -1) &&
+                (form.ques_con == '' || form.ques_con == null)
+              "
+              v-model="x.ques_type"
+              :options="ques_select_mat"
+              :props="{
+                expandTrigger: 'hover',
+              }"
+              clearable
+              placeholder="请选择题型"
+            ></el-cascader>
+            <el-cascader
+              v-else-if="
+                form.ques_file != '' &&
+                (form.ques_file.search('.mp3') != -1 ||
+                  form.ques_file.search('.wav') != -1 ||
+                  form.ques_file.search('.ogg') != -1) &&
+                (form.ques_con == '' || form.ques_con == null)
+              "
+              v-model="x.ques_type"
+              :options="ques_select_listen"
+              :props="{
+                expandTrigger: 'hover',
+              }"
+              clearable
+              placeholder="请选择题型"
+            ></el-cascader>
+            <el-cascader
+              v-else-if="
+                form.ques_file.search('.png') == -1 &&
+                form.ques_file.search('.gif') == -1 &&
+                form.ques_file.search('.jpg') == -1 &&
+                form.ques_con != '' &&
+                form.ques_con != null
+              "
+              v-model="x.ques_type"
+              :options="ques_select_nmat"
+              :props="{
+                expandTrigger: 'hover',
+              }"
+              clearable
+              placeholder="请选择题型"
+            ></el-cascader>
+            <el-cascader
+              v-else
+              v-model="x.ques_type"
+              :options="ques_select"
+              :props="{
+                expandTrigger: 'hover',
+              }"
+              clearable
+              placeholder="请选择题型"
+            ></el-cascader>
+          </el-form-item>
+          <el-form-item
+            label="题目数量："
+            :label-width="formLabelWidth"
+            v-if="x.ques_type[1] != '阅读短文，选择正确答案'"
+          >
+            <el-input
+              type="number"
+              min="0"
+              v-model="x.ques_num"
+              placeholder="请输入题目数量"
+              autocomplete="off"
+            ></el-input>
+          </el-form-item>
+          <el-form-item
+            label="医学题数量："
+            :label-width="formLabelWidth"
+            v-if="x.ques_type[1] == '阅读短文，选择正确答案'"
+          >
+            <el-input
+              type="number"
+              min="0"
+              v-model="x.ques_num_yixue"
+              placeholder="请输入医学题数量"
+              autocomplete="off"
+            ></el-input>
+          </el-form-item>
+          <el-form-item
+            label="综合题数量："
+            :label-width="formLabelWidth"
+            v-if="x.ques_type[1] == '阅读短文，选择正确答案'"
+          >
+            <el-input
+              type="number"
+              min="0"
+              v-model="x.ques_num_zonghe"
+              placeholder="请输入综合题数量"
+              autocomplete="off"
+            ></el-input>
+          </el-form-item>
+          <el-form-item label="题目等级：" :label-width="formLabelWidth">
+            <el-select v-model="x.grade" placeholder="请选择题目等级">
+              <el-option
+                v-for="item in grade"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              >
+              </el-option>
+            </el-select>
+          </el-form-item>
+          <i
+            class="el-icon-remove-outline"
+            v-if="form.type.length != 1"
+            @click="delAuto(index)"
+          ></i>
+        </div>
+        <i class="el-icon-circle-plus-outline" @click="addAuto"></i>
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="setQues">保存到题库</el-button>
-        <el-button @click="dialogFormVisible = false">取 消</el-button>
+        <el-button type="primary" @click="setQues">生成题目</el-button>
+        <el-button @click="autoClose">取 消</el-button>
       </div>
     </el-dialog>
     <el-dialog
@@ -223,6 +345,8 @@
 </template>
 
 <script>
+import global from "@/util/global.js";
+import { Read4 } from "@/api/api.js";
 import Cookies from "js-cookie";
 import Cookie from "js-cookie";
 var BaaS = require("minapp-sdk");
@@ -247,9 +371,36 @@ export default {
       initial: [],
       dialogFormVisible: false,
       form: {
-        ques_num: 1,
-        ques_type: "",
+        ques_con: "",
+        ques_file: "",
+        type: [
+          {
+            ques_num: 1,
+            ques_type: "",
+            ques_num_yixue: 1,
+            ques_num_zonghe: 1,
+            grade: "不限等级",
+          },
+        ],
       },
+      grade: [
+        {
+          value: "不限等级",
+          label: "不限等级",
+        },
+        {
+          value: "一级",
+          label: "一级",
+        },
+        {
+          value: "二级",
+          label: "二级",
+        },
+        {
+          value: "三级",
+          label: "三级",
+        },
+      ],
       formLabelWidth: "120px",
       srcList: [],
       addMore: true,
@@ -312,6 +463,94 @@ export default {
           ],
         },
       ],
+      ques_select_listen: [
+        {
+          value: "听力题",
+          label: "听力题",
+          children: [
+            {
+              value: "听句子，判断对错",
+              label: "听句子，判断对错",
+            },
+            {
+              value: "听短对话，选择正确答案",
+              label: "听短对话，选择正确答案",
+            },
+            {
+              value: "听长对话，选择正确答案",
+              label: "听长对话，选择正确答案",
+            },
+            {
+              value: "听短文，选择正确答案",
+              label: "听短文，选择正确答案",
+            },
+          ],
+        },
+      ],
+      ques_select_mat: [
+        {
+          value: "阅读题",
+          label: "阅读题",
+          children: [
+            {
+              value: "阅读材料，选择正确答案",
+              label: "阅读材料，选择正确答案",
+            },
+          ],
+        },
+      ],
+      ques_select_nmat: [
+        {
+          value: "听力题",
+          label: "听力题",
+          children: [
+            {
+              value: "听句子，判断对错",
+              label: "听句子，判断对错",
+            },
+            {
+              value: "听短对话，选择正确答案",
+              label: "听短对话，选择正确答案",
+            },
+            {
+              value: "听长对话，选择正确答案",
+              label: "听长对话，选择正确答案",
+            },
+            {
+              value: "听短文，选择正确答案",
+              label: "听短文，选择正确答案",
+            },
+          ],
+        },
+        {
+          value: "阅读题",
+          label: "阅读题",
+          children: [
+            {
+              value: "选择正确词语填空",
+              label: "选择正确词语填空",
+            },
+            {
+              value: "阅读语段，选择与语段意思一致的一项",
+              label: "阅读语段，选择与语段意思一致的一项",
+            },
+            {
+              value: "阅读短文，选择正确答案",
+              label: "阅读短文，选择正确答案",
+            },
+          ],
+        },
+        {
+          value: "写作题",
+          label: "写作题",
+          children: [
+            {
+              value: "根据一段长对话写门诊病历记录",
+              label: "根据一段长对话写门诊病历记录",
+            },
+          ],
+        },
+      ],
       catalog: [],
     };
   },
@@ -319,86 +558,91 @@ export default {
   computed: {},
   methods: {
     init() {
+      let ques = [];
       let query = new BaaS.Query();
       query.compare("created_by", "=", Cookie.get("user_id") * 1);
       let q2 = new BaaS.Query();
       q2.compare("is_delete", "=", false);
       let andQuery = BaaS.Query.and(query, q2);
-      let Material = new BaaS.TableObject("question_content");
-      Material.limit(1000)
+      let Question = new BaaS.TableObject("questions_information");
+      Question.setQuery(andQuery)
+        .limit(1000)
         .offset(0)
-        .setQuery(andQuery)
-        .orderBy("-created_at")
         .find()
         .then(
           (res) => {
-            res.data.objects.forEach((element) => {
-              element.have = false;
-              let q3 = new BaaS.Query();
-              q3.compare("question_content_id", "=", element.id);
-              let Question = new BaaS.TableObject("questions_information");
-              let and = BaaS.Query.and(query, q2, q3);
-              Question.setQuery(and)
-                .limit(1000)
+            if (res.data.objects.length != 0) {
+              ques = res.data.objects;
+              let Material = new BaaS.TableObject("question_content");
+              Material.limit(1000)
                 .offset(0)
+                .setQuery(andQuery)
+                .orderBy("-created_at")
                 .find()
                 .then(
                   (res) => {
-                    if (res.data.objects.length != 0) {
-                      element.have = true;
+                    res.data.objects.forEach((element) => {
+                      element.have = false;
+                      for (let i = 0; i < ques.length; i++) {
+                        if (ques[i].question_content_id == element.id) {
+                          element.have = true;
+                          break;
+                        }
+                      }
+                      if (
+                        element.file_url != null &&
+                        (element.file_url.path.search(".png") != -1 ||
+                          element.file_url.path.search(".jpg") != -1 ||
+                          element.file_url.path.search(".gif") != -1)
+                      ) {
+                        this.srcList.push(element.file_url.path);
+                      }
+                      if (element.catalog != null) {
+                        var a = {
+                          have: false,
+                          finish: true,
+                          rename: false,
+                          catalog: element.catalog,
+                        };
+                        this.catalog.push(a);
+                      }
+                    });
+                    if (this.catalog.length != 0) {
+                      const map = new Map();
+                      this.catalog = this.catalog.filter(
+                        (key) =>
+                          !map.has(key.catalog) && map.set(key.catalog, 1)
+                      );
                     }
+                    this.catalog.forEach((element) => {
+                      res.data.objects.forEach((item) => {
+                        if (
+                          element.catalog == item.catalog &&
+                          (item.content != null || item.file_url != null)
+                        ) {
+                          element.have = true;
+                        }
+                      });
+                    });
+                    this.catalog.forEach((element) => {
+                      res.data.objects = res.data.objects.filter(
+                        (t) => t.catalog != element.catalog
+                      );
+                      res.data.objects.unshift(element);
+                    });
+                    this.loading = false;
+                    sessionStorage.setItem(
+                      "contentCatalog",
+                      JSON.stringify(this.catalog)
+                    );
+                    this.tableData = res.data.objects;
+                    this.initial = res.data.objects;
                   },
                   (err) => {
                     console.log(err);
                   }
                 );
-              if (
-                element.file_url != null &&
-                (element.file_url.path.search(".png") != -1 ||
-                  element.file_url.path.search(".jpg") != -1 ||
-                  element.file_url.path.search(".gif") != -1)
-              ) {
-                this.srcList.push(element.file_url.path);
-              }
-              if (element.catalog != null) {
-                var a = {
-                  have: false,
-                  finish: true,
-                  rename: false,
-                  catalog: element.catalog,
-                };
-                this.catalog.push(a);
-              }
-            });
-            if (this.catalog.length != 0) {
-              const map = new Map();
-              this.catalog = this.catalog.filter(
-                (key) => !map.has(key.catalog) && map.set(key.catalog, 1)
-              );
             }
-            this.catalog.forEach((element) => {
-              res.data.objects.forEach((item) => {
-                if (
-                  element.catalog == item.catalog &&
-                  (item.content != null || item.file_url != null)
-                ) {
-                  element.have = true;
-                }
-              });
-            });
-            this.catalog.forEach((element) => {
-              res.data.objects = res.data.objects.filter(
-                (t) => t.catalog != element.catalog
-              );
-              res.data.objects.unshift(element);
-            });
-            this.loading = false;
-            sessionStorage.setItem(
-              "contentCatalog",
-              JSON.stringify(this.catalog)
-            );
-            this.tableData = res.data.objects;
-            this.initial = res.data.objects;
           },
           (err) => {
             console.log(err);
@@ -671,7 +915,7 @@ export default {
           }
         );
     },
-    delContent(index,row) {
+    delContent(index, row) {
       const loading = this.$loading({
         lock: true,
         text: "正在删除，请稍后",
@@ -688,7 +932,7 @@ export default {
             message: "删除成功",
             type: "success",
           });
-          this.tableData.splice(index,1)
+          this.tableData.splice(index, 1);
           loading.close();
         },
         (err) => {
@@ -757,30 +1001,134 @@ export default {
       }
     },
     enterFolder(row) {
+      Cookies.set("make_out", "third");
       Cookies.set("catalog", row.catalog);
       Cookies.set("catalogall", JSON.stringify(this.catalog));
       this.$router.push("/materialCatalog");
     },
     checkQuesP(id) {
+      Cookies.set("make_out", "third");
       Cookies.set("material_id", id);
       this.$router.push("/checkQuesP");
     },
     handleSet(val) {
-      Cookies.set("material_id", val);
+      console.log(val);
+      Cookies.set("material_id", val.id);
+      this.form.ques_con = val.content;
+      if (val.file_url != "" && val.file_url != null) {
+        this.form.ques_file = val.file_url.path;
+      }
       this.dialogFormVisible = true;
+    },
+    autoClose() {
+      this.form = {
+        ques_con: "",
+        ques_file: "",
+        type: [
+          {
+            ques_type: "",
+            ques_num: 1,
+            ques_num_yixue: 1,
+            ques_num_zonghe: 1,
+            grade: "不限等级",
+          },
+        ],
+      };
+      this.dialogFormVisible = false;
     },
     setQues() {
       console.log(this.form);
-
-      this.dialogFormVisible = false;
+      let valid = true;
+      for (let i = 0; i < this.form.type.length; i++) {
+        if (this.form.type[i].ques_type == "") {
+          valid = false;
+          this.$message.warning("请选择出题题型");
+          break;
+        }
+        this.form.type[i].ques_num *= 1;
+        this.form.type[i].ques_num_yixue *= 1;
+        this.form.type[i].ques_num_zonghe *= 1;
+      }
+      if (valid == true) {
+        const loading = this.$loading({
+        lock: true,
+        text: "正在出题中，请稍后",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)",
+      });
+        for (let i = 0; i < this.form.type.length; i++) {
+          if (this.form.type[i].ques_type[1] == "阅读短文，选择正确答案") {
+            Read4(
+              this.form.ques_con,
+              this.form.type[i].ques_num_yixue,
+              this.form.type[i].ques_num_zonghe
+            ).then(
+              (res) => {
+                loading.close()
+                console.log(res);
+                if(res.medical_data.length!=0){
+                  for(let j=0;j<res.medical_data.length;j++){
+                    global.auto.push(res.medical_data[j])
+                  }
+                }
+                if(res.synthesis_data.length!=0){
+                  for(let j=0;j<res.synthesis_data.length;j++){
+                    global.auto.push(res.synthesis_data[j])
+                  }
+                }
+                
+                // let questions = []
+                // let content = []
+                // for(let i=0;i<this.form.type.length;i++){
+                //   let s = {
+                //     temp: this.form.ques_con
+                //   }
+                // }
+                // for(let i=0;i<res.medical_data.length;i++){
+                //   let t = {
+                //   question_content: this.form.ques_con,
+                  
+                // }
+                // }
+                
+                this.autoClose();
+                Cookies.set("autoQues","true")
+                Cookies.set("make_out", "third");
+                this.$router.push("/mcreatePaper")
+              },
+              (err) => {
+                this.$message.error("出题失败")
+                loading.close()
+                console.log(err)
+              }
+            );
+          }
+        }
+      }
+    },
+    addAuto() {
+      let t = {
+        ques_type: "",
+        ques_num: 1,
+        ques_num_yixue: 1,
+        ques_num_zonghe: 1,
+        grade: "不限等级",
+      };
+      this.form.type.push(t);
+    },
+    delAuto(val) {
+      console.log(val);
+      this.form.type.splice(val, 1);
     },
     trash() {
+      Cookies.set("make_out", "third");
       Cookies.set("trash", "content");
       this.$router.push("/trash_list");
     },
     checkMaterial(id) {
+      Cookies.set("make_out", "third");
       Cookies.set("material_id", id);
-      this.$router.push("checkMaterial");
+      this.$router.push("/checkMaterial");
     },
     handleSizeChange(val) {
       console.log(`每页 ${val} 条`);
@@ -857,7 +1205,7 @@ export default {
   color: #f90c0c;
 }
 .material .el-dialog {
-  width: 450px;
+  width: 620px !important;
 }
 .material .el-cascader {
   width: 100%;
@@ -876,5 +1224,25 @@ export default {
 }
 .material .autoQP .el-dialog__body {
   padding: 0 20px;
+}
+.material .el-icon-circle-plus-outline {
+  font-size: 40px;
+  color: green;
+  float: left;
+}
+.material .el-icon-remove-outline {
+  font-size: 30px;
+  color: red;
+  float: right;
+}
+.material .autoType {
+  margin-bottom: 20px;
+  padding-bottom: 40px;
+  border-bottom: 1px dotted gray;
+}
+.material .autoType .el-cascader,
+.material .autoType .el-input,
+.material .autoType .el-select {
+  width: 100%;
 }
 </style>

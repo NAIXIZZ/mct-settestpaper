@@ -3,14 +3,14 @@
   <div class="handout">
     <Heads></Heads>
     <el-tabs v-model="active_out">
-      <el-tab-pane label="题干资料" name="first"
-        ><material_list></material_list
+      <el-tab-pane label="试卷" name="first"
+        ><paper_list></paper_list
       ></el-tab-pane>
       <el-tab-pane label="题库" name="second"
         ><ques_list></ques_list
       ></el-tab-pane>
-      <el-tab-pane label="试卷" name="third"
-        ><paper_list></paper_list
+      <el-tab-pane label="题干资料" name="third"
+        ><material_list></material_list
       ></el-tab-pane>
     </el-tabs>
   </div>

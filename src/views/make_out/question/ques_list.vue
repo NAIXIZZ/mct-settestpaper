@@ -132,7 +132,7 @@
           </el-table-column>
           <el-table-column
             prop="question_content_id"
-            label="题目"
+            label="题干"
             show-overflow-tooltip
             width="300"
           >
@@ -140,13 +140,23 @@
               <audio
                 :src="scope.row.file"
                 controls="controls"
-                v-if="scope.row.file && scope.row.file.search('.mp3') != -1"
+                v-if="
+                  scope.row.file &&
+                  (scope.row.file.search('.mp3') != -1 ||
+                    scope.row.file.search('.wav') != -1 ||
+                    scope.row.file.search('.ogg') != -1)
+                "
                 style="width: 250px"
               ></audio>
               <el-image
                 :preview-src-list="srcList"
                 :src="scope.row.file"
-                v-if="scope.row.file && scope.row.file.search('.png') != -1"
+                v-if="
+                  scope.row.file &&
+                  (scope.row.file.search('.png') != -1 ||
+                    scope.row.file.search('.jpg') != -1 ||
+                    scope.row.file.search('.gif') != -1)
+                "
               ></el-image>
               <p>{{ scope.row.question_content_id }}</p>
             </template>
@@ -182,7 +192,7 @@
                   type="danger"
                   plain
                   v-if="!scope.row.have"
-                  @click="delQues(scope.$index,scope.row)"
+                  @click="delQues(scope.$index, scope.row)"
                   >删除</el-button
                 >
                 <div style="margin: 0 10px" v-else>
@@ -242,47 +252,176 @@
       <el-button type="primary" icon="el-icon-delete" @click="trash"
         >回收站</el-button
       >
+      <div id="mat"></div>
     </div>
     <el-dialog
       title="自动出题"
       :visible.sync="dialogFormVisible"
       class="autoQP"
+      :before-close="autoClose"
     >
-      <el-form :model="form">
-        <el-form-item label="题干材料：" :label-width="formLabelWidth">
-          <el-input
-            type="textarea"
-            :rows="3"
-            v-model="form.ques_con"
-            placeholder="请输入题干材料"
-            autocomplete="off"
-          ></el-input>
-        </el-form-item>
-        <el-form-item label="题目数量：" :label-width="formLabelWidth">
-          <el-input
-            type="number"
-            v-model="form.ques_num"
-            placeholder="请输入题目数量"
-            autocomplete="off"
-          ></el-input>
-        </el-form-item>
-        <el-form-item label="题目类型：" :label-width="formLabelWidth">
-          <el-cascader
-            v-model="form.ques_type"
-            :options="ques_select"
-            :props="{
-              multiple: true,
-              checkStrictly: true,
-              expandTrigger: 'hover',
-            }"
-            clearable
-            placeholder="请选择题型"
-          ></el-cascader>
-        </el-form-item>
-      </el-form>
+      <el-button size="small" @click="addTab(editableTabsValue)">
+        添加题干
+      </el-button>
+      <el-tabs
+        v-model="editableTabsValue"
+        type="card"
+        closable
+        @tab-remove="removeTab"
+      >
+        <el-tab-pane
+          v-for="(item, index) in editableTabs"
+          :key="item.name"
+          :label="item.title"
+          :name="item.name"
+        >
+          <el-form :model="item.content">
+            <el-form-item label="题干材料：" :label-width="formLabelWidth">
+              <div class="edit_ques_content">
+                <div class="material">
+                  <div :id="'mat' + item.name">
+                    <!-- <p>{{ questions.question_content }}</p> -->
+                  </div>
+                </div>
+                <el-upload
+                  ref="upload"
+                  action=""
+                  class="upload-demo"
+                  :multiple="false"
+                  accept=".mp3,.wav,.ogg"
+                  :before-upload="audiobeforeAvatarUpload"
+                  :auto-upload="false"
+                  :on-change="audioChange"
+                  :on-exceed="handleExceed"
+                  :on-remove="audioRemove"
+                  :limit="1"
+                  :file-list="audiofileList[index].file"
+                >
+                  <el-button>上传音频</el-button>
+                </el-upload>
+                <audio
+                  :src="item.content.ques_file"
+                  controls="controls"
+                  v-if="
+                    item.content.ques_file != '' &&
+                    (item.content.ques_file.search('.mp3') != -1 ||
+                      item.content.ques_file.search('.ogg') != -1 ||
+                      item.content.ques_file.search('.wav') != -1)
+                  "
+                ></audio>
+                <el-upload
+                  ref="upload"
+                  action=""
+                  class="upload-demo"
+                  :multiple="false"
+                  accept=".xls,.xlsx"
+                  :before-upload="excelbeforeAvatarUpload"
+                  :auto-upload="false"
+                  :on-change="excelChange"
+                  :on-exceed="handleExceed"
+                  :on-remove="excelRemove"
+                  :limit="1"
+                  :file-list="excelfileList[index].file"
+                >
+                  <el-button>上传表格</el-button>
+                </el-upload>
+              </div>
+            </el-form-item>
+            <div
+              v-for="(x, index) in item.content.type"
+              :key="x.index"
+              class="autoType"
+            >
+              <p style="color: red" v-if="x.ques_type[0] == '听力题'">
+                注：听力题文本文件和音频文件只能选择一项上传，若两项都存在则使用音频文件出题。
+              </p>
+              <p
+                style="color: red"
+                v-if="x.ques_type[1] == '阅读材料，选择正确答案'"
+              >
+                上传Excel表格出题，点击<el-button
+                  type="text"
+                  @click="downloadExcel"
+                  >下载模板</el-button
+                >
+              </p>
+              <el-form-item label="题目类型：" :label-width="formLabelWidth">
+                <el-cascader
+                  v-model="x.ques_type"
+                  :options="ques_select"
+                  :props="{
+                    expandTrigger: 'hover',
+                  }"
+                  clearable
+                  placeholder="请选择题型"
+                ></el-cascader>
+              </el-form-item>
+              <el-form-item
+                label="题目数量："
+                :label-width="formLabelWidth"
+                v-if="
+                  x.ques_type[1] != '阅读短文，选择正确答案' &&
+                  x.ques_type[0] != '写作题'
+                "
+              >
+                <el-input
+                  type="number"
+                  min="0"
+                  v-model="x.ques_num"
+                  placeholder="请输入题目数量"
+                  autocomplete="off"
+                ></el-input>
+              </el-form-item>
+              <el-form-item
+                label="医学题数量："
+                :label-width="formLabelWidth"
+                v-if="x.ques_type[1] == '阅读短文，选择正确答案'"
+              >
+                <el-input
+                  type="number"
+                  min="0"
+                  v-model="x.ques_num_yixue"
+                  placeholder="请输入医学题数量"
+                  autocomplete="off"
+                ></el-input>
+              </el-form-item>
+              <el-form-item
+                label="综合题数量："
+                :label-width="formLabelWidth"
+                v-if="x.ques_type[1] == '阅读短文，选择正确答案'"
+              >
+                <el-input
+                  type="number"
+                  min="0"
+                  v-model="x.ques_num_zonghe"
+                  placeholder="请输入综合题数量"
+                  autocomplete="off"
+                ></el-input>
+              </el-form-item>
+              <el-form-item label="题目等级：" :label-width="formLabelWidth">
+                <el-select v-model="x.grade" placeholder="请选择题目等级">
+                  <el-option
+                    v-for="item in grade"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  >
+                  </el-option>
+                </el-select>
+              </el-form-item>
+              <i
+                class="el-icon-remove-outline"
+                v-if="item.content.type.length != 1"
+                @click="delAuto(index)"
+              ></i>
+            </div>
+            <i class="el-icon-circle-plus-outline" @click="addAuto"></i>
+          </el-form>
+        </el-tab-pane>
+      </el-tabs>
       <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="setQues">保存到题库</el-button>
-        <el-button @click="dialogFormVisible = false">取 消</el-button>
+        <el-button type="primary" @click="setQues">生成题目</el-button>
+        <el-button @click="autoClose">取 消</el-button>
       </div>
     </el-dialog>
     <el-dialog title="批量导入" :visible.sync="importFile">
@@ -344,6 +483,7 @@
 
 <script lang="javascript" src="dist/xlsx.full.min.js"></script>
 <script>
+import E from "wangeditor";
 import { export_json_to_excel } from "@/util/Export2Excel.js";
 import Cookies from "js-cookie";
 import Cookie from "js-cookie";
@@ -362,6 +502,31 @@ export default {
   props: {},
   data() {
     return {
+      importExcel: false,
+      editor: [],
+      editableTabs: [
+        {
+          title: "文本 1",
+          name: "1",
+          content: {
+            ques_con: "",
+            ques_file: "",
+            ques_image: "",
+            ques_ex: "",
+            type: [
+              {
+                grade: "不限等级",
+                ques_num: 1,
+                ques_type: "",
+                ques_num_yixue: 1,
+                ques_num_zonghe: 1,
+              },
+            ],
+          },
+        },
+      ],
+      tabIndex: 1,
+      editableTabsValue: "1",
       ex: "1",
       der: [],
       exVisible: false,
@@ -412,8 +577,8 @@ export default {
               label: "阅读材料，选择正确答案",
             },
             {
-              value: "阅读短文，选出正确答案",
-              label: "阅读短文，选出正确答案",
+              value: "阅读短文，选择正确答案",
+              label: "阅读短文，选择正确答案",
             },
           ],
         },
@@ -445,22 +610,7 @@ export default {
       multipleSelection: [],
       preMove: [],
       dialogFormVisible: false,
-      form: {
-        ques_con: "",
-        ques_num: 1,
-        ques_type: "",
-      },
       formLabelWidth: "120px",
-      material: [
-        {
-          value: "新型冠状病毒诊疗分析",
-          label: "新型冠状病毒诊疗分析",
-        },
-        {
-          value: "脑梗死患者电子病历标注",
-          label: "脑梗死患者电子病历标注",
-        },
-      ],
       currentPage: 1,
       pageSize: 10,
       // fileType: "",
@@ -472,6 +622,36 @@ export default {
       moveVisible: false,
       loading: true,
       file: "",
+      audiofileList: [
+        {
+          tabName: "1",
+          file: [],
+        },
+      ],
+      excelfileList: [
+        {
+          tabName: "1",
+          file: [],
+        },
+      ],
+      grade: [
+        {
+          value: "不限等级",
+          label: "不限等级",
+        },
+        {
+          value: "一级",
+          label: "一级",
+        },
+        {
+          value: "二级",
+          label: "二级",
+        },
+        {
+          value: "三级",
+          label: "三级",
+        },
+      ],
     };
   },
   watch: {},
@@ -485,7 +665,6 @@ export default {
       }
       return isFile;
     },
-
     // 读取压缩文件
     async componentImport() {
       const loading = this.$loading({
@@ -499,6 +678,59 @@ export default {
       var i = 0;
       this.fileNum = Object.keys(zipData.files).length;
       this.sureClick = false;
+      let cata = [];
+      let xlsx = [];
+      for (let key in zipData.files) {
+        if (!zipData.files[key].dir) {
+          if (/\.(xlsx)$/.test(zipData.files[key].name)) {
+            let base = await zip.file(zipData.files[key].name).async("base64"); // 以base64输出文本内容
+            const result = this.dataURLtoFile(base, zipData.files[key].name);
+            if (typeof FileReader === "undefined") {
+              this.$message({
+                type: "info",
+                message: "您的浏览器不支持FileReader接口",
+              });
+              return;
+            }
+            let reader = new FileReader();
+            reader.readAsBinaryString(result);
+            reader.onload = function (e) {
+              try {
+                var data = e.target.result;
+                var workbook = XLSX.read(data, { type: "binary" });
+                var wsname = workbook.SheetNames[0]; // 取第一张表
+                var ws = XLSX.utils.sheet_to_json(workbook.Sheets[wsname]); // 生成json表格内容
+                xlsx = ws;
+                let i = 0;
+                for (i = 0; i < ws.length; i++) {
+                  if (
+                    ws[i].catalogue != "" &&
+                    ws[i].catalogue != undefined &&
+                    ws[i].catalogue != null
+                  ) {
+                    let t = {
+                      catalog: ws[i].catalogue,
+                      content: ws[i].question_content,
+                    };
+                    cata.push(t);
+                  }
+                  if (i == ws.length - 1) {
+                    const map = new Map();
+                    const qc_c = cata.filter(
+                      (key) => !map.has(key.content) && map.set(key.content, 1)
+                    );
+                    cata = qc_c;
+                  }
+                }
+              } catch (e) {
+                console.log(e);
+                return false;
+              }
+            }.bind(this);
+            break;
+          }
+        }
+      }
       for (let key in zipData.files) {
         if (!zipData.files[key].dir) {
           if (
@@ -517,24 +749,72 @@ export default {
               let audio = { fileObj: result };
               File.upload(audio).then(
                 (res) => {
-                  let Content = new BaaS.TableObject("question_content");
-                  let content = Content.create();
-                  content.set("file_url", res.data.file);
-                  content.set("content", null);
-                  content.set("catalog", null);
-                  content
-                    .save()
-                    .then((res2) => {
-                      var a = {
-                        name: res2.data.file_url.name,
-                        id: res2.data.id,
-                      };
-                      this.contentFile.push(a);
-                      resolve(0);
-                    })
-                    .catch((err) => {
-                      console.log(err);
-                    });
+                  if (cata.length != 0) {
+                    let find = false;
+                    for (let i = 0; i < cata.length; i++) {
+                      if (cata[i].content == zipData.files[key].name) {
+                        find = true;
+                        let Content = new BaaS.TableObject("question_content");
+                        let content = Content.create();
+                        content.set("file_url", res.data.file);
+                        content.set("content", null);
+                        content.set("catalog", cata[i].catalog);
+                        content
+                          .save()
+                          .then((res2) => {
+                            var a = {
+                              name: res2.data.file_url.name,
+                              id: res2.data.id,
+                            };
+                            this.contentFile.push(a);
+                            resolve(0);
+                          })
+                          .catch((err) => {
+                            console.log(err);
+                          });
+                        break;
+                      }
+                    }
+                    if (find == false) {
+                      let Content = new BaaS.TableObject("question_content");
+                      let content = Content.create();
+                      content.set("file_url", res.data.file);
+                      content.set("content", null);
+                      content.set("catalog", null);
+                      content
+                        .save()
+                        .then((res2) => {
+                          var a = {
+                            name: res2.data.file_url.name,
+                            id: res2.data.id,
+                          };
+                          this.contentFile.push(a);
+                          resolve(0);
+                        })
+                        .catch((err) => {
+                          console.log(err);
+                        });
+                    }
+                  } else {
+                    let Content = new BaaS.TableObject("question_content");
+                    let content = Content.create();
+                    content.set("file_url", res.data.file);
+                    content.set("content", null);
+                    content.set("catalog", null);
+                    content
+                      .save()
+                      .then((res2) => {
+                        var a = {
+                          name: res2.data.file_url.name,
+                          id: res2.data.id,
+                        };
+                        this.contentFile.push(a);
+                        resolve(0);
+                      })
+                      .catch((err) => {
+                        console.log(err);
+                      });
+                  }
                 },
                 (err) => {
                   console.log(err);
@@ -562,8 +842,11 @@ export default {
                 var wsname = workbook.SheetNames[0]; // 取第一张表
                 var ws = XLSX.utils.sheet_to_json(workbook.Sheets[wsname]); // 生成json表格内容
                 ws.forEach((element) => {
-                  if (element.catalog == undefined || element.catalog == "") {
-                    element.catalog = null;
+                  if (
+                    element.catalogue == undefined ||
+                    element.catalogue == ""
+                  ) {
+                    element.catalogue = null;
                   }
                   if (
                     element.primary_ques_type == undefined ||
@@ -649,7 +932,7 @@ export default {
                     element.task = null;
                   }
                   var a = {
-                    catalog: element.catalog,
+                    catalog: element.catalogue,
                     primary_ques_type: element.primary_ques_type,
                     secondary_ques_type: element.secondary_ques_type,
                     question_content_id: element.question_content,
@@ -789,61 +1072,193 @@ export default {
                         });
                       }
                     } else if (res.data.objects.length == 0) {
-                      let addContent = new BaaS.TableObject("question_content");
-                      let add = addContent.create();
-                      add.set("content", element.content);
-                      add.save().then(
-                        (res) => {
-                          element.id = res.data.id;
-                          k++;
-                          if (k == qc.length) {
-                            this.excelFile.forEach((element) => {
-                              var a = qc.findIndex(
-                                (item) =>
-                                  item.content === element.question_content_id
-                              );
-                              if (a != -1) {
-                                element.question_content_id = qc[a].id;
-                                let importQ = new BaaS.TableObject(
-                                  "questions_information"
+                      if (cata.length != 0) {
+                        let find = false;
+                        for (let i = 0; i < cata.length; i++) {
+                          find = true;
+                          if (cata[i].content == element.content) {
+                            let addContent = new BaaS.TableObject(
+                              "question_content"
+                            );
+                            let add = addContent.create();
+                            add.set("content", element.content);
+                            add.set("catalog", cata[i].catalog);
+                            add.save().then(
+                              (res) => {
+                                element.id = res.data.id;
+                                k++;
+                                if (k == qc.length) {
+                                  this.excelFile.forEach((element) => {
+                                    var a = qc.findIndex(
+                                      (item) =>
+                                        item.content ===
+                                        element.question_content_id
+                                    );
+                                    if (a != -1) {
+                                      element.question_content_id = qc[a].id;
+                                      let importQ = new BaaS.TableObject(
+                                        "questions_information"
+                                      );
+                                      let importq = importQ.create();
+                                      importq
+                                        .set(element)
+                                        .save()
+                                        .then(
+                                          (res) => {
+                                            // console.log(res);
+                                            num++;
+                                            if (num == this.excelFile.length) {
+                                              loading.close();
+                                              this.$message({
+                                                message: "导入成功",
+                                                type: "success",
+                                              });
+                                              this.init();
+                                              this.importFile = false;
+                                            }
+                                          },
+                                          (err) => {
+                                            loading.close();
+                                            this.$message({
+                                              message: "导入失败",
+                                              type: "warning",
+                                            });
+                                            this.init();
+                                            this.importFile = false;
+                                            console.log(err);
+                                          }
+                                        );
+                                    }
+                                  });
+                                }
+                              },
+                              (err) => {
+                                console.log(err);
+                              }
+                            );
+                          }
+                        }
+                        if (find == false) {
+                          let addContent = new BaaS.TableObject(
+                            "question_content"
+                          );
+                          let add = addContent.create();
+                          add.set("content", element.content);
+                          add.set("catalog", null);
+                          add.save().then(
+                            (res) => {
+                              element.id = res.data.id;
+                              k++;
+                              if (k == qc.length) {
+                                this.excelFile.forEach((element) => {
+                                  var a = qc.findIndex(
+                                    (item) =>
+                                      item.content ===
+                                      element.question_content_id
+                                  );
+                                  if (a != -1) {
+                                    element.question_content_id = qc[a].id;
+                                    let importQ = new BaaS.TableObject(
+                                      "questions_information"
+                                    );
+                                    let importq = importQ.create();
+                                    importq
+                                      .set(element)
+                                      .save()
+                                      .then(
+                                        (res) => {
+                                          // console.log(res);
+                                          num++;
+                                          if (num == this.excelFile.length) {
+                                            loading.close();
+                                            this.$message({
+                                              message: "导入成功",
+                                              type: "success",
+                                            });
+                                            this.init();
+                                            this.importFile = false;
+                                          }
+                                        },
+                                        (err) => {
+                                          loading.close();
+                                          this.$message({
+                                            message: "导入失败",
+                                            type: "warning",
+                                          });
+                                          this.init();
+                                          this.importFile = false;
+                                          console.log(err);
+                                        }
+                                      );
+                                  }
+                                });
+                              }
+                            },
+                            (err) => {
+                              console.log(err);
+                            }
+                          );
+                        }
+                      } else {
+                        let addContent = new BaaS.TableObject(
+                          "question_content"
+                        );
+                        let add = addContent.create();
+                        add.set("content", element.content);
+                        add.set("catalog", null);
+                        add.save().then(
+                          (res) => {
+                            element.id = res.data.id;
+                            k++;
+                            if (k == qc.length) {
+                              this.excelFile.forEach((element) => {
+                                var a = qc.findIndex(
+                                  (item) =>
+                                    item.content === element.question_content_id
                                 );
-                                let importq = importQ.create();
-                                importq
-                                  .set(element)
-                                  .save()
-                                  .then(
-                                    (res) => {
-                                      // console.log(res);
-                                      num++;
-                                      if (num == this.excelFile.length) {
+                                if (a != -1) {
+                                  element.question_content_id = qc[a].id;
+                                  let importQ = new BaaS.TableObject(
+                                    "questions_information"
+                                  );
+                                  let importq = importQ.create();
+                                  importq
+                                    .set(element)
+                                    .save()
+                                    .then(
+                                      (res) => {
+                                        // console.log(res);
+                                        num++;
+                                        if (num == this.excelFile.length) {
+                                          loading.close();
+                                          this.$message({
+                                            message: "导入成功",
+                                            type: "success",
+                                          });
+                                          this.init();
+                                          this.importFile = false;
+                                        }
+                                      },
+                                      (err) => {
                                         loading.close();
                                         this.$message({
-                                          message: "导入成功",
-                                          type: "success",
+                                          message: "导入失败",
+                                          type: "warning",
                                         });
                                         this.init();
                                         this.importFile = false;
+                                        console.log(err);
                                       }
-                                    },
-                                    (err) => {
-                                      loading.close();
-                                      this.$message({
-                                        message: "导入失败",
-                                        type: "warning",
-                                      });
-                                      this.init();
-                                      this.importFile = false;
-                                      console.log(err);
-                                    }
-                                  );
-                              }
-                            });
+                                    );
+                                }
+                              });
+                            }
+                          },
+                          (err) => {
+                            console.log(err);
                           }
-                        },
-                        (err) => {
-                          console.log(err);
-                        }
-                      );
+                        );
+                      }
                     }
                   },
                   (err) => {
@@ -891,7 +1306,123 @@ export default {
       let blob = new File([u8arr], name[name.length - 1], { type: mime });
       return blob;
     },
+    adataURLtoFile(dataURL, fileName, fileType) {
+      /**
+       * 注意：【不同文件不同类型】，例如【图片类型】就是`data:image/png;base64,${dataURL}`.split(',')
+       * 下面的是【excel文件(.xlsx尾缀)】的文件类型拼接，一个完整的 base64 应该
+       * 是这样的,例如： data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAMAAACelLz8AAAABGdBTUEAALGPC/xhBQAAACBjSFJN
+       */
+      // if (this.fileType == "xlsx") {
+      //   fileType =
+      //     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+      // } else if (this.fileType == "png") {
+      //   fileType = "image/png";
+      // } else if (this.fileType == "mp3") {
+      //   fileType = "audio/mp3";
+      // }
+      const arr = dataURL.split(",");
+      const mime = arr[0].match(/:(.*?);/)[1];
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      var name = fileName.split("/");
+      let blob = new File([u8arr], name[name.length - 1], { type: mime });
+      return blob;
+    },
+    audiobeforeAvatarUpload(file) {
+      let isFile =
+        file.name.split(".")[file.name.split(".").length - 1] == "mp3" ||
+        file.name.split(".")[file.name.split(".").length - 1] == "wav" ||
+        file.name.split(".")[file.name.split(".").length - 1] == "ogg";
+      if (!isFile) {
+        this.$message.error("导入文件格式不正确");
+      }
+      return isFile;
+    },
+    audioChange(file, fileList) {
+      for (let i = 0; i < this.audiofileList.length; i++) {
+        if (this.audiofileList[i].tabName == this.editableTabsValue) {
+          this.audiofileList[i].file.push(file);
+        }
+      }
+      if (
+        /\.(mp3)$/.test(file.raw.name) ||
+        /\.(wav)$/.test(file.raw.name) ||
+        /\.(ogg)$/.test(file.raw.name)
+      ) {
+        var reader = new FileReader();
+        reader.readAsDataURL(file.raw);
+        reader.onload = () => {
+          const result = this.adataURLtoFile(reader.result, file.raw.name);
+          console.log(result);
+          // new Promise((resolve, reject) => {
+          //   this.audio = reader.result;
+          //   this.audior = result;
+          // });
+          for (let i = 0; i < this.editableTabs.length; i++) {
+            if (this.editableTabsValue == this.editableTabs[i].name) {
+              this.editableTabs[i].content.ques_file = reader.result;
+            }
+          }
+        };
+      }
+    },
+    audioRemove(file, fileList) {
+      this.audiofileList[this.editableTabsValue * 1 - 1].file = [];
+      for (let i = 0; i < this.editableTabs.length; i++) {
+        if (this.editableTabs[i].name == this.editableTabsValue) {
+          this.editableTabs[i].content.ques_file = "";
+        }
+      }
+    },
+    excelbeforeAvatarUpload(file) {
+      let isFile =
+        file.name.split(".")[file.name.split(".").length - 1] == "xls" ||
+        file.name.split(".")[file.name.split(".").length - 1] == "xlsx";
+      if (!isFile) {
+        this.$message.error("导入文件格式不正确");
+      }
+      return isFile;
+    },
+    excelChange(file, fileList) {
+      for (let i = 0; i < this.excelfileList.length; i++) {
+        if (this.excelfileList[i].tabName == this.editableTabsValue) {
+          this.excelfileList[i].file.push(file);
+        }
+      }
+      if (/\.(xls)$/.test(file.raw.name) || /\.(xlsx)$/.test(file.raw.name)) {
+        var reader = new FileReader();
+        reader.readAsDataURL(file.raw);
+        reader.onload = () => {
+          const result = this.adataURLtoFile(reader.result, file.raw.name);
+          console.log(result);
+          // new Promise((resolve, reject) => {
+          //   this.audio = reader.result;
+          //   this.audior = result;
+          // });
+          for (let i = 0; i < this.editableTabs.length; i++) {
+            if (this.editableTabsValue == this.editableTabs[i].name) {
+              this.editableTabs[i].content.ques_ex = reader.result;
+            }
+          }
+        };
+      }
+    },
+    excelRemove(file, fileList) {
+      this.excelfileList[this.editableTabsValue * 1 - 1].file = [];
+      for (let i = 0; i < this.editableTabs.length; i++) {
+        if (this.editableTabs[i].name == this.editableTabsValue) {
+          this.editableTabs[i].content.ques_ex = "";
+        }
+      }
+    },
     init() {
+      let ques = [],
+        mat = [],
+        paper = [];
       let query = new BaaS.Query();
       query.compare("created_by", "=", Cookie.get("user_id") * 1);
       let q2 = new BaaS.Query();
@@ -905,30 +1436,9 @@ export default {
         .find()
         .then(
           (res) => {
-            res.data.objects.forEach((element) => {
+            ques = res.data.objects;
+            ques.forEach((element) => {
               element.have = false;
-              let q3 = new BaaS.Query();
-              q3.contains("questions_detail", element.id);
-              let q4 = new BaaS.Query();
-              q4.compare("is_delete", "=", false);
-              let andQuery = BaaS.Query.and(q3, q4);
-              let Paper = new BaaS.TableObject("test_paper");
-              Paper.setQuery(andQuery)
-                .limit(1000)
-                .offset(0)
-                .find()
-                .then(
-                  (res) => {
-                    if (res.data.objects.length != 0) {
-                      element.have = true;
-                    } else {
-                      element.have = false;
-                    }
-                  },
-                  (err) => {
-                    console.log(err);
-                  }
-                );
               let date = new Date(element.created_at * 1000);
               let Y = date.getFullYear() + "-";
               let M =
@@ -952,31 +1462,6 @@ export default {
                   ? "0" + date.getSeconds()
                   : date.getSeconds();
               element.created_at = Y + M + D + h + m + s;
-              if (element.question_content_id != null) {
-                let query = new BaaS.Query();
-                query.compare("id", "=", element.question_content_id);
-                let findContent = new BaaS.TableObject("question_content");
-                findContent
-                  .setQuery(query)
-                  .find()
-                  .then(
-                    (res) => {
-                      if (res.data.objects[0].content != null) {
-                        element.question_content_id =
-                          res.data.objects[0].content;
-                      } else {
-                        element.question_content_id = "";
-                      }
-                      if (res.data.objects[0].file_url != null) {
-                        element.file = res.data.objects[0].file_url.path;
-                        this.srcList.push(element.file);
-                      }
-                    },
-                    (err) => {
-                      console.log(err);
-                    }
-                  );
-              }
               if (element.catalog != null) {
                 var a = {
                   have: false,
@@ -987,48 +1472,99 @@ export default {
                 this.catalog.push(a);
               }
             });
-            setTimeout(() => {
-              if (this.catalog.length != 0) {
-                const map = new Map();
-                this.catalog = this.catalog.filter(
-                  (key) => !map.has(key.catalog) && map.set(key.catalog, 1)
-                );
-                for (let i = 0; i < this.catalog.length; i++) {
-                  for (let j = 0; j < res.data.objects.length; j++) {
-                    if (
-                      this.catalog[i].catalog == res.data.objects[j].catalog &&
-                      res.data.objects[j].have
-                    ) {
-                      this.catalog[i].have = true;
-                      break;
-                    }
-                  }
-                }
-              }
-              this.catalog.forEach((element) => {
-                res.data.objects = res.data.objects.filter(
-                  (t) => t.catalog != element.catalog
-                );
-                res.data.objects.unshift(element);
-              });
-              sessionStorage.setItem(
-                "questionsCatalog",
-                JSON.stringify(this.catalog)
-              );
-              this.loading = false;
-              this.tableData = res.data.objects;
-              this.initial = this.tableData;
-            }, 3000);
           },
           (err) => {
             console.log(err);
           }
         );
+      let Paper = new BaaS.TableObject("test_paper");
+      Paper.limit(1000)
+        .offset(0)
+        .setQuery(andQuery)
+        .find()
+        .then(
+          (res) => {
+            paper = res.data.objects;
+          },
+          (err) => {
+            console.log(err);
+          }
+        );
+      let Content = new BaaS.TableObject("question_content");
+      Content.limit(1000)
+        .offset(0)
+        .setQuery(andQuery)
+        .find()
+        .then(
+          (res) => {
+            mat = res.data.objects;
+          },
+          (err) => {
+            console.log(err);
+          }
+        );
+      setTimeout(() => {
+        for (let i = 0; i < ques.length; i++) {
+          if (paper.length != 0) {
+            for (let j = 0; j < paper.length; j++) {
+              if (
+                paper[j].questions_detail != "" &&
+                paper[j].questions_detail != null &&
+                paper[j].questions_detail != undefined &&
+                paper[j].questions_detail.search(ques[i].id + "") != -1
+              ) {
+                ques[i].have = true;
+                break;
+              }
+            }
+          }
+          if (ques[i].question_content_id != null) {
+            for (let k = 0; k < mat.length; k++) {
+              if (ques[i].question_content_id == mat[k].id) {
+                if (mat[k].content != null) {
+                  ques[i].question_content_id = mat[k].content;
+                } else {
+                  ques[i].question_content_id = "";
+                }
+                if (mat[k].file_url != null) {
+                  ques[i].file = mat[k].file_url.path;
+                  this.srcList.push(ques[i].file);
+                }
+                break;
+              }
+            }
+          }
+        }
+        if (this.catalog.length != 0) {
+          const map = new Map();
+          this.catalog = this.catalog.filter(
+            (key) => !map.has(key.catalog) && map.set(key.catalog, 1)
+          );
+          for (let i = 0; i < this.catalog.length; i++) {
+            for (let j = 0; j < ques.length; j++) {
+              if (this.catalog[i].catalog == ques[j].catalog && ques[j].have) {
+                this.catalog[i].have = true;
+                break;
+              }
+            }
+          }
+        }
+        this.catalog.forEach((element) => {
+          ques = ques.filter((t) => t.catalog != element.catalog);
+          ques.unshift(element);
+        });
+        sessionStorage.setItem(
+          "questionsCatalog",
+          JSON.stringify(this.catalog)
+        );
+        this.loading = false;
+        this.tableData = ques;
+        this.initial = this.tableData;
+      }, 3000);
     },
     arraySpanMethod({ row, column, rowIndex, columnIndex }) {
       if (
-        this.tableData[rowIndex].finish == false ||
-        this.tableData[rowIndex].catalog != null
+        this.tableData[rowIndex].finish == false 
       ) {
         if (columnIndex === 2) {
           return [1, 2];
@@ -1341,7 +1877,7 @@ export default {
       Cookies.set("catalogall", JSON.stringify(this.catalog));
       this.$router.push("/questionCatalog");
     },
-    delQues(index,val) {
+    delQues(index, val) {
       const loading = this.$loading({
         lock: true,
         text: "正在删除中，请稍后",
@@ -1530,7 +2066,20 @@ export default {
     },
     downloadTemplate() {
       let Template = new BaaS.File();
-      Template.get("62496310685599564c86a5c9").then(
+      Template.get("6266180e7a0c9a036e284d81").then(
+        (res) => {
+          // console.log(res);
+          let viewUrl = res.data.path;
+          window.open(viewUrl, "_self");
+        },
+        (err) => {
+          console.log(err);
+        }
+      );
+    },
+    downloadExcel() {
+      let Template = new BaaS.File();
+      Template.get("6352b8c73abe18008d48031c").then(
         (res) => {
           // console.log(res);
           let viewUrl = res.data.path;
@@ -1558,11 +2107,227 @@ export default {
       return index + 1;
     },
     handleSet() {
-      //   Cookies.set("material_id", val);
       this.dialogFormVisible = true;
+      setTimeout(() => {
+        this.createEdit();
+      }, 500);
     },
     setQues() {
+      console.log(this.editableTabs);
+      let valid = true;
+      for (let i = 0; i < this.editableTabs.length; i++) {
+        for (let k = 0; k < this.editor.length; k++) {
+          if (
+            this.editor[k].toolbarSelector ==
+            "#mat" + this.editableTabs[i].name
+          ) {
+            if (
+              this.editor[k].txt.html() == "" &&
+              this.editableTabs[i].content.ques_file == "" &&
+              this.editableTabs[i].content.ques_ex == ""
+            ) {
+              valid = false;
+              this.$message.warning("请输入题干材料");
+              break;
+            } else {
+              if (
+                this.editor[k].txt.html().search("<img src=") != -1 &&
+                this.editableTabs[i].content.ques_file == ""
+              ) {
+                let src = "";
+                let a = this.editor[k].txt.html().search("<img src=");
+                let x = this.editor[k].txt.html();
+                for (let b = a + 10; b < x.length; b++) {
+                  if (x[b] != '"') {
+                    src += x[b];
+                  } else {
+                    break;
+                  }
+                }
+                this.editableTabs[i].content.ques_image = src;
+              } else if (
+                this.editor[k].txt.html().search("<img src=") != -1 &&
+                this.editableTabs[i].content.ques_file != ""
+              ) {
+                this.$message({
+                  message: "图片和音频只支持一项，请修改",
+                  type: "warning",
+                });
+                valid = false;
+                break;
+              }
+              this.editableTabs[i].content.ques_con = this.editor[k].txt.text();
+              for (
+                let j = 0;
+                j < this.editableTabs[i].content.type.length;
+                j++
+              ) {
+                if (this.editableTabs[i].content.type[j].ques_type == "") {
+                  valid = false;
+                  this.$message.warning("请选择出题题型");
+                  break;
+                }
+                if (
+                  this.editableTabs[i].content.type[j].ques_type[0] == "听力题"
+                ) {
+                  if (
+                    this.editableTabs[i].content.ques_con == "" &&
+                    this.editableTabs[i].content.ques_file == ""
+                  ) {
+                    this.$message({
+                      message:
+                        this.editableTabs[i].title +
+                        " 存在听力题，请输入题干文本或音频文件",
+                      type: "warning",
+                    });
+                    valid = false;
+                    break;
+                  }
+                } else if (
+                  this.editableTabs[i].content.type[j].ques_type[1] ==
+                  "阅读材料，选择正确答案"
+                ) {
+                  if (this.excelfileList[i].file.length == 0) {
+                    this.$message({
+                      message:
+                        this.editableTabs[i].title +
+                        " 存在材料题，请上传Excel文件",
+                      type: "warning",
+                    });
+                    valid = false;
+                    break;
+                  }
+                } else if (
+                  this.editableTabs[i].content.type[j].ques_type[0] !=
+                    "听力题" &&
+                  this.editableTabs[i].content.type[j].ques_type[1] !=
+                    "阅读材料，选择正确答案"
+                ) {
+                  if (this.editableTabs[i].content.ques_con == "") {
+                    this.$message({
+                      message: this.editableTabs[i].title + " 需要输入题干文本",
+                      type: "warning",
+                    });
+                    valid = false;
+                    break;
+                  }
+                }
+                this.editableTabs[i].content.type[j].ques_num *= 1;
+                this.editableTabs[i].content.type[j].ques_num_yixue *= 1;
+                this.editableTabs[i].content.type[j].ques_num_zonghe *= 1;
+              }
+            }
+            break;
+          }
+        }
+      }
+      if (valid == true) {
+        this.autoClose();
+      }
+    },
+    autoClose() {
+      for (let i = 0; i < this.editor.length; i++) {
+        this.editor[i].destroy();
+      }
+      this.editor = [];
+      this.editableTabs = [
+        {
+          title: "文本 1",
+          name: "1",
+          content: {
+            ques_con: "",
+            ques_file: "",
+            ques_image: "",
+            ques_ex: "",
+            type: [
+              {
+                grade: "不限等级",
+                ques_num: 1,
+                ques_type: "",
+                ques_num_yixue: 1,
+                ques_num_zonghe: 1,
+              },
+            ],
+          },
+        },
+      ];
+      this.audiofileList = [
+        {
+          tabName: "1",
+          file: [],
+        },
+      ];
+      this.tabIndex = 1;
+      this.editableTabsValue = "1";
       this.dialogFormVisible = false;
+    },
+    addAuto() {
+      let t = {
+        ques_type: "",
+        ques_num: 1,
+        ques_num_yixue: 1,
+        ques_num_zonghe: 1,
+      };
+      for (let i = 0; i < this.editableTabs.length; i++) {
+        if (this.editableTabsValue == this.editableTabs[i].name) {
+          this.editableTabs[i].content.type.push(t);
+        }
+      }
+    },
+    delAuto(val) {
+      for (let i = 0; i < this.editableTabs.length; i++) {
+        if (this.editableTabsValue == this.editableTabs[i].name) {
+          this.editableTabs[i].content.type.splice(val, 1);
+        }
+      }
+    },
+    addTab(targetName) {
+      let newTabName = ++this.tabIndex + "";
+      this.editableTabs.push({
+        title: "文本 " + this.tabIndex,
+        name: newTabName,
+        content: {
+          ques_con: "",
+          ques_file: "",
+          ques_image: "",
+          ques_ex: "",
+          type: [
+            {
+              grade: "不限等级",
+              ques_num: 1,
+              ques_type: "",
+              ques_num_yixue: 1,
+              ques_num_zonghe: 1,
+            },
+          ],
+        },
+      });
+      this.audiofileList.push({
+        tabName: newTabName,
+        file: [],
+      });
+      this.editableTabsValue = newTabName;
+      setTimeout(() => {
+        this.createEdit();
+      }, 500);
+      console.log(this.audiofileList);
+    },
+    removeTab(targetName) {
+      let tabs = this.editableTabs;
+      let activeName = this.editableTabsValue;
+      if (activeName === targetName) {
+        tabs.forEach((tab, index) => {
+          if (tab.name === targetName) {
+            let nextTab = tabs[index + 1] || tabs[index - 1];
+            if (nextTab) {
+              activeName = nextTab.name;
+            }
+          }
+        });
+      }
+      this.editableTabsValue = activeName;
+      this.editableTabs = tabs.filter((tab) => tab.name !== targetName);
+      this.audiofileList[targetName * 1 - 1].file = [];
     },
     handleSizeChange(val) {
       console.log(`每页 ${val} 条`);
@@ -1971,6 +2736,14 @@ export default {
     loadFile(url, callback) {
       PizZipUtils.getBinaryContent(url, callback);
     },
+    createEdit() {
+      const material = new E("#mat" + this.tabIndex);
+      material.config.uploadImgShowBase64 = true;
+      material.config.height = 200;
+      material.config.placeholder = "请输入题干";
+      material.create();
+      this.editor.push(material);
+    },
   },
   created() {},
   mounted() {
@@ -2002,5 +2775,25 @@ export default {
 .question .move .el-button + .el-button,
 .questionCatalog .move .el-button + .el-button {
   margin-left: 0px;
+}
+.question .autoType .el-cascader,
+.question .autoType .el-input,
+.question .autoType .el-select {
+  width: 100%;
+}
+.question .el-icon-circle-plus-outline {
+  font-size: 40px;
+  color: green;
+  float: left;
+}
+.question .el-icon-remove-outline {
+  font-size: 30px;
+  color: red;
+  float: right;
+}
+.question .autoType {
+  margin-bottom: 20px;
+  padding-bottom: 40px;
+  border-bottom: 1px dotted gray;
 }
 </style>

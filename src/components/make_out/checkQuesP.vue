@@ -7,21 +7,38 @@
         effect="dark"
         :content="content"
         placement="bottom"
-        v-show="content != ''"
+        v-show="
+          content.search('.png') == -1 &&
+          content.search('.jpg') == -1 &&
+          content.search('.gif') == -1 &&
+          content.search('.mp3') == -1 &&
+          content.search('.wav') == -1 &&
+          content.search('.ogg') == -1
+        "
       >
         <p>{{ content }}</p>
       </el-tooltip>
       <el-image
         style="width: 100px; height: 100px"
-        :src="file"
+        :src="content"
         :preview-src-list="srcList"
-        v-show="file != null && file.search('.png') != -1"
+        v-show="
+          content != null &&
+          (content.search('.png') != -1 ||
+            content.search('.jpg') != -1 ||
+            content.search('.gif') != -1)
+        "
       >
       </el-image>
       <audio
-        :src="file"
+        :src="content"
         controls="controls"
-        v-show="file != null && file.search('.mp3') != -1"
+        v-show="
+          content != null &&
+          (content.search('.mp3') != -1 ||
+            content.search('.wav') != -1 ||
+            content.search('.ogg') != -1)
+        "
       ></audio>
       <el-button size="small" @click="back">返回</el-button>
       <!-- <i class="el-icon-back" @click="back"></i> -->
@@ -38,7 +55,7 @@
 </template>
 
 <script>
-import Heads from '@/components/heads'
+import Heads from "@/components/heads";
 import Cookie from "js-cookie";
 import Cookies from "js-cookie";
 import checkQues from "@/views/make_out/material/checkQues.vue";
@@ -48,7 +65,7 @@ export default {
   components: {
     checkQues,
     checkPaper,
-    Heads
+    Heads,
   },
   props: {},
   data() {
@@ -64,9 +81,9 @@ export default {
   methods: {
     back() {
       this.$router.go(-1);
-      Cookies.set("question_content","");
-      Cookies.set("question_file","");
-      Cookies.set("material_id","");
+      Cookies.set("question_content", "");
+      Cookies.set("question_file", "");
+      Cookies.set("material_id", "");
     },
     init() {
       var BaaS = require("minapp-sdk");
@@ -81,7 +98,7 @@ export default {
           (res) => {
             if (res.data.objects[0].content == null) {
               this.file = res.data.objects[0].file_url.path;
-              console.log(this.file)
+              console.log(this.file);
               this.srcList.push(this.file);
               Cookies.set("question_file", this.file);
             } else {
@@ -102,7 +119,8 @@ export default {
 };
 </script>
 <style>
-.checkQuesP .checkQP_title,.checkQuesP .el-tabs {
+.checkQuesP .checkQP_title,
+.checkQuesP .el-tabs {
   padding: 0 20px;
 }
 .checkQP_title {

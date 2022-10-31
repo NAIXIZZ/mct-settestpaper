@@ -40,15 +40,15 @@
             >
             </el-table-column>
             <el-table-column
-              prop="release_date"
-              label="发布日期"
+              prop="created_at"
+              label="创建日期"
               sortable
               header-align="center"
               align="center"
             >
             </el-table-column>
             <el-table-column
-              prop="created_user_id"
+              prop="nickname"
               label="出卷人"
               header-align="center"
               align="center"
@@ -64,7 +64,7 @@
             >
             </el-table-column>
             <el-table-column
-              prop="release_type"
+              prop="paper_type"
               label="试卷类型"
               header-align="center"
               align="center"
@@ -72,14 +72,6 @@
               :filter-method="filterHandler"
             >
             </el-table-column>
-            <!-- <el-table-column
-              prop="did_num"
-              label="做题人数"
-              header-align="center"
-              align="center"
-              sortable
-            >
-            </el-table-column> -->
           </el-table>
         </el-row>
         <el-row style="margin-top:15px">
@@ -101,9 +93,9 @@
 
 <script src="https://dl.ifanr.cn/hydrogen/sdk/sdk-web-latest.js"></script>
 <script>
-import Cookie from "js-cookie";
 import Cookies from "js-cookie";
 import visitorHead from '@/components/visitorHead.vue'
+import '@/util/format.js'
 export default {
   name: 'home',
   components: {
@@ -128,30 +120,32 @@ export default {
       var BaaS = require("minapp-sdk");
       let clientID = "395062a19e209a770059";
       BaaS.init(clientID);
+      let query_id = new BaaS.Query();
+      query_id.compare("created_by", "=", 484881850859865);
       let test_paper = new BaaS.TableObject("test_paper")
-      let released_paper = new BaaS.TableObject("released_paper")
-      released_paper.orderBy('-release_date').select(['id', 'release_date', 'paper_id', 'paper_title', 'release_type', 'did_num']).find().then(res1 => {
-        // console.log(res1.data.objects)
-        this.tableData = res1.data.objects
-        for (let i = 0; i < this.tableData.length; i++) {
-          let query = new BaaS.Query()
-          query.compare('id', '=', this.tableData[i].paper_id)
-          test_paper.setQuery(query).select(['created_user_id', 'questions_num', 'questions_id', 'points']).find().then(res2 => {
-            // console.log(res2.data.objects[0])
-            Object.assign(this.tableData[i], res2.data.objects[0])
-            // console.log(this.tableData)
-            this.$forceUpdate();
+      test_paper.setQuery(query_id).orderBy('-release_date').find().then(res => {
+        // console.log(res.data.objects)
+        var paper_list = []
+        paper_list = res.data.objects
+        for (let j = 1; j < 10; j++) {
+          test_paper.limit(1000).offset(j * 1000).setQuery(query_id).orderBy('-release_date').find().then(res => {
+            Object.assign(paper_list, res.data.objects)
           }, err => {
             console.log(err)
           })
         }
+        for (let i = 0; i < paper_list.length; i++) {
+          var created_at = new Date(paper_list[i].created_at * 1000)
+          paper_list[i].created_at = created_at.Format("yyyy-MM-dd HH:mm:ss")
+          paper_list[i].nickname = 'huadazhiyu'
+        }
+        this.tableData = paper_list
       }, err => {
         console.log(err)
       })
     },
     paperDetail (row) {
-      Cookies.set('home_released_paper_id', row.id)
-      Cookies.set('home_test_paper_id', row.paper_id)
+      Cookies.set('home_paper_id', row.id)
       this.$router.push({
         path: '/visitor_paperDetail'
       })
@@ -166,29 +160,24 @@ export default {
         let clientID = "395062a19e209a770059";
         BaaS.init(clientID);
         let test_paper = new BaaS.TableObject("test_paper")
-        let released_paper = new BaaS.TableObject("released_paper")
         let queryTitle = new BaaS.Query()
         queryTitle.contains('paper_title', this.input)
         let queryType = new BaaS.Query()
-        queryType.contains('release_type', this.input)
-        let queryDate = new BaaS.Query()
-        queryDate.contains('release_date', this.input)
-        let orQuery = BaaS.Query.or(queryTitle, queryType, queryDate)
-        released_paper.setQuery(orQuery).select(['id', 'release_date', 'paper_id', 'paper_title', 'release_type', 'did_num']).find().then(res => {
+        queryType.contains('paper_type', this.input)
+        let orQuery = BaaS.Query.or(queryTitle, queryType)
+        let queryId = new BaaS.Query()
+        queryId.compare("created_by", "=", 484881850859865)
+        let andQuery = BaaS.Query.and(orQuery, queryId)
+        test_paper.limit(1000).setQuery(andQuery).orderBy('-release_date').find().then(res => {
           // console.log(res.data.objects)
-          this.tableData = res.data.objects
-          for (let i = 0; i < this.tableData.length; i++) {
-            let query = new BaaS.Query()
-            query.compare('id', '=', this.tableData[i].paper_id)
-            test_paper.setQuery(query).select(['created_user_id', 'questions_num', 'questions_id', 'points']).find().then(res2 => {
-              // console.log(res2.data.objects[0])
-              Object.assign(this.tableData[i], res2.data.objects[0])
-              // console.log(this.tableData)
-              this.$forceUpdate();
-            }, err => {
-              console.log(err)
-            })
+          var paper_list = []
+          paper_list = res.data.objects
+          for (let i = 0; i < paper_list.length; i++) {
+            var created_at = new Date(paper_list[i].created_at * 1000)
+            paper_list[i].created_at = created_at.Format("yyyy-MM-dd HH:mm:ss")
+            paper_list[i].nickname = 'huadazhiyu'
           }
+          this.tableData = paper_list
         }, err => {
           console.log(err)
         })

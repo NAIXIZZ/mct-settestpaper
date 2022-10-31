@@ -121,16 +121,22 @@
           </el-table-column>
           <el-table-column prop="created_at" label="创建日期" sortable>
           </el-table-column>
-          <el-table-column label="操作" width="400">
+          <el-table-column label="操作" width="450">
             <template slot-scope="scope">
               <div v-show="scope.row.paper_title != null">
+                <el-button type="success" plain @click="check(scope.row)"
+                  >预览</el-button
+                >
                 <el-button type="success" plain @click="preview(scope.row)"
-                  >查看/编辑</el-button
+                  >编辑</el-button
                 >
                 <el-button type="warning" plain @click="copy(scope.row)"
                   >复制</el-button
                 >
-                <el-button type="danger" plain @click="delPaper(scope.$index,scope.row)"
+                <el-button
+                  type="danger"
+                  plain
+                  @click="delPaper(scope.$index, scope.row)"
                   >删除</el-button
                 >
                 <el-button type="primary" plain @click="moveTo(scope.row.id, 1)"
@@ -611,10 +617,7 @@ export default {
       }
     },
     arraySpanMethod({ rowIndex, columnIndex }) {
-      if (
-        this.tableData[rowIndex].finish == false ||
-        this.tableData[rowIndex].catalog != null
-      ) {
+      if (this.tableData[rowIndex].finish == false) {
         if (columnIndex === 2) {
           return [1, 2];
         } else if (columnIndex === 3) {
@@ -826,7 +829,6 @@ export default {
         );
     },
     enterFolder(row) {
-      Cookies.set("make_out", "third");
       Cookies.set("catalog", row.catalog);
       Cookies.set("catalogall", JSON.stringify(this.catalog));
       this.$router.push("/paperCatalog");
@@ -834,7 +836,6 @@ export default {
     createPaper() {
       if (this.radio == 1) {
         this.$router.push("/mcreatePaper");
-        Cookies.set("make_out", "third");
       } else if (this.radio == 2) {
         if (this.ruleForm.paper_title == "" || this.ruleForm.paper_type == "") {
           this.$message({
@@ -1543,7 +1544,6 @@ export default {
                                   ssw
                               );
                               loading.close();
-                              Cookies.set("make_out", "third");
                               this.$router.push("/mcreatePaper");
                             }
                           },
@@ -1731,9 +1731,180 @@ export default {
                       sessionStorage.setItem("ques_score", val.points);
                       Cookies.set("paperEdit", true);
                       Cookies.set("paperInfo", val.id);
-                      Cookies.set("make_out", "third");
                       loading.close();
                       this.$router.push("/mcreatePaper");
+                    }
+                  },
+                  (err) => {
+                    console.log(err);
+                  }
+                );
+              }
+            }
+          },
+          (err) => {
+            console.log(err);
+          }
+        );
+      }
+    },
+    check(val) {
+      const loading = this.$loading({
+        lock: true,
+        text: "请稍后",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)",
+      });
+      Cookies.set("paper_id", val.id);
+      Cookies.set("paper_title", val.paper_title);
+      Cookies.set("questions_detail", val.questions_detail);
+      let ques = JSON.parse(val.questions_detail);
+      ques.sort(function (a, b) {
+        return a.sub_sequence - b.sub_sequence;
+      });
+      let questions = [];
+      let contents = [];
+      for (let i = 0; i < ques.length; i++) {
+        let questio = new BaaS.TableObject("questions_information");
+        questio.get(ques[i].id).then(
+          (res) => {
+            let temp =
+              res.data.question_content_id +
+              res.data.primary_ques_type +
+              res.data.secondary_ques_type;
+            let s = {
+              temp: temp,
+              content_id: res.data.question_content_id,
+              primary_ques_type: res.data.primary_ques_type,
+              secondary_ques_type: res.data.secondary_ques_type,
+            };
+            contents.push(s);
+            ques[i].temp = temp;
+            let sub = {
+              sub_sequence: 0,
+              actual_sequence: ques[i].sub_sequence,
+              score: ques[i].score * 1,
+              question: res.data.question,
+              options: JSON.parse(res.data.options),
+              answer: res.data.answer,
+              anlysis: res.data.anlysis,
+              level_value: res.data.ques_level,
+              grade_value: res.data.grade_standard,
+              topic_value: res.data.topic_outline,
+              task_value: res.data.task_outline,
+              department_value: res.data.department,
+              qclass_value: res.data.question_class,
+              fivehe_value: res.data.question_type_5he,
+              A: "",
+              B: "",
+              C: "",
+              D: "",
+              author: res.data.author,
+              author_org: res.data.author_org,
+              time_created: res.data.time_created,
+            };
+            let op = JSON.parse(res.data.options);
+            if (op != null && op != undefined) {
+              for (let j = 0; j < op.length; j++) {
+                if (op[j].index == "A") {
+                  sub.A = op[j].content;
+                } else if (op[j].index == "B") {
+                  sub.B = op[j].content;
+                } else if (op[j].index == "C") {
+                  sub.C = op[j].content;
+                } else if (op[j].index == "D") {
+                  sub.D = op[j].content;
+                }
+              }
+            }
+            ques[i].sub = sub;
+            if (contents.length == ques.length) {
+              const map = new Map();
+              const qc = contents.filter(
+                (key) => !map.has(key.temp) && map.set(key.temp, 1)
+              );
+              for (let j = 0; j < qc.length; j++) {
+                let sub = [];
+                let sub_seq = 1;
+                let score = 0;
+                for (let k = 0; k < ques.length; k++) {
+                  if (qc[j].temp == ques[k].temp) {
+                    ques[k].sub.sub_sequence = sub_seq;
+                    sub.push(ques[k].sub);
+                    sub_seq++;
+                    score += ques[k].score;
+                  }
+                }
+                let content = new BaaS.TableObject("question_content");
+                content.get(qc[j].content_id).then(
+                  (con) => {
+                    let question = {
+                      primary_ques_type: qc[j].primary_ques_type,
+                      secondary_ques_type: qc[j].secondary_ques_type,
+                      total_score: score,
+                      saveQ: true,
+                      saveT: true,
+                      audio: "",
+                      file_url: "",
+                      fileList: [],
+                    };
+                    if (con.data.file_url != null) {
+                      if (
+                        con.data.file_url.path.search(".png") != -1 ||
+                        con.data.file_url.path.search(".jpg") != -1 ||
+                        con.data.file_url.path.search(".gif") != -1
+                      ) {
+                        question.file_url = con.data.file_url.path;
+                      } else if (
+                        con.data.file_url.path.search(".mp3") != -1 ||
+                        con.data.file_url.path.search(".wav") != -1 ||
+                        con.data.file_url.path.search(".ogg") != -1
+                      ) {
+                        question.audio = con.data.file_url.path;
+                        question.fileList.push({
+                          name: con.data.file_url.name,
+                          url: con.data.file_url.path,
+                        });
+                      }
+                    }
+                    question.question_content = con.data.content;
+                    question.sub_question = sub;
+                    questions.push(question);
+                    if (questions.length == qc.length) {
+                      questions.sort(function (a, b) {
+                        return (
+                          a.sub_question[0].actual_sequence -
+                          b.sub_question[0].actual_sequence
+                        );
+                      });
+                      let sequen = 1;
+                      for (let h = 0; h < questions.length; h++) {
+                        questions[h].sequence = sequen;
+                        questions[h].name = questions[h].sequence.toString();
+                        sequen++;
+                      }
+                      sessionStorage.setItem(
+                        "questions",
+                        JSON.stringify(questions)
+                      );
+                      sessionStorage.setItem("ques_type", val.ques_type);
+                      sessionStorage.setItem("currentQues", questions.length);
+                      sessionStorage.setItem(
+                        "currentSubQues",
+                        questions[questions.length - 1].sub_question.length
+                      );
+                      sessionStorage.setItem("title", val.paper_title);
+                      if (val.paper_type == "模考") {
+                        sessionStorage.setItem("exam", true);
+                      } else {
+                        sessionStorage.setItem("exam", false);
+                      }
+                      sessionStorage.setItem("ques_num", val.questions_num);
+                      sessionStorage.setItem("ques_score", val.points);
+                      sessionStorage.setItem("paperCheck", "true");
+                      Cookies.set("paperInfo", val.id);
+                      loading.close();
+                      this.$router.push("/preview");
                     }
                   },
                   (err) => {
@@ -1852,7 +2023,7 @@ export default {
           }
         );
     },
-    delPaper(index,val) {
+    delPaper(index, val) {
       const loading = this.$loading({
         lock: true,
         text: "正在删除，请稍后",
@@ -1870,7 +2041,7 @@ export default {
             message: "删除成功",
             type: "success",
           });
-          this.tableData.splice(index,1)
+          this.tableData.splice(index, 1);
         },
         (err) => {
           loading.close();
@@ -1884,7 +2055,6 @@ export default {
       );
     },
     trash() {
-      Cookies.set("make_out", "third");
       Cookies.set("trash", "paper");
       this.$router.push("/trash_list");
     },

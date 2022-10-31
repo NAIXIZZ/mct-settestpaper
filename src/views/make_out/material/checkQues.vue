@@ -54,7 +54,7 @@
     <div class="ques_content">
       <div class="ques_list">
         <el-table
-        v-loading="loading"
+          v-loading="loading"
           ref="multipleTable"
           :data="
             tableData.slice(
@@ -111,27 +111,159 @@
         >回收站</el-button
       >
     </div>
-    <el-dialog title="自动出题" :visible.sync="dialogFormVisible">
+    <el-dialog
+      title="自动出题"
+      :visible.sync="dialogFormVisible"
+      :before-close="autoClose"
+      class="autoQP"
+    >
       <el-form :model="form">
-        <el-form-item label="题目数量：" :label-width="formLabelWidth">
-          <el-input v-model="form.quesnum" autocomplete="off"></el-input>
+        <el-form-item label="题干材料：" :label-width="formLabelWidth">
+          <p>{{ form.ques_con }}</p>
+          <img
+            :src="form.ques_file"
+            alt=""
+            v-if="
+              form.ques_file != '' &&
+              (form.ques_file.search('.png') != -1 ||
+                form.ques_file.search('.jpg') != -1 ||
+                form.ques_file.search('.gif') != -1)
+            "
+            style="width: 400px"
+          />
+          <audio
+            :src="form.ques_file"
+            v-if="
+              form.ques_file != '' &&
+              (form.ques_file.search('.mp3') != -1 ||
+                form.ques_file.search('.wav') != -1 ||
+                form.ques_file.search('.ogg') != -1)
+            "
+            controls="controls"
+          ></audio>
         </el-form-item>
-        <el-form-item label="题目类型：" :label-width="formLabelWidth">
-          <el-cascader
-            :options="ques_select"
-            :props="{
-              multiple: true,
-              checkStrictly: true,
-              expandTrigger: 'hover',
-            }"
-            clearable
-            placeholder="请选择题型"
-          ></el-cascader>
-        </el-form-item>
+        <div v-for="(x, index) in form.type" :key="x.index" class="autoType">
+          <el-form-item label="题目类型：" :label-width="formLabelWidth">
+            <el-cascader
+              v-if="
+                form.ques_file != '' &&
+                (form.ques_file.search('.png') != -1 ||
+                  form.ques_file.search('.jpg') != -1 ||
+                  form.ques_file.search('.gif') != -1) &&
+                (form.ques_con == '' || form.ques_con == null)
+              "
+              v-model="x.ques_type"
+              :options="ques_select_mat"
+              :props="{
+                expandTrigger: 'hover',
+              }"
+              clearable
+              placeholder="请选择题型"
+            ></el-cascader>
+            <el-cascader
+              v-else-if="
+                form.ques_file != '' &&
+                (form.ques_file.search('.mp3') != -1 ||
+                  form.ques_file.search('.wav') != -1 ||
+                  form.ques_file.search('.ogg') != -1) &&
+                (form.ques_con == '' || form.ques_con == null)
+              "
+              v-model="x.ques_type"
+              :options="ques_select_listen"
+              :props="{
+                expandTrigger: 'hover',
+              }"
+              clearable
+              placeholder="请选择题型"
+            ></el-cascader>
+            <el-cascader
+              v-else-if="
+                form.ques_file.search('.png') == -1 &&
+                form.ques_file.search('.gif') == -1 &&
+                form.ques_file.search('.jpg') == -1 &&
+                form.ques_con != '' &&
+                form.ques_con != null
+              "
+              v-model="x.ques_type"
+              :options="ques_select_nmat"
+              :props="{
+                expandTrigger: 'hover',
+              }"
+              clearable
+              placeholder="请选择题型"
+            ></el-cascader>
+            <el-cascader
+              v-else
+              v-model="x.ques_type"
+              :options="ques_select"
+              :props="{
+                expandTrigger: 'hover',
+              }"
+              clearable
+              placeholder="请选择题型"
+            ></el-cascader>
+          </el-form-item>
+          <el-form-item
+            label="题目数量："
+            :label-width="formLabelWidth"
+            v-if="x.ques_type[1] != '阅读短文，选择正确答案'"
+          >
+            <el-input
+              type="number"
+              min="0"
+              v-model="x.ques_num"
+              placeholder="请输入题目数量"
+              autocomplete="off"
+            ></el-input>
+          </el-form-item>
+          <el-form-item
+            label="医学题数量："
+            :label-width="formLabelWidth"
+            v-if="x.ques_type[1] == '阅读短文，选择正确答案'"
+          >
+            <el-input
+              type="number"
+              min="0"
+              v-model="x.ques_num_yixue"
+              placeholder="请输入医学题数量"
+              autocomplete="off"
+            ></el-input>
+          </el-form-item>
+          <el-form-item
+            label="综合题数量："
+            :label-width="formLabelWidth"
+            v-if="x.ques_type[1] == '阅读短文，选择正确答案'"
+          >
+            <el-input
+              type="number"
+              min="0"
+              v-model="x.ques_num_zonghe"
+              placeholder="请输入综合题数量"
+              autocomplete="off"
+            ></el-input>
+          </el-form-item>
+          <el-form-item label="题目等级：" :label-width="formLabelWidth">
+            <el-select v-model="x.grade" placeholder="请选择题目等级">
+              <el-option
+                v-for="item in grade"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              >
+              </el-option>
+            </el-select>
+          </el-form-item>
+          <i
+            class="el-icon-remove-outline"
+            v-if="form.type.length != 1"
+            @click="delAuto(index)"
+          ></i>
+        </div>
+        <i class="el-icon-circle-plus-outline" @click="addAuto"></i>
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="setQues">保存到题库</el-button>
-        <el-button @click="dialogFormVisible = false">取 消</el-button>
+        <el-button type="primary" @click="setQues">生成题目</el-button>
+        <el-button @click="autoClose">取 消</el-button>
       </div>
     </el-dialog>
     <el-dialog title="批量导入" :visible.sync="importFile">
@@ -199,7 +331,8 @@ export default {
   props: {},
   data() {
     return {
-      loading:true,
+      deri: 0,
+      loading: true,
       importFile: false,
       ques_select: [
         {
@@ -241,6 +374,94 @@ export default {
               label: "阅读材料，选择正确答案",
             },
             {
+              value: "阅读短文，选出正确答案",
+              label: "阅读短文，选出正确答案",
+            },
+          ],
+        },
+        {
+          value: "写作题",
+          label: "写作题",
+          children: [
+            {
+              value: "根据一段长对话写门诊病历记录",
+              label: "根据一段长对话写门诊病历记录",
+            },
+          ],
+        },
+      ],
+      ques_select_listen: [
+        {
+          value: "听力题",
+          label: "听力题",
+          children: [
+            {
+              value: "听句子，判断对错",
+              label: "听句子，判断对错",
+            },
+            {
+              value: "听短对话，选择正确答案",
+              label: "听短对话，选择正确答案",
+            },
+            {
+              value: "听长对话，选择正确答案",
+              label: "听长对话，选择正确答案",
+            },
+            {
+              value: "听短文，选择正确答案",
+              label: "听短文，选择正确答案",
+            },
+          ],
+        },
+      ],
+      ques_select_mat: [
+        {
+          value: "阅读题",
+          label: "阅读题",
+          children: [
+            {
+              value: "阅读材料，选择正确答案",
+              label: "阅读材料，选择正确答案",
+            },
+          ],
+        },
+      ],
+      ques_select_nmat: [
+        {
+          value: "听力题",
+          label: "听力题",
+          children: [
+            {
+              value: "听句子，判断对错",
+              label: "听句子，判断对错",
+            },
+            {
+              value: "听短对话，选择正确答案",
+              label: "听短对话，选择正确答案",
+            },
+            {
+              value: "听长对话，选择正确答案",
+              label: "听长对话，选择正确答案",
+            },
+            {
+              value: "听短文，选择正确答案",
+              label: "听短文，选择正确答案",
+            },
+          ],
+        },
+        {
+          value: "阅读题",
+          label: "阅读题",
+          children: [
+            {
+              value: "选择正确词语填空",
+              label: "选择正确词语填空",
+            },
+            {
+              value: "阅读语段，选择与语段意思一致的一项",
+              label: "阅读语段，选择与语段意思一致的一项",
+            },
+            {
               value: "阅读短文，选择正确答案",
               label: "阅读短文，选择正确答案",
             },
@@ -249,6 +470,12 @@ export default {
         {
           value: "写作题",
           label: "写作题",
+          children: [
+            {
+              value: "根据一段长对话写门诊病历记录",
+              label: "根据一段长对话写门诊病历记录",
+            },
+          ],
         },
       ],
       use: [
@@ -269,9 +496,36 @@ export default {
       multipleSelection: [],
       dialogFormVisible: false,
       form: {
-        title: "",
-        quesnum: "",
+        ques_con: "",
+        ques_file: "",
+        type: [
+          {
+            ques_num: 1,
+            ques_type: "",
+            ques_num_yixue: 1,
+            ques_num_zonghe: 1,
+            grade: "不限等级",
+          },
+        ],
       },
+      grade: [
+        {
+          value: "不限等级",
+          label: "不限等级",
+        },
+        {
+          value: "一级",
+          label: "一级",
+        },
+        {
+          value: "二级",
+          label: "二级",
+        },
+        {
+          value: "三级",
+          label: "三级",
+        },
+      ],
       formLabelWidth: "120px",
       currentPage: 1,
       pageSize: 10,
@@ -280,6 +534,8 @@ export default {
       ex: "1",
       der: [],
       exVisible: false,
+      contentFile: [],
+      excelFile: [],
     };
   },
   watch: {},
@@ -324,7 +580,7 @@ export default {
                   : date.getSeconds();
               element.created_at = Y + M + D + h + m + s;
             });
-            this.loading=false
+            this.loading = false;
             this.tableData = res.data.objects;
             this.initial = this.tableData;
             // console.log(this.tableData);
@@ -470,14 +726,20 @@ export default {
       }
       return isFile;
     },
-
     // 读取压缩文件
     async componentImport() {
+      const loading = this.$loading({
+        lock: true,
+        text: "正在导入中，请稍后",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)",
+      });
       const zip = new JSZip();
       const zipData = await zip.loadAsync(this.fileList[0].raw);
       var i = 0;
       this.fileNum = Object.keys(zipData.files).length;
       this.sureClick = false;
+      let temp = {};
       for (let key in zipData.files) {
         if (!zipData.files[key].dir) {
           if (
@@ -546,6 +808,33 @@ export default {
                     element.catalog = null;
                   }
                   if (
+                    element.paper_title == undefined ||
+                    element.paper_title == ""
+                  ) {
+                    element.paper_title = null;
+                  }
+                  if (
+                    element.paper_type == undefined ||
+                    element.paper_type == ""
+                  ) {
+                    element.paper_type = null;
+                  }
+                  if (
+                    element.questions_num == undefined ||
+                    element.questions_num == ""
+                  ) {
+                    element.questions_num = null;
+                  }
+                  if (element.points == undefined || element.points == "") {
+                    element.points = null;
+                  }
+                  if (element.sequence == undefined || element.sequence == "") {
+                    element.sequence = null;
+                  }
+                  if (element.score == undefined || element.score == "") {
+                    element.score = null;
+                  }
+                  if (
                     element.primary_ques_type == undefined ||
                     element.primary_ques_type == ""
                   ) {
@@ -582,36 +871,6 @@ export default {
                     element.department = null;
                   } else {
                     element.department = element.department.split("，");
-                    for (let i = 0; i < element.department.length; i++) {
-                      let findID = new BaaS.TableObject("department");
-                      let findid = new BaaS.Query();
-                      findid.compare("department", "=", element.department[i]);
-                      findID
-                        .setQuery(findid)
-                        .find()
-                        .then(
-                          (res) => {
-                            if (res.data.objects.length == 0) {
-                              let addKno = new BaaS.TableObject("department");
-                              let addkno = addKno.create();
-                              addkno.set("department", element.department[i]);
-                              addkno.save().then(
-                                (res) => {
-                                  element.department[i] = res.data.id;
-                                },
-                                (err) => {
-                                  console.log(err);
-                                }
-                              );
-                            } else {
-                              element.department[i] = res.data.objects[0].id;
-                            }
-                          },
-                          (err) => {
-                            console.log(err);
-                          }
-                        );
-                    }
                   }
                   if (
                     element.ques_level == undefined ||
@@ -646,8 +905,26 @@ export default {
                   ) {
                     element.time_created = null;
                   }
+                  if (
+                    element.grade_standard == undefined ||
+                    element.grade_standard == ""
+                  ) {
+                    element.grade_standard = null;
+                  }
+                  if (element.topic == undefined || element.topic == "") {
+                    element.topic = null;
+                  }
+                  if (element.task == undefined || element.task == "") {
+                    element.task = null;
+                  }
                   var a = {
                     catalog: element.catalog,
+                    paper_title: element.paper_title,
+                    paper_type: element.paper_type,
+                    questions_num: element.questions_num,
+                    points: element.points,
+                    sequence: element.sequence,
+                    score: element.score,
                     primary_ques_type: element.primary_ques_type,
                     secondary_ques_type: element.secondary_ques_type,
                     question_content_id: element.question_content,
@@ -655,19 +932,28 @@ export default {
                     options: element.options,
                     answer: element.answer,
                     analysis: element.analysis,
-                    knowledge_id: element.knowledge,
-                    source_id: element.source,
-                    test_id: element.test,
                     department: element.department,
-                    sub_sequence: element.sub_sequence,
                     ques_level: element.ques_level,
                     question_class: element.question_class,
                     question_type_5he: element.question_type_5he,
                     author: element.author,
                     author_org: element.author_org,
                     time_created: element.time_created,
+                    grade_standard: element.grade_standard,
+                    topic_outline: element.topic,
+                    task_outline: element.task,
                   };
-                  this.excelFile.push(a);
+                  if (element.paper_title == null) {
+                    this.excelFile.push(a);
+                  } else {
+                    temp = {
+                      catalog: element.catalog,
+                      paper_title: element.paper_title,
+                      paper_type: element.paper_type,
+                      questions_num: element.questions_num,
+                      points: element.points,
+                    };
+                  }
                 });
               } catch (e) {
                 console.log(e);
@@ -677,6 +963,108 @@ export default {
           }
         }
         i++;
+        let questions_detail = [];
+        let ques_type = [
+          {
+            primary: "听力",
+            secondary: [
+              {
+                type: "听句子，判断对错",
+                start: -1,
+                end: -1,
+                hoverS: false,
+                score: 0,
+                num: 0,
+              },
+              {
+                type: "听短对话，选择正确答案",
+                start: -1,
+                end: -1,
+                hoverS: false,
+                score: 0,
+                num: 0,
+              },
+              {
+                type: "听长对话，选择正确答案",
+                start: -1,
+                end: -1,
+                hoverS: false,
+                score: 0,
+                num: 0,
+              },
+              {
+                type: "听短文，选择正确答案",
+                start: -1,
+                end: -1,
+                hoverS: false,
+                score: 0,
+                num: 0,
+              },
+            ],
+            hoverP: false,
+            total_score: 0,
+            total_num: 0,
+            start: -1,
+          },
+          {
+            primary: "阅读",
+            secondary: [
+              {
+                type: "选择正确的词语填空",
+                start: -1,
+                end: -1,
+                hoverS: false,
+                score: 0,
+                num: 0,
+              },
+              {
+                type: "阅读语段，选择与语段意思一致的一项",
+                start: -1,
+                end: -1,
+                hoverS: false,
+                score: 0,
+                num: 0,
+              },
+              {
+                type: "阅读材料，选择正确答案",
+                start: -1,
+                end: -1,
+                hoverS: false,
+                score: 0,
+                num: 0,
+              },
+              {
+                type: "阅读短文，选择正确答案",
+                start: -1,
+                end: -1,
+                hoverS: false,
+                score: 0,
+                num: 0,
+              },
+            ],
+            hoverP: false,
+            total_score: 0,
+            total_num: 0,
+            start: -1,
+          },
+          {
+            primary: "写作",
+            secondary: [
+              {
+                type: "根据一段长对话写门诊病历记录",
+                start: -1,
+                end: -1,
+                hoverS: false,
+                score: 0,
+                num: 0,
+              },
+            ],
+            hoverP: false,
+            total_score: 0,
+            total_num: 0,
+            start: -1,
+          },
+        ];
         if (i == this.fileNum) {
           var arr = new Array();
           this.excelFile.forEach((element) => {
@@ -692,7 +1080,115 @@ export default {
                   .save()
                   .then(
                     (res) => {
-                      // console.log(res);
+                      let q = {
+                        id: res.data.id,
+                        sub_sequence: element.sequence,
+                        score: element.score,
+                      };
+                      questions_detail.push(q);
+                      if (questions_detail.length == this.excelFile.length) {
+                        let num = 0;
+                        questions_detail.sort(function (a, b) {
+                          return a.sub_sequence - b.sub_sequence;
+                        });
+                        for (let a = 0; a < this.excelFile.length; a++) {
+                          for (let b = 0; b < ques_type.length; b++) {
+                            if (
+                              this.excelFile[a].primary_ques_type ==
+                              ques_type[b].primary
+                            ) {
+                              for (
+                                let c = 0;
+                                c < ques_type[b].secondary.length;
+                                c++
+                              ) {
+                                if (
+                                  this.excelFile[a].secondary_ques_type ==
+                                  ques_type[b].secondary[c].type
+                                ) {
+                                  ques_type[b].secondary[c].num++;
+                                  ques_type[b].secondary[c].score +=
+                                    this.excelFile[a].score;
+                                  ques_type[b].total_num++;
+                                  ques_type[b].total_score +=
+                                    this.excelFile[a].score;
+                                  if (ques_type[b].secondary[c].start == -1) {
+                                    ques_type[b].secondary[c].start =
+                                      this.excelFile[a].sequence - 1 - num;
+                                    ques_type[b].secondary[c].end =
+                                      this.excelFile[a].sequence - 1 - num;
+                                    ques_type[b].start =
+                                      this.excelFile[a].sequence - 1 - num;
+                                  } else if (
+                                    this.excelFile[a].question_content_id !=
+                                    this.excelFile[a - 1].question_content_id
+                                  ) {
+                                    ques_type[b].secondary[c].end++;
+                                  } else {
+                                    num++;
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                        for (let a = 0; a < ques_type.length; a++) {
+                          ques_type[a].secondary.sort(function (c, d) {
+                            return c.start - d.start;
+                          });
+                        }
+                        ques_type.sort(function (c, d) {
+                          return c.start - d.start;
+                        });
+                        for (let a = 0; a < ques_type.length; a++) {
+                          if (ques_type[a].start != -1) {
+                            ques_type.splice(0, a);
+                            break;
+                          }
+                        }
+                        for (let a = 0; a < ques_type.length; a++) {
+                          for (
+                            let b = 0;
+                            b < ques_type[a].secondary.length;
+                            b++
+                          ) {
+                            if (ques_type[a].secondary[b].start != -1) {
+                              ques_type[a].secondary.splice(0, b);
+                              break;
+                            }
+                          }
+                        }
+                        let saveP = new BaaS.TableObject("test_paper");
+                        let savep = saveP.create();
+                        let s = {
+                          paper_title: temp.paper_title,
+                          paper_type: temp.paper_type,
+                          questions_num: temp.questions_num,
+                          points: temp.points,
+                          is_delete: false,
+                          catalog: temp.catalog,
+                          questions_detail: JSON.stringify(questions_detail),
+                          ques_type: JSON.stringify(ques_type),
+                        };
+                        savep
+                          .set(s)
+                          .save()
+                          .then(
+                            (res) => {
+                              // console.log(res)
+                              this.$message({
+                                message: "导入成功",
+                                type: "success",
+                              });
+                              loading.close();
+                              this.importFile = false;
+                              this.init();
+                            },
+                            (err) => {
+                              console.log(err);
+                            }
+                          );
+                      }
                     },
                     (err) => {
                       console.log(err);
@@ -716,6 +1212,7 @@ export default {
             );
             var k = 0;
             qc.forEach((element) => {
+              // console.log(element)
               let Content = new BaaS.TableObject("question_content");
               let content = new BaaS.Query();
               content.compare("content", "=", element.content);
@@ -743,7 +1240,148 @@ export default {
                               .save()
                               .then(
                                 (res) => {
-                                  // console.log(res);
+                                  let q = {
+                                    id: res.data.id,
+                                    sub_sequence: element.sequence,
+                                    score: element.score,
+                                  };
+                                  questions_detail.push(q);
+                                  if (
+                                    questions_detail.length ==
+                                    this.excelFile.length
+                                  ) {
+                                    let num = 0;
+                                    questions_detail.sort(function (a, b) {
+                                      return a.sub_sequence - b.sub_sequence;
+                                    });
+
+                                    for (
+                                      let a = 0;
+                                      a < this.excelFile.length;
+                                      a++
+                                    ) {
+                                      for (
+                                        let b = 0;
+                                        b < ques_type.length;
+                                        b++
+                                      ) {
+                                        if (
+                                          this.excelFile[a].primary_ques_type ==
+                                          ques_type[b].primary
+                                        ) {
+                                          for (
+                                            let c = 0;
+                                            c < ques_type[b].secondary.length;
+                                            c++
+                                          ) {
+                                            if (
+                                              this.excelFile[a]
+                                                .secondary_ques_type ==
+                                              ques_type[b].secondary[c].type
+                                            ) {
+                                              ques_type[b].secondary[c].num++;
+                                              ques_type[b].secondary[c].score +=
+                                                this.excelFile[a].score;
+                                              ques_type[b].total_num++;
+                                              ques_type[b].total_score +=
+                                                this.excelFile[a].score;
+                                              if (
+                                                ques_type[b].secondary[c]
+                                                  .start == -1
+                                              ) {
+                                                ques_type[b].secondary[
+                                                  c
+                                                ].start =
+                                                  this.excelFile[a].sequence -
+                                                  1 -
+                                                  num;
+                                                ques_type[b].secondary[c].end =
+                                                  this.excelFile[a].sequence -
+                                                  1 -
+                                                  num;
+                                                ques_type[b].start =
+                                                  this.excelFile[a].sequence -
+                                                  1 -
+                                                  num;
+                                              } else if (
+                                                this.excelFile[a]
+                                                  .question_content_id !=
+                                                this.excelFile[a - 1]
+                                                  .question_content_id
+                                              ) {
+                                                ques_type[b].secondary[c].end++;
+                                              } else {
+                                                num++;
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                    for (let a = 0; a < ques_type.length; a++) {
+                                      ques_type[a].secondary.sort(function (
+                                        c,
+                                        d
+                                      ) {
+                                        return c.start - d.start;
+                                      });
+                                    }
+                                    ques_type.sort(function (c, d) {
+                                      return c.start - d.start;
+                                    });
+                                    for (let a = 0; a < ques_type.length; a++) {
+                                      if (ques_type[a].start != -1) {
+                                        ques_type.splice(0, a);
+                                        break;
+                                      }
+                                    }
+                                    for (let a = 0; a < ques_type.length; a++) {
+                                      for (
+                                        let b = 0;
+                                        b < ques_type[a].secondary.length;
+                                        b++
+                                      ) {
+                                        if (
+                                          ques_type[a].secondary[b].start != -1
+                                        ) {
+                                          ques_type[a].secondary.splice(0, b);
+                                          break;
+                                        }
+                                      }
+                                    }
+                                    let saveP = new BaaS.TableObject(
+                                      "test_paper"
+                                    );
+                                    let savep = saveP.create();
+                                    let s = {
+                                      paper_title: temp.paper_title,
+                                      paper_type: temp.paper_type,
+                                      questions_num: temp.questions_num,
+                                      points: temp.points,
+                                      is_delete: false,
+                                      catalog: temp.catalog,
+                                      questions_detail:
+                                        JSON.stringify(questions_detail),
+                                      ques_type: JSON.stringify(ques_type),
+                                    };
+                                    savep
+                                      .set(s)
+                                      .save()
+                                      .then(
+                                        (res) => {
+                                          this.$message({
+                                            message: "导入成功",
+                                            type: "success",
+                                          });
+                                          loading.close();
+                                          this.importFile = false;
+                                          this.init();
+                                        },
+                                        (err) => {
+                                          console.log(err);
+                                        }
+                                      );
+                                  }
                                 },
                                 (err) => {
                                   console.log(err);
@@ -777,7 +1415,177 @@ export default {
                                   .save()
                                   .then(
                                     (res) => {
-                                      // console.log(res);
+                                      let q = {
+                                        id: res.data.id,
+                                        sub_sequence: element.sequence,
+                                        score: element.score,
+                                      };
+                                      questions_detail.push(q);
+                                      if (
+                                        questions_detail.length ==
+                                        this.excelFile.length
+                                      ) {
+                                        let num = 0;
+                                        questions_detail.sort(function (a, b) {
+                                          return (
+                                            a.sub_sequence - b.sub_sequence
+                                          );
+                                        });
+
+                                        for (
+                                          let a = 0;
+                                          a < this.excelFile.length;
+                                          a++
+                                        ) {
+                                          for (
+                                            let b = 0;
+                                            b < ques_type.length;
+                                            b++
+                                          ) {
+                                            if (
+                                              this.excelFile[a]
+                                                .primary_ques_type ==
+                                              ques_type[b].primary
+                                            ) {
+                                              for (
+                                                let c = 0;
+                                                c <
+                                                ques_type[b].secondary.length;
+                                                c++
+                                              ) {
+                                                if (
+                                                  this.excelFile[a]
+                                                    .secondary_ques_type ==
+                                                  ques_type[b].secondary[c].type
+                                                ) {
+                                                  ques_type[b].secondary[c]
+                                                    .num++;
+                                                  ques_type[b].secondary[
+                                                    c
+                                                  ].score +=
+                                                    this.excelFile[a].score;
+                                                  ques_type[b].total_num++;
+                                                  ques_type[b].total_score +=
+                                                    this.excelFile[a].score;
+                                                  if (
+                                                    ques_type[b].secondary[c]
+                                                      .start == -1
+                                                  ) {
+                                                    ques_type[b].secondary[
+                                                      c
+                                                    ].start =
+                                                      this.excelFile[a]
+                                                        .sequence -
+                                                      1 -
+                                                      num;
+                                                    ques_type[b].secondary[
+                                                      c
+                                                    ].end =
+                                                      this.excelFile[a]
+                                                        .sequence -
+                                                      1 -
+                                                      num;
+                                                    ques_type[b].start =
+                                                      this.excelFile[a]
+                                                        .sequence -
+                                                      1 -
+                                                      num;
+                                                  } else if (
+                                                    this.excelFile[a]
+                                                      .question_content_id !=
+                                                    this.excelFile[a - 1]
+                                                      .question_content_id
+                                                  ) {
+                                                    ques_type[b].secondary[c]
+                                                      .end++;
+                                                  } else {
+                                                    num++;
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                        for (
+                                          let a = 0;
+                                          a < ques_type.length;
+                                          a++
+                                        ) {
+                                          ques_type[a].secondary.sort(function (
+                                            c,
+                                            d
+                                          ) {
+                                            return c.start - d.start;
+                                          });
+                                        }
+                                        ques_type.sort(function (c, d) {
+                                          return c.start - d.start;
+                                        });
+                                        for (
+                                          let a = 0;
+                                          a < ques_type.length;
+                                          a++
+                                        ) {
+                                          if (ques_type[a].start != -1) {
+                                            ques_type.splice(0, a);
+                                            break;
+                                          }
+                                        }
+                                        for (
+                                          let a = 0;
+                                          a < ques_type.length;
+                                          a++
+                                        ) {
+                                          for (
+                                            let b = 0;
+                                            b < ques_type[a].secondary.length;
+                                            b++
+                                          ) {
+                                            if (
+                                              ques_type[a].secondary[b].start !=
+                                              -1
+                                            ) {
+                                              ques_type[a].secondary.splice(
+                                                0,
+                                                b
+                                              );
+                                              break;
+                                            }
+                                          }
+                                        }
+                                        let saveP = new BaaS.TableObject(
+                                          "test_paper"
+                                        );
+                                        let savep = saveP.create();
+                                        let s = {
+                                          paper_title: temp.paper_title,
+                                          paper_type: temp.paper_type,
+                                          questions_num: temp.questions_num,
+                                          points: temp.points,
+                                          is_delete: false,
+                                          catalog: temp.catalog,
+                                          questions_detail:
+                                            JSON.stringify(questions_detail),
+                                          ques_type: JSON.stringify(ques_type),
+                                        };
+                                        savep
+                                          .set(s)
+                                          .save()
+                                          .then(
+                                            (res) => {
+                                              this.$message({
+                                                message: "导入成功",
+                                                type: "success",
+                                              });
+                                              loading.close();
+                                              this.importFile = false;
+                                              this.init();
+                                            },
+                                            (err) => {
+                                              console.log(err);
+                                            }
+                                          );
+                                      }
                                     },
                                     (err) => {
                                       console.log(err);
@@ -922,11 +1730,107 @@ export default {
       return index + 1;
     },
     handleSet() {
-      //   Cookies.set("material_id", val);
+      let content = Cookie.get("question_content");
+      this.form.ques_con = content;
+      if (
+        content.search(".mp3") != -1 ||
+        content.search(".wav") != -1 ||
+        content.search(".ogg") != -1 ||
+        content.search(".png") != -1 ||
+        content.search(".jpg") != -1 ||
+        content.search(".gif") != -1
+      ) {
+        this.form.ques_file = content;
+      }
       this.dialogFormVisible = true;
     },
-    setQues() {
+    autoClose() {
+      this.form = {
+        ques_con: "",
+        ques_file: "",
+        type: [
+          {
+            ques_type: "",
+            ques_num: 1,
+            ques_num_yixue: 1,
+            ques_num_zonghe: 1,
+            grade: "不限等级",
+          },
+        ],
+      };
       this.dialogFormVisible = false;
+    },
+    setQues() {
+      console.log(this.form);
+      let valid = true;
+      for (let i = 0; i < this.form.type.length; i++) {
+        if (this.form.type[i].ques_type == "") {
+          valid = false;
+          this.$message.warning("请选择出题题型");
+          break;
+        }
+        this.form.type[i].ques_num *= 1;
+        this.form.type[i].ques_num_yixue *= 1;
+        this.form.type[i].ques_num_zonghe *= 1;
+      }
+      if (valid == true) {
+        const loading = this.$loading({
+          lock: true,
+          text: "正在出题中，请稍后",
+          spinner: "el-icon-loading",
+          background: "rgba(0, 0, 0, 0.7)",
+        });
+        for (let i = 0; i < this.form.type.length; i++) {
+          if (this.form.type[i].ques_type[1] == "阅读短文，选择正确答案") {
+            Read4(
+              this.form.ques_con,
+              this.form.type[i].ques_num_yixue,
+              this.form.type[i].ques_num_zonghe
+            ).then(
+              (res) => {
+                loading.close();
+                console.log(res);
+                // let questions = []
+                // let content = []
+                // for(let i=0;i<this.form.type.length;i++){
+                //   let s = {
+                //     temp: this.form.ques_con
+                //   }
+                // }
+                // for(let i=0;i<res.medical_data.length;i++){
+                //   let t = {
+                //   question_content: this.form.ques_con,
+
+                // }
+                // }
+
+                this.autoClose();
+                Cookies.set("make_out", "third");
+                this.$router.push("/mcreatePaper");
+              },
+              (err) => {
+                this.$message.error("出题失败");
+                loading.close();
+                console.log(err);
+              }
+            );
+          }
+        }
+      }
+    },
+    addAuto() {
+      let t = {
+        ques_type: "",
+        ques_num: 1,
+        ques_num_yixue: 1,
+        ques_num_zonghe: 1,
+        grade: "不限等级",
+      };
+      this.form.type.push(t);
+    },
+    delAuto(val) {
+      console.log(val);
+      this.form.type.splice(val, 1);
     },
     handleSizeChange(val) {
       console.log(`每页 ${val} 条`);
@@ -952,7 +1856,7 @@ export default {
         this.exVisible = true;
       }
     },
-    derive() {
+    async derive() {
       const loading = this.$loading({
         lock: true,
         text: "正在导出，请稍等",
@@ -960,19 +1864,21 @@ export default {
         background: "rgba(0, 0, 0, 0.7)",
       });
       let final = [];
-      let catanum = 0;
       for (let i = 0; i < this.der.length; i++) {
-        this.der[i].question_content_id=Cookie.get("question_content")
+        this.der[i].question_content_id = Cookie.get("question_content");
+        if (this.deri == 0) {
           if (this.der[i].options != null) {
-            let temp = JSON.parse(this.der[i].options);
+            let temp = await JSON.parse(this.der[i].options);
             let str = "";
             for (let j = 0; j < temp.length; j++) {
               str += temp[j].index + "." + temp[j].content + " ";
             }
             this.der[i].options = str;
           }
-          final.push(this.der[i]);
+        }
+        final.push(this.der[i]);
       }
+      this.deri++;
       if (this.ex == 1) {
         setTimeout(() => {
           const testData = {
@@ -1015,7 +1921,7 @@ export default {
             message: "导出成功",
             type: "success",
           });
-        }, 1000);
+        }, 3000);
       } else if (this.ex == 2) {
         setTimeout(() => {
           for (let i = 0; i < final.length; i++) {
@@ -1203,7 +2109,7 @@ export default {
             message: "导出成功",
             type: "success",
           });
-        }, 1000);
+        }, 3000);
       }
       this.$refs.multipleTable.clearSelection();
     },
@@ -1266,5 +2172,28 @@ export default {
 .ques_bottom {
   display: flex;
   justify-content: flex-end;
+}
+.checkQues .autoQP .el-dialog__body {
+  padding: 0 20px;
+}
+.checkQues .el-icon-circle-plus-outline {
+  font-size: 40px;
+  color: green;
+  float: left;
+}
+.checkQues .el-icon-remove-outline {
+  font-size: 30px;
+  color: red;
+  float: right;
+}
+.checkQues .autoType {
+  margin-bottom: 20px;
+  padding-bottom: 40px;
+  border-bottom: 1px dotted gray;
+}
+.checkQues .autoType .el-cascader,
+.checkQues .autoType .el-input,
+.checkQues .autoType .el-select {
+  width: 100%;
 }
 </style>

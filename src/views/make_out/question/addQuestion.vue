@@ -74,6 +74,7 @@
             </div>
           </div>
           <el-upload
+            v-if="questions.primary_ques_type == '听力'"
             ref="upload"
             action=""
             class="upload-demo"
@@ -89,7 +90,24 @@
           >
             <el-button>上传音频</el-button>
           </el-upload>
-          <audio :src="audio" controls="controls" v-if="audio != ''"></audio>
+          <audio :src="audio" controls="controls" v-if="audio != ''&&questions.primary_ques_type=='听力'"></audio>
+          <el-upload
+            v-if="questions.secondary_ques_type == '阅读材料，选择正确答案'"
+            ref="upload"
+            action=""
+            class="upload-demo"
+            :multiple="false"
+            accept=".xls,.xlsx"
+            :before-upload="excelbeforeAvatarUpload"
+            :auto-upload="false"
+            :on-change="excelChange"
+            :on-exceed="handleExceed"
+            :on-remove="excelRemove"
+            :limit="1"
+            :file-list="excelfileList"
+          >
+            <el-button>上传表格</el-button>
+          </el-upload>
         </div>
         <el-collapse v-model="activeNames">
           <el-collapse-item
@@ -174,7 +192,7 @@
               </div>
             </div>
             <div class="select_bar">
-              <div class="knowledge">
+              <!-- <div class="knowledge">
                 等级：
                 <el-select v-model="s.level_value" placeholder="请选择题目等级">
                   <el-option
@@ -185,9 +203,9 @@
                   >
                   </el-option>
                 </el-select>
-              </div>
+              </div> -->
               <div class="knowledge">
-                等级标准：
+                MCT等级：
                 <el-cascader
                   v-model="s.grade_value"
                   :options="grade_standard"
@@ -354,7 +372,7 @@
 
 <script src="//cdn.jsdelivr.net/npm/xgplayer@2.9.6/browser/index.js" type="text/javascript"></script>
 <script>
-// import Cookie from "js-cookie";
+import Cookie from "js-cookie";
 // import Cookies from "js-cookie";
 import E from "wangeditor";
 var BaaS = require("minapp-sdk");
@@ -366,6 +384,7 @@ export default {
   props: {},
   data() {
     return {
+      excelfileList: [],
       audior: "",
       audio: "",
       fileList: [],
@@ -471,8 +490,8 @@ export default {
       grade_value: [],
       grade_standard: [
         {
-          value: "医学汉语能力总体描述",
-          label: "医学汉语能力总体描述",
+          value: "医学汉语能力总体等级",
+          label: "医学汉语能力总体等级",
           children: [
             {
               value: "一级",
@@ -681,18 +700,47 @@ export default {
       task_value: [],
       dialogVisible: false,
       file_url: "",
+      excelr: "",
     };
   },
   watch: {},
   computed: {},
   methods: {
+    excelbeforeAvatarUpload(file) {
+      let isFile =
+        file.name.split(".")[file.name.split(".").length - 1] == "xls" ||
+        file.name.split(".")[file.name.split(".").length - 1] == "xlsx";
+      if (!isFile) {
+        this.$message.error("导入文件格式不正确");
+      }
+      return isFile;
+    },
+    excelChange(file, fileList) {
+      this.excelfileList.push(file);
+      if (/\.(xls)$/.test(file.raw.name) || /\.(xlsx)$/.test(file.raw.name)) {
+        var reader = new FileReader();
+        reader.readAsDataURL(file.raw);
+        reader.onload = () => {
+          const result = this.dataURLtoFile(reader.result, file.raw.name);
+          console.log(result);
+          new Promise((resolve, reject) => {
+            // this.audio = reader.result;
+            this.excelr = result;
+          });
+        };
+      }
+    },
+    excelRemove(file, fileList) {
+      this.excelfileList = [];
+      this.excelr = "";
+    },
     beforeAvatarUpload(file) {
       let isFile =
         file.name.split(".")[file.name.split(".").length - 1] == "mp3" ||
         file.name.split(".")[file.name.split(".").length - 1] == "wav" ||
         file.name.split(".")[file.name.split(".").length - 1] == "ogg";
       if (!isFile) {
-        this.$message.error("导入文件格式不正确");
+        this.$message.warning("导入文件格式不正确");
       }
       return isFile;
     },
@@ -762,7 +810,7 @@ export default {
         options: [],
         answer: "",
         analysis: "",
-        level_value: "",
+        // level_value: "",
         grade_value: "",
         topic_value: "",
         task_value: "",
@@ -865,7 +913,7 @@ export default {
         options: [],
         answer: "",
         analysis: "",
-        level_value: "",
+        // level_value: "",
         knowledge_value: "",
         department_value: "",
         test_value: "",
@@ -919,12 +967,18 @@ export default {
       this.editor.push(analysis);
     },
     async checkQues() {
+      if (this.questions.primary_ques_type != "听力") {
+        this.handleRemove()
+      }
+      if (this.questions.secondary_ques_type != "阅读材料，选择正确答案") {
+        this.excelRemove()
+      }
       this.file_url = "";
       var valid = true;
       for (let j = 1; j <= this.currentSubQues; j++) {
-        if (this.questions.sub_question[j - 1].level_value == "") {
-          this.questions.sub_question[j - 1].level_value = null;
-        }
+        // if (this.questions.sub_question[j - 1].level_value == "") {
+        //   this.questions.sub_question[j - 1].level_value = null;
+        // }
         if (this.questions.sub_question[j - 1].grade_value == "") {
           this.questions.sub_question[j - 1].grade_value = null;
         }
@@ -958,7 +1012,7 @@ export default {
             break;
           }
           if (this.editor[i].toolbarSelector == "#material") {
-            if (this.editor[i].txt.html() == "" && this.audio == "") {
+            if (this.editor[i].txt.html() == "" && this.audio == ""&&this.excelr=="") {
               this.questions.question_content = null;
               this.$message({
                 message: "请填写题干",
@@ -984,10 +1038,10 @@ export default {
                 this.file_url = src;
               } else if (
                 this.editor[i].txt.html().search("<img src=") != -1 &&
-                this.audio != ""
+                (this.audio != "" || this.excelr != "")
               ) {
                 this.$message({
-                  message: "图片和音频只支持一项，请修改",
+                  message: "图片、音频、表格只支持一项，请修改",
                   type: "warning",
                 });
                 valid = false;
@@ -1229,6 +1283,12 @@ export default {
       }
     },
     saveQues() {
+      let cata
+      if(Cookie.get("catalog")!=""){
+        cata = Cookie.get("catalog")
+      }else{
+        cata = null
+      }
       const loading = this.$loading({
         lock: true,
         text: "正在保存中，请稍后",
@@ -1236,7 +1296,7 @@ export default {
         background: "rgba(0, 0, 0, 0.7)",
       });
       this.dialogVisible = false;
-      if (this.file_url != "" && this.audio == "") {
+      if (this.file_url != "" && this.audio == "" && this.excelr == "") {
         const result = this.dataURLtoFile(this.file_url, "图片.png");
         let addFile = new BaaS.File();
         let file = { fileObj: result };
@@ -1268,8 +1328,8 @@ export default {
                     analysis: this.questions.sub_question[i].analysis,
                     department: this.questions.sub_question[i].department_value,
                     is_delete: false,
-                    catalog: null,
-                    ques_level: this.questions.sub_question[i].level_value,
+                    catalog: cata,
+                    // ques_level: this.questions.sub_question[i].level_value,
                     question_class: this.questions.sub_question[i].qclass_value,
                     question_type_5he:
                       this.questions.sub_question[i].fivehe_value,
@@ -1310,7 +1370,7 @@ export default {
             console.log(err);
           }
         );
-      } else if (this.file_url == "" && this.audio != "") {
+      } else if (this.file_url == "" && this.audio != "" && this.excelr == "") {
         let addFile = new BaaS.File();
         let file = { fileObj: this.audior };
         addFile.upload(file).then(
@@ -1341,8 +1401,82 @@ export default {
                     analysis: this.questions.sub_question[i].analysis,
                     department: this.questions.sub_question[i].department_value,
                     is_delete: false,
-                    catalog: null,
-                    ques_level: this.questions.sub_question[i].level_value,
+                    catalog: cata,
+                    // ques_level: this.questions.sub_question[i].level_value,
+                    question_class: this.questions.sub_question[i].qclass_value,
+                    question_type_5he:
+                      this.questions.sub_question[i].fivehe_value,
+                    author: this.questions.sub_question[i].author,
+                    author_org: this.questions.sub_question[i].author_org,
+                    time_created: this.questions.sub_question[i].time_created,
+                    topic_outline: this.questions.sub_question[i].topic_value,
+                    grade_standard: this.questions.sub_question[i].grade_value,
+                    task_outline: this.questions.sub_question[i].task_value,
+                  };
+                  saveq
+                    .set(temp)
+                    .save()
+                    .then(
+                      (res) => {
+                        console.log(res);
+                        this.$message({
+                          message: "第" + (i + 1) + "题保存成功",
+                          type: "success",
+                        });
+                        if (i == this.questions.sub_question.length - 1) {
+                          loading.close();
+                          this.back();
+                        }
+                      },
+                      (err) => {
+                        console.log(err);
+                      }
+                    );
+                }
+              },
+              (err) => {
+                console.log(err);
+              }
+            );
+          },
+          (err) => {
+            console.log(err);
+          }
+        );
+      } else if (this.file_url == "" && this.audio == "" && this.excelr != "") {
+        let addFile = new BaaS.File();
+        let file = { fileObj: this.excelr };
+        addFile.upload(file).then(
+          (res) => {
+            let saveContent = new BaaS.TableObject("question_content");
+            let savec = saveContent.create();
+            savec.set({
+              content: this.questions.question_content,
+              file_url: res.data.file, //调用api生成图片
+              excel: res.data.file,
+              catalog: null,
+              is_delete: false,
+            });
+            savec.save().then(
+              (res) => {
+                this.questions.question_content = res.data.id;
+                for (let i = 0; i < this.questions.sub_question.length; i++) {
+                  let saveQ = new BaaS.TableObject("questions_information");
+                  let saveq = saveQ.create();
+                  let temp = {
+                    question_content_id: this.questions.question_content,
+                    primary_ques_type: this.questions.primary_ques_type,
+                    secondary_ques_type: this.questions.secondary_ques_type,
+                    question: this.questions.sub_question[i].question,
+                    options: JSON.stringify(
+                      this.questions.sub_question[i].options
+                    ),
+                    answer: this.questions.sub_question[i].answer,
+                    analysis: this.questions.sub_question[i].analysis,
+                    department: this.questions.sub_question[i].department_value,
+                    is_delete: false,
+                    catalog: cata,
+                    // ques_level: this.questions.sub_question[i].level_value,
                     question_class: this.questions.sub_question[i].qclass_value,
                     question_type_5he:
                       this.questions.sub_question[i].fivehe_value,
@@ -1428,8 +1562,8 @@ export default {
                         department:
                           this.questions.sub_question[i].department_value,
                         is_delete: false,
-                        catalog: null,
-                        ques_level: this.questions.sub_question[i].level_value,
+                        catalog: cata,
+                        // ques_level: this.questions.sub_question[i].level_value,
                         question_class:
                           this.questions.sub_question[i].qclass_value,
                         question_type_5he:
@@ -1545,15 +1679,15 @@ export default {
                     );
                   }
                   q9.compare("is_delete", "=", false);
-                  if (this.questions.sub_question[i].level_value == null) {
-                    q11.isNull("ques_level");
-                  } else {
-                    q11.compare(
-                      "ques_level",
-                      "=",
-                      this.questions.sub_question[i].level_value
-                    );
-                  }
+                  // if (this.questions.sub_question[i].level_value == null) {
+                  //   q11.isNull("ques_level");
+                  // } else {
+                  //   q11.compare(
+                  //     "ques_level",
+                  //     "=",
+                  //     this.questions.sub_question[i].level_value
+                  //   );
+                  // }
                   if (this.questions.sub_question[i].qclass_value == null) {
                     q12.isNull("question_class");
                   } else {
@@ -1672,9 +1806,9 @@ export default {
                             department:
                               this.questions.sub_question[i].department_value,
                             is_delete: false,
-                            catalog: null,
-                            ques_level:
-                              this.questions.sub_question[i].level_value,
+                            catalog: cata,
+                            // ques_level:
+                              // this.questions.sub_question[i].level_value,
                             question_class:
                               this.questions.sub_question[i].qclass_value,
                             question_type_5he:
