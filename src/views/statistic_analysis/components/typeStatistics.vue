@@ -114,13 +114,16 @@ export default {
       BaaS.init(clientID);
       let query_id = new BaaS.Query()
       query_id.compare('created_by', '=', Cookies.get('user_id') * 1)
+      let query_delete = new BaaS.Query();
+      query_delete.compare("is_delete", "=", false);
+      let andQuery = BaaS.Query.and(query_id, query_delete)
       let questions_information = new BaaS.TableObject("questions_information")
       var typeList = ['听力', '阅读', '写作']
-      questions_information.limit(1000).setQuery(query_id).find().then(res => {
+      questions_information.limit(1000).setQuery(andQuery.exists('primary_ques_type')).find().then(res => {
         this.number = res.data.objects.length
         this.ques_list = res.data.objects
         for (let j = 1; j < 10; j++) {
-          questions_information.limit(1000).offset(j * 1000).setQuery(query_id).find().then(res => {
+          questions_information.limit(1000).offset(j * 1000).setQuery(andQuery.exists('primary_ques_type')).find().then(res => {
             this.number = this.number + res.data.objects.length
             Object.assign(this.ques_list, res.data.objects)
           }, err => {

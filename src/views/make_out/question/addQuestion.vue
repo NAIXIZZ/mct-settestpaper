@@ -90,24 +90,40 @@
           >
             <el-button>上传音频</el-button>
           </el-upload>
-          <audio :src="audio" controls="controls" v-if="audio != ''&&questions.primary_ques_type=='听力'"></audio>
-          <el-upload
+          <audio
+            :src="audio"
+            controls="controls"
+            v-if="audio != '' && questions.primary_ques_type == '听力'"
+          ></audio>
+          <div
             v-if="questions.secondary_ques_type == '阅读材料，选择正确答案'"
-            ref="upload"
-            action=""
-            class="upload-demo"
-            :multiple="false"
-            accept=".xls,.xlsx"
-            :before-upload="excelbeforeAvatarUpload"
-            :auto-upload="false"
-            :on-change="excelChange"
-            :on-exceed="handleExceed"
-            :on-remove="excelRemove"
-            :limit="1"
-            :file-list="excelfileList"
+            style="display: flex; flex-direction: row; align-items: center"
           >
-            <el-button>上传表格</el-button>
-          </el-upload>
+            <el-upload
+              ref="upload"
+              action=""
+              class="upload-demo"
+              :multiple="false"
+              accept=".xls,.xlsx"
+              :before-upload="excelbeforeAvatarUpload"
+              :auto-upload="false"
+              :on-change="excelChange"
+              :on-exceed="handleExceed"
+              :on-remove="excelRemove"
+              :limit="1"
+              :file-list="excelfileList"
+            >
+              <el-button>上传表格</el-button>
+            </el-upload>
+            <el-tooltip
+              class="item"
+              effect="light"
+              content="点击查看上传格式"
+              placement="right"
+            >
+              <i class="el-icon-info" @click="excelMode = true"></i>
+            </el-tooltip>
+          </div>
         </div>
         <el-collapse v-model="activeNames">
           <el-collapse-item
@@ -206,7 +222,7 @@
               </div> -->
               <div class="knowledge">
                 MCT等级：
-                <el-cascader
+                <!-- <el-cascader
                   v-model="s.grade_value"
                   :options="grade_standard"
                   :props="props"
@@ -214,7 +230,34 @@
                   clearable
                   placeholder="请选择等级标准"
                   @change="(type) => grade(type, s.sub_sequence)"
-                ></el-cascader>
+                ></el-cascader> -->
+                <el-select
+                  v-model="s.grade_value1"
+                  placeholder="请选择"
+                  @change="levelChange(s.sub_sequence)"
+                  clearable
+                >
+                  <el-option
+                    v-for="item in grade_standard1"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  >
+                  </el-option>
+                </el-select>
+                <el-select
+                  v-model="s.grade_value2"
+                  placeholder="请选择"
+                  v-if="s.grade_value1 != ''"
+                >
+                  <el-option
+                    v-for="item in grade_standard2"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  >
+                  </el-option>
+                </el-select>
                 <el-tooltip
                   class="item"
                   effect="light"
@@ -228,7 +271,7 @@
               </div>
               <div class="knowledge">
                 话题大纲：
-                <el-cascader
+                <!-- <el-cascader
                   v-model="s.topic_value"
                   :options="topic_outline"
                   :props="props"
@@ -236,7 +279,73 @@
                   clearable
                   placeholder="请选择话题大纲"
                   @change="(type) => topic(type, s.sub_sequence)"
-                ></el-cascader>
+                ></el-cascader> -->
+                <el-select
+                  v-model="s.topic_value1"
+                  placeholder="请选择"
+                  @change="topicChange(s.sub_sequence)"
+                  clearable
+                >
+                  <el-option
+                    v-for="item in topic_outline1"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  >
+                  </el-option>
+                </el-select>
+                <el-select
+                  v-model="s.topic_value2"
+                  placeholder="请选择"
+                  v-if="s.topic_value1 == '医生-医生'"
+                >
+                  <el-option
+                    v-for="item in topic_outline2_1"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  >
+                  </el-option>
+                </el-select>
+                <el-select
+                  v-model="s.topic_value2"
+                  placeholder="请选择"
+                  v-if="s.topic_value1 == '医生-患者'"
+                >
+                  <el-option
+                    v-for="item in topic_outline2_2"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  >
+                  </el-option>
+                </el-select>
+                <el-select
+                  v-model="s.topic_value2"
+                  placeholder="请选择"
+                  v-if="s.topic_value1 == '医生-护士'"
+                >
+                  <el-option
+                    v-for="item in topic_outline2_3"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  >
+                  </el-option>
+                </el-select>
+                <el-select
+                  v-model="s.topic_value2"
+                  placeholder="请选择"
+                  v-if="s.topic_value1 == '患者-护士'"
+                >
+                  <el-option
+                    v-for="item in topic_outline2_4"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  >
+                  </el-option>
+                </el-select>
                 <el-tooltip
                   class="item"
                   effect="light"
@@ -254,6 +363,7 @@
                   v-model="s.task_value"
                   multiple
                   placeholder="请选择任务大纲"
+                  clearable
                 >
                   <el-option
                     v-for="item in task_outline"
@@ -280,6 +390,7 @@
                   v-model="s.department_value"
                   multiple
                   placeholder="请搜索或添加系统"
+                  clearable
                 >
                   <el-option
                     v-for="item in department"
@@ -295,6 +406,7 @@
                 <el-select
                   v-model="s.qclass_value"
                   placeholder="请选择题目类型"
+                  clearable
                 >
                   <el-option
                     v-for="item in qclass"
@@ -310,6 +422,7 @@
                 <el-select
                   v-model="s.fivehe_value"
                   placeholder="请选择题目五何类型"
+                  clearable
                 >
                   <el-option
                     v-for="item in fivehe"
@@ -336,12 +449,10 @@
               </div>
               <div class="knowledge">
                 题目创作日期：
-                <el-date-picker
+                <el-input
                   v-model="s.time_created"
-                  type="date"
                   placeholder="选择题目创作日期"
-                >
-                </el-date-picker>
+                ></el-input>
               </div>
             </div>
             <div class="sub_ques_check">
@@ -367,6 +478,15 @@
         <el-button type="primary" @click="saveQues">确 定</el-button>
       </span>
     </el-dialog>
+    <el-dialog title="表格上传格式" :visible.sync="excelMode">
+      <p>表格模板</p>
+      <el-image src="excelMode.jpg" :preview-src-list="srcList"> </el-image>
+      <p>结果提示字典</p>
+      <el-image src="hint.jpg" :preview-src-list="srcList"> </el-image>
+      <span slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="excelMode = false">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -384,6 +504,8 @@ export default {
   props: {},
   data() {
     return {
+      srcList: ["excelMode.jpg", "hint.jpg"],
+      excelMode: false,
       excelfileList: [],
       audior: "",
       audio: "",
@@ -487,182 +609,301 @@ export default {
       ],
       fivehe_value: "",
       props: { multiple: true, expandTrigger: "hover" },
-      grade_value: [],
-      grade_standard: [
+      grade_standard1: [
         {
           value: "医学汉语能力总体等级",
           label: "医学汉语能力总体等级",
-          children: [
-            {
-              value: "一级",
-              label: "一级",
-            },
-            {
-              value: "二级",
-              label: "二级",
-            },
-            {
-              value: "三级",
-              label: "三级",
-            },
-          ],
         },
         {
           value: "医学汉语口头理解能力（听）",
           label: "医学汉语口头理解能力（听）",
-          children: [
-            {
-              value: "一级",
-              label: "一级",
-            },
-            {
-              value: "二级",
-              label: "二级",
-            },
-            {
-              value: "三级",
-              label: "三级",
-            },
-          ],
         },
         {
           value: "医学汉语口头理解能力（说）",
           label: "医学汉语口头理解能力（说）",
-          children: [
-            {
-              value: "一级",
-              label: "一级",
-            },
-            {
-              value: "二级",
-              label: "二级",
-            },
-            {
-              value: "三级",
-              label: "三级",
-            },
-          ],
         },
         {
           value: "医学汉语口头理解能力（读）",
           label: "医学汉语口头理解能力（读）",
-          children: [
-            {
-              value: "一级",
-              label: "一级",
-            },
-            {
-              value: "二级",
-              label: "二级",
-            },
-            {
-              value: "三级",
-              label: "三级",
-            },
-          ],
         },
         {
           value: "医学汉语口头理解能力（写）",
           label: "医学汉语口头理解能力（写）",
-          children: [
-            {
-              value: "一级",
-              label: "一级",
-            },
-            {
-              value: "二级",
-              label: "二级",
-            },
-            {
-              value: "三级",
-              label: "三级",
-            },
-          ],
         },
       ],
-      topic_value: [],
-      topic_outline: [
+      grade_standard2: [
+        {
+          value: "一级",
+          label: "一级",
+        },
+        {
+          value: "二级",
+          label: "二级",
+        },
+        {
+          value: "三级",
+          label: "三级",
+        },
+      ],
+      // grade_value: [],
+      // grade_standard: [
+      //   {
+      //     value: "医学汉语能力总体等级",
+      //     label: "医学汉语能力总体等级",
+      //     children: [
+      //       {
+      //         value: "一级",
+      //         label: "一级",
+      //       },
+      //       {
+      //         value: "二级",
+      //         label: "二级",
+      //       },
+      //       {
+      //         value: "三级",
+      //         label: "三级",
+      //       },
+      //     ],
+      //   },
+      //   {
+      //     value: "医学汉语口头理解能力（听）",
+      //     label: "医学汉语口头理解能力（听）",
+      //     children: [
+      //       {
+      //         value: "一级",
+      //         label: "一级",
+      //       },
+      //       {
+      //         value: "二级",
+      //         label: "二级",
+      //       },
+      //       {
+      //         value: "三级",
+      //         label: "三级",
+      //       },
+      //     ],
+      //   },
+      //   {
+      //     value: "医学汉语口头理解能力（说）",
+      //     label: "医学汉语口头理解能力（说）",
+      //     children: [
+      //       {
+      //         value: "一级",
+      //         label: "一级",
+      //       },
+      //       {
+      //         value: "二级",
+      //         label: "二级",
+      //       },
+      //       {
+      //         value: "三级",
+      //         label: "三级",
+      //       },
+      //     ],
+      //   },
+      //   {
+      //     value: "医学汉语口头理解能力（读）",
+      //     label: "医学汉语口头理解能力（读）",
+      //     children: [
+      //       {
+      //         value: "一级",
+      //         label: "一级",
+      //       },
+      //       {
+      //         value: "二级",
+      //         label: "二级",
+      //       },
+      //       {
+      //         value: "三级",
+      //         label: "三级",
+      //       },
+      //     ],
+      //   },
+      //   {
+      //     value: "医学汉语口头理解能力（写）",
+      //     label: "医学汉语口头理解能力（写）",
+      //     children: [
+      //       {
+      //         value: "一级",
+      //         label: "一级",
+      //       },
+      //       {
+      //         value: "二级",
+      //         label: "二级",
+      //       },
+      //       {
+      //         value: "三级",
+      //         label: "三级",
+      //       },
+      //     ],
+      //   },
+      // ],
+      topic_outline1: [
         {
           value: "医生-医生",
           label: "医生-医生",
-          children: [
-            {
-              value: "询问",
-              label: "询问",
-            },
-            {
-              value: "交流",
-              label: "交流",
-            },
-            {
-              value: "指令",
-              label: "指令",
-            },
-          ],
         },
         {
           value: "医生-患者",
           label: "医生-患者",
-          children: [
-            {
-              value: "问诊",
-              label: "问诊",
-            },
-            {
-              value: "诊断",
-              label: "诊断",
-            },
-            {
-              value: "治疗",
-              label: "治疗",
-            },
-            {
-              value: "主诉",
-              label: "主诉",
-            },
-            {
-              value: "交流",
-              label: "交流",
-            },
-            {
-              value: "指令",
-              label: "指令",
-            },
-          ],
         },
         {
           value: "医生-护士",
           label: "医生-护士",
-          children: [
-            {
-              value: "交流",
-              label: "交流",
-            },
-            {
-              value: "指令",
-              label: "指令",
-            },
-          ],
         },
         {
           value: "患者-护士",
           label: "患者-护士",
-          children: [
-            {
-              value: "交流",
-              label: "交流",
-            },
-            {
-              value: "指令",
-              label: "指令",
-            },
-            {
-              value: "咨询",
-              label: "咨询",
-            },
-          ],
         },
       ],
+      topic_outline2_1: [
+        {
+          value: "询问",
+          label: "询问",
+        },
+        {
+          value: "交流",
+          label: "交流",
+        },
+        {
+          value: "指令",
+          label: "指令",
+        },
+      ],
+      topic_outline2_2: [
+        {
+          value: "问诊",
+          label: "问诊",
+        },
+        {
+          value: "诊断",
+          label: "诊断",
+        },
+        {
+          value: "治疗",
+          label: "治疗",
+        },
+        {
+          value: "主诉",
+          label: "主诉",
+        },
+        {
+          value: "交流",
+          label: "交流",
+        },
+        {
+          value: "指令",
+          label: "指令",
+        },
+      ],
+      topic_outline2_3: [
+        {
+          value: "交流",
+          label: "交流",
+        },
+        {
+          value: "指令",
+          label: "指令",
+        },
+      ],
+      topic_outline2_4: [
+        {
+          value: "交流",
+          label: "交流",
+        },
+        {
+          value: "指令",
+          label: "指令",
+        },
+        {
+          value: "咨询",
+          label: "咨询",
+        },
+      ],
+
+      // topic_value: [],
+      // topic_outline: [
+      //   {
+      //     value: "医生-医生",
+      //     label: "医生-医生",
+      //     children: [
+      //       {
+      //         value: "询问",
+      //         label: "询问",
+      //       },
+      //       {
+      //         value: "交流",
+      //         label: "交流",
+      //       },
+      //       {
+      //         value: "指令",
+      //         label: "指令",
+      //       },
+      //     ],
+      //   },
+      //   {
+      //     value: "医生-患者",
+      //     label: "医生-患者",
+      //     children: [
+      //       {
+      //         value: "问诊",
+      //         label: "问诊",
+      //       },
+      //       {
+      //         value: "诊断",
+      //         label: "诊断",
+      //       },
+      //       {
+      //         value: "治疗",
+      //         label: "治疗",
+      //       },
+      //       {
+      //         value: "主诉",
+      //         label: "主诉",
+      //       },
+      //       {
+      //         value: "交流",
+      //         label: "交流",
+      //       },
+      //       {
+      //         value: "指令",
+      //         label: "指令",
+      //       },
+      //     ],
+      //   },
+      //   {
+      //     value: "医生-护士",
+      //     label: "医生-护士",
+      //     children: [
+      //       {
+      //         value: "交流",
+      //         label: "交流",
+      //       },
+      //       {
+      //         value: "指令",
+      //         label: "指令",
+      //       },
+      //     ],
+      //   },
+      //   {
+      //     value: "患者-护士",
+      //     label: "患者-护士",
+      //     children: [
+      //       {
+      //         value: "交流",
+      //         label: "交流",
+      //       },
+      //       {
+      //         value: "指令",
+      //         label: "指令",
+      //       },
+      //       {
+      //         value: "咨询",
+      //         label: "咨询",
+      //       },
+      //     ],
+      //   },
+      // ],
       task_outline: [
         {
           value: "病史采集",
@@ -706,6 +947,12 @@ export default {
   watch: {},
   computed: {},
   methods: {
+    levelChange(s) {
+      this.questions.sub_question[s - 1].grade_value2 = "";
+    },
+    topicChange(s) {
+      this.questions.sub_question[s - 1].topic_value2 = "";
+    },
     excelbeforeAvatarUpload(file) {
       let isFile =
         file.name.split(".")[file.name.split(".").length - 1] == "xls" ||
@@ -811,8 +1058,10 @@ export default {
         answer: "",
         analysis: "",
         // level_value: "",
-        grade_value: "",
-        topic_value: "",
+        grade_value1: "",
+        grade_value2: "",
+        topic_value1: "",
+        topic_value2: "",
         task_value: "",
         department_value: "",
         qclass_value: "",
@@ -914,10 +1163,12 @@ export default {
         answer: "",
         analysis: "",
         // level_value: "",
-        knowledge_value: "",
+        grade_value1: "",
+        grade_value2: "",
+        topic_value1: "",
+        topic_value2: "",
+        task_value: "",
         department_value: "",
-        test_value: "",
-        source_value: "",
         qclass_value: "",
         fivehe_value: "",
         A: "",
@@ -968,10 +1219,10 @@ export default {
     },
     async checkQues() {
       if (this.questions.primary_ques_type != "听力") {
-        this.handleRemove()
+        this.handleRemove();
       }
       if (this.questions.secondary_ques_type != "阅读材料，选择正确答案") {
-        this.excelRemove()
+        this.excelRemove();
       }
       this.file_url = "";
       var valid = true;
@@ -979,17 +1230,51 @@ export default {
         // if (this.questions.sub_question[j - 1].level_value == "") {
         //   this.questions.sub_question[j - 1].level_value = null;
         // }
-        if (this.questions.sub_question[j - 1].grade_value == "") {
+        if (this.questions.sub_question[j - 1].grade_value1 == "") {
           this.questions.sub_question[j - 1].grade_value = null;
+        } else {
+          if (this.questions.sub_question[j - 1].grade_value2 == "") {
+            this.$message({
+              message: "请选择MCT等级",
+              type: "warning",
+            });
+            valid = false;
+            break;
+          } else {
+            this.questions.sub_question[j - 1].grade_value = [
+              this.questions.sub_question[j - 1].grade_value1,
+              this.questions.sub_question[j - 1].grade_value2,
+            ];
+          }
         }
-        if (this.questions.sub_question[j - 1].department_value == "") {
+        if (
+          this.questions.sub_question[j - 1].department_value == "" ||
+          this.questions.sub_question[j - 1].department_value == []
+        ) {
           this.questions.sub_question[j - 1].department_value = null;
         }
-        if (this.questions.sub_question[j - 1].task_value == "") {
+        if (
+          this.questions.sub_question[j - 1].task_value == "" ||
+          this.questions.sub_question[j - 1].task_value == []
+        ) {
           this.questions.sub_question[j - 1].task_value = null;
         }
-        if (this.questions.sub_question[j - 1].topic_value == "") {
+        if (this.questions.sub_question[j - 1].topic_value1 == "") {
           this.questions.sub_question[j - 1].topic_value = null;
+        } else {
+          if (this.questions.sub_question[j - 1].topic_value2 == "") {
+            this.$message({
+              message: "请选择话题大纲",
+              type: "warning",
+            });
+            valid = false;
+            break;
+          } else {
+            this.questions.sub_question[j - 1].topic_value = [
+              this.questions.sub_question[j - 1].topic_value1,
+              this.questions.sub_question[j - 1].topic_value2,
+            ];
+          }
         }
         if (this.questions.sub_question[j - 1].qclass_value == "") {
           this.questions.sub_question[j - 1].qclass_value = null;
@@ -1006,13 +1291,21 @@ export default {
         if (this.questions.sub_question[j - 1].time_created == "") {
           this.questions.sub_question[j - 1].time_created = null;
         }
+        console.log(
+          this.questions.sub_question[j - 1].grade_value,
+          this.questions.sub_question[j - 1].topic_value
+        );
         let a = new Array();
         for (let i = 0; i < this.editor.length; i++) {
           if (valid == false) {
             break;
           }
           if (this.editor[i].toolbarSelector == "#material") {
-            if (this.editor[i].txt.html() == "" && this.audio == ""&&this.excelr=="") {
+            if (
+              this.editor[i].txt.html() == "" &&
+              this.audio == "" &&
+              this.excelr == ""
+            ) {
               this.questions.question_content = null;
               this.$message({
                 message: "请填写题干",
@@ -1079,7 +1372,7 @@ export default {
             if (
               (this.questions.primary_ques_type == "听力" ||
                 this.questions.primary_ques_type == "阅读" ||
-                this.questions.primary_ques_type == "写作") &&
+                this.questions.pFrimary_ques_type == "写作") &&
               this.questions.secondary_ques_type == ""
             ) {
               this.$message({
@@ -1283,11 +1576,13 @@ export default {
       }
     },
     saveQues() {
-      let cata
-      if(Cookie.get("catalog")!=""){
-        cata = Cookie.get("catalog")
-      }else{
-        cata = null
+      let cata;
+      // if (Cookie.get("catalog") != "") {
+      //   cata = Cookie.get("catalog");
+      if (sessionStorage.getItem("catalog") != "") {
+        cata = sessionStorage.getItem("catalog");
+      } else {
+        cata = null;
       }
       const loading = this.$loading({
         lock: true,
@@ -1339,6 +1634,7 @@ export default {
                     topic_outline: this.questions.sub_question[i].topic_value,
                     grade_standard: this.questions.sub_question[i].grade_value,
                     task_outline: this.questions.sub_question[i].task_value,
+                    created_by: Cookie.get("user_id") * 1,
                   };
                   saveq
                     .set(temp)
@@ -1356,17 +1652,32 @@ export default {
                         }
                       },
                       (err) => {
+                        this.$message({
+                          message: "保存失败",
+                          type: "warning",
+                        });
+                        loading.close();
                         console.log(err);
                       }
                     );
                 }
               },
               (err) => {
+                this.$message({
+                  message: "保存失败",
+                  type: "warning",
+                });
+                loading.close();
                 console.log(err);
               }
             );
           },
           (err) => {
+            this.$message({
+              message: "保存失败",
+              type: "warning",
+            });
+            loading.close();
             console.log(err);
           }
         );
@@ -1412,6 +1723,7 @@ export default {
                     topic_outline: this.questions.sub_question[i].topic_value,
                     grade_standard: this.questions.sub_question[i].grade_value,
                     task_outline: this.questions.sub_question[i].task_value,
+                    created_by: Cookie.get("user_id") * 1,
                   };
                   saveq
                     .set(temp)
@@ -1429,17 +1741,32 @@ export default {
                         }
                       },
                       (err) => {
+                        this.$message({
+                          message: "保存失败",
+                          type: "warning",
+                        });
+                        loading.close();
                         console.log(err);
                       }
                     );
                 }
               },
               (err) => {
+                this.$message({
+                  message: "保存失败",
+                  type: "warning",
+                });
+                loading.close();
                 console.log(err);
               }
             );
           },
           (err) => {
+            this.$message({
+              message: "保存失败",
+              type: "warning",
+            });
+            loading.close();
             console.log(err);
           }
         );
@@ -1486,6 +1813,7 @@ export default {
                     topic_outline: this.questions.sub_question[i].topic_value,
                     grade_standard: this.questions.sub_question[i].grade_value,
                     task_outline: this.questions.sub_question[i].task_value,
+                    created_by: Cookie.get("user_id") * 1,
                   };
                   saveq
                     .set(temp)
@@ -1503,17 +1831,32 @@ export default {
                         }
                       },
                       (err) => {
+                        this.$message({
+                          message: "保存失败",
+                          type: "warning",
+                        });
+                        loading.close();
                         console.log(err);
                       }
                     );
                 }
               },
               (err) => {
+                this.$message({
+                  message: "保存失败",
+                  type: "warning",
+                });
+                loading.close();
                 console.log(err);
               }
             );
           },
           (err) => {
+            this.$message({
+              message: "保存失败",
+              type: "warning",
+            });
+            loading.close();
             console.log(err);
           }
         );
@@ -1523,9 +1866,12 @@ export default {
         findc.compare("content", "=", this.questions.question_content);
         let q2 = new BaaS.Query();
         q2.compare("is_delete", "=", false);
-        let andQuery = BaaS.Query.and(findc, q2);
+        let q3 = new BaaS.Query();
+        q3.compare("created_by", "=", Cookie.get("user_id") * 1);
+        let andQuery = BaaS.Query.and(findc, q2, q3);
         findContent
           .setQuery(andQuery)
+          .limit(1000)
           .find()
           .then(
             (res) => {
@@ -1577,6 +1923,7 @@ export default {
                         grade_standard:
                           this.questions.sub_question[i].grade_value,
                         task_outline: this.questions.sub_question[i].task_value,
+                        created_by: Cookie.get("user_id") * 1,
                       };
                       saveq
                         .set(temp)
@@ -1594,12 +1941,22 @@ export default {
                             }
                           },
                           (err) => {
+                            this.$message({
+                              message: "保存失败",
+                              type: "warning",
+                            });
+                            loading.close();
                             console.log(err);
                           }
                         );
                     }
                   },
                   (err) => {
+                    this.$message({
+                      message: "保存失败",
+                      type: "warning",
+                    });
+                    loading.close();
                     console.log(err);
                   }
                 );
@@ -1626,6 +1983,7 @@ export default {
                   let q17 = new BaaS.Query();
                   let q18 = new BaaS.Query();
                   let q19 = new BaaS.Query();
+                  let q20 = new BaaS.Query();
                   q1.compare(
                     "question_content_id",
                     "=",
@@ -1760,6 +2118,7 @@ export default {
                       this.questions.sub_question[i].task_value
                     );
                   }
+                  q20.compare("created_by", "=", Cookie.get("user_id" * 1));
                   let andQuery = BaaS.Query.and(
                     q1,
                     q2,
@@ -1779,10 +2138,12 @@ export default {
                     q16,
                     q17,
                     q18,
-                    q19
+                    q19,
+                    q20
                   );
                   findQ
                     .setQuery(andQuery)
+                    .limit(1000)
                     .find()
                     .then(
                       (res) => {
@@ -1808,7 +2169,7 @@ export default {
                             is_delete: false,
                             catalog: cata,
                             // ques_level:
-                              // this.questions.sub_question[i].level_value,
+                            // this.questions.sub_question[i].level_value,
                             question_class:
                               this.questions.sub_question[i].qclass_value,
                             question_type_5he:
@@ -1824,6 +2185,7 @@ export default {
                               this.questions.sub_question[i].grade_value,
                             task_outline:
                               this.questions.sub_question[i].task_value,
+                            created_by: Cookie.get("user_id") * 1,
                           };
                           saveq
                             .set(temp)
@@ -1844,6 +2206,11 @@ export default {
                                 }
                               },
                               (err) => {
+                                this.$message({
+                                  message: "保存失败",
+                                  type: "warning",
+                                });
+                                loading.close();
                                 console.log(err);
                               }
                             );
@@ -1859,6 +2226,11 @@ export default {
                         }
                       },
                       (err) => {
+                        this.$message({
+                          message: "保存失败",
+                          type: "warning",
+                        });
+                        loading.close();
                         console.log(err);
                       }
                     );
@@ -1866,6 +2238,11 @@ export default {
               }
             },
             (err) => {
+              this.$message({
+                message: "保存失败",
+                type: "warning",
+              });
+              loading.close();
               console.log(err);
             }
           );

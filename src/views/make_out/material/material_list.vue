@@ -87,7 +87,12 @@
             :src="scope.row.file_url.path"
             controls="controls"
             v-if="
-              scope.row.file_url && scope.row.file_url.path.search('.mp3') != -1
+              (scope.row.file_url &&
+                scope.row.file_url.path.search('.mp3') != -1) ||
+              (scope.row.file_url &&
+                scope.row.file_url.path.search('.wav') != -1) ||
+              (scope.row.file_url &&
+                scope.row.file_url.path.search('.ogg') != -1)
             "
           ></audio>
           <el-image
@@ -95,7 +100,12 @@
             :preview-src-list="srcList"
             :src="scope.row.file_url.path"
             v-if="
-              scope.row.file_url && scope.row.file_url.path.search('.png') != -1
+              (scope.row.file_url &&
+                scope.row.file_url.path.search('.png') != -1) ||
+              (scope.row.file_url &&
+                scope.row.file_url.path.search('.gif') != -1) ||
+              (scope.row.file_url &&
+                scope.row.file_url.path.search('.jpg') != -1)
             "
           ></el-image>
         </template>
@@ -346,8 +356,8 @@
 
 <script>
 import global from "@/util/global.js";
-import { Read4 } from "@/api/api.js";
-import Cookies from "js-cookie";
+import { Read1, Read4 } from "@/api/api.js";
+// import Cookies from "js-cookie";
 import Cookie from "js-cookie";
 var BaaS = require("minapp-sdk");
 let clientID = "395062a19e209a770059";
@@ -379,15 +389,11 @@ export default {
             ques_type: "",
             ques_num_yixue: 1,
             ques_num_zonghe: 1,
-            grade: "不限等级",
+            grade: "一级",
           },
         ],
       },
       grade: [
-        {
-          value: "不限等级",
-          label: "不限等级",
-        },
         {
           value: "一级",
           label: "一级",
@@ -561,6 +567,7 @@ export default {
       let ques = [];
       let query = new BaaS.Query();
       query.compare("created_by", "=", Cookie.get("user_id") * 1);
+      // query.compare("created_by", "=", sessionStorage.getItem("user_id") * 1);
       let q2 = new BaaS.Query();
       q2.compare("is_delete", "=", false);
       let andQuery = BaaS.Query.and(query, q2);
@@ -720,9 +727,12 @@ export default {
         let q2 = new BaaS.Query();
         query.compare("catalog", "=", name);
         q2.compare("is_delete", "=", false);
-        let andQuery = BaaS.Query.and(query, q2);
+        let q = new BaaS.Query();
+        q.compare("created_by", "=", Cookie.get("user_id") * 1);
+        let andQuery = BaaS.Query.and(query, q2, q);
         let Catalog = new BaaS.TableObject("question_content");
         Catalog.setQuery(andQuery)
+          .limit(1000)
           .find()
           .then(
             (res) => {
@@ -790,15 +800,18 @@ export default {
       let q2 = new BaaS.Query();
       query.compare("catalog", "=", row.catalog);
       q2.compare("is_delete", "=", false);
-      let andQuery = BaaS.Query.and(query, q2);
+      let q = new BaaS.Query();
+      q.compare("created_by", "=", Cookie.get("user_id") * 1);
+      let andQuery = BaaS.Query.and(query, q2, q);
       let Catalog = new BaaS.TableObject("question_content");
       Catalog.setQuery(andQuery)
+        .limit(1000)
         .find()
         .then(
           (res) => {
             console.log(res);
             if (res.data.objects.length == 0) {
-              let catalog = Catalog.getWithoutData(row.id);
+              let catalog = Catalog.limit(1000).getWithoutData(row.id);
               catalog.set("catalog", row.catalog);
               catalog.update().then(
                 (res) => {
@@ -839,9 +852,11 @@ export default {
       let q3 = new BaaS.Query();
       query.compare("catalog", "=", row.catalog);
       q2.compare("created_by", "=", Cookie.get("user_id") * 1);
+      // q2.compare("created_by", "=", sessionStorage.getItem("user_id") * 1);
       q3.compare("is_delete", "=", false);
       let andQuery = BaaS.Query.and(query, q2, q3);
       Catalog.setQuery(andQuery)
+        .limit(1000)
         .find()
         .then(
           (res) => {
@@ -866,37 +881,46 @@ export default {
         spinner: "el-icon-loading",
         background: "rgba(0, 0, 0, 0.7)",
       });
+      let num = 0;
       let findCata = new BaaS.TableObject("question_content");
       let findc = new BaaS.Query();
       let q2 = new BaaS.Query();
       findc.compare("catalog", "=", row.catalog);
       q2.compare("is_delete", "=", false);
-      let andQuery = BaaS.Query.and(findc, q2);
+      let q = new BaaS.Query();
+      q.compare("created_by", "=", Cookie.get("user_id") * 1);
+      let andQuery = BaaS.Query.and(findc, q2, q);
       findCata
         .setQuery(andQuery)
+        .limit(1000)
         .find()
         .then(
           (res) => {
             let Catalog = new BaaS.TableObject("question_content");
-            let cata = Catalog.getWithoutData(res.data.objects[0].id);
+            let cata = Catalog.limit(1000).getWithoutData(
+              res.data.objects[0].id
+            );
             cata.set("is_delete", true);
             cata.update().then(
               (res) => {
                 console.log(res);
-                loading.close();
-                this.$message({
-                  message: "文件夹删除成功",
-                  type: "success",
-                });
-                this.tableData.splice(index, 1);
-                for (let i = 0; i < this.catalog.length; i++) {
-                  if (this.catalog[i].catalog == row.catalog) {
-                    this.catalog.splice(i, 1);
-                    sessionStorage.setItem(
-                      "contentCatalog",
-                      JSON.stringify(this.catalog)
-                    );
-                    break;
+                if (num == 0) {
+                  this.$message({
+                    message: "文件夹删除成功",
+                    type: "success",
+                  });
+                  this.tableData.splice(index, 1);
+                  num++;
+                  loading.close();
+                  for (let i = 0; i < this.catalog.length; i++) {
+                    if (this.catalog[i].catalog == row.catalog) {
+                      this.catalog.splice(i, 1);
+                      sessionStorage.setItem(
+                        "contentCatalog",
+                        JSON.stringify(this.catalog)
+                      );
+                      break;
+                    }
                   }
                 }
               },
@@ -923,7 +947,7 @@ export default {
         background: "rgba(0, 0, 0, 0.7)",
       });
       let Catalog = new BaaS.TableObject("question_content");
-      let cata = Catalog.getWithoutData(row.id);
+      let cata = Catalog.limit(1000).getWithoutData(row.id);
       cata.set("is_delete", true);
       cata.update().then(
         (res) => {
@@ -955,7 +979,7 @@ export default {
     to(val) {
       for (let i = 0; i < this.preMove.length; i++) {
         let Catalog = new BaaS.TableObject("question_content");
-        let cata = Catalog.getWithoutData(this.preMove[i]);
+        let cata = Catalog.limit(1000).getWithoutData(this.preMove[i]);
         cata.set("catalog", val);
         cata.update().then(
           (res) => {
@@ -1001,19 +1025,25 @@ export default {
       }
     },
     enterFolder(row) {
-      Cookies.set("make_out", "third");
-      Cookies.set("catalog", row.catalog);
-      Cookies.set("catalogall", JSON.stringify(this.catalog));
+      // Cookies.set("make_out", "third");
+      // Cookies.set("catalog", row.catalog);
+      // Cookies.set("catalogall", JSON.stringify(this.catalog));
+      sessionStorage.setItem("make_out", "third");
+      sessionStorage.setItem("catalog", row.catalog);
+      sessionStorage.setItem("catalogall", JSON.stringify(this.catalog));
       this.$router.push("/materialCatalog");
     },
     checkQuesP(id) {
-      Cookies.set("make_out", "third");
-      Cookies.set("material_id", id);
+      // Cookies.set("make_out", "third");
+      // Cookies.set("material_id", id);
+      sessionStorage.setItem("make_out", "third");
+      sessionStorage.setItem("material_id", id);
       this.$router.push("/checkQuesP");
     },
     handleSet(val) {
       console.log(val);
-      Cookies.set("material_id", val.id);
+      // Cookies.set("material_id", val.id);
+      sessionStorage.setItem("material_id", val.id);
       this.form.ques_con = val.content;
       if (val.file_url != "" && val.file_url != null) {
         this.form.ques_file = val.file_url.path;
@@ -1030,7 +1060,7 @@ export default {
             ques_num: 1,
             ques_num_yixue: 1,
             ques_num_zonghe: 1,
-            grade: "不限等级",
+            grade: "一级",
           },
         ],
       };
@@ -1051,32 +1081,60 @@ export default {
       }
       if (valid == true) {
         const loading = this.$loading({
-        lock: true,
-        text: "正在出题中，请稍后",
-        spinner: "el-icon-loading",
-        background: "rgba(0, 0, 0, 0.7)",
-      });
+          lock: true,
+          text: "正在出题中，请稍后",
+          spinner: "el-icon-loading",
+          background: "rgba(0, 0, 0, 0.7)",
+        });
+        let finish = 0;
+        let success = 0;
         for (let i = 0; i < this.form.type.length; i++) {
-          if (this.form.type[i].ques_type[1] == "阅读短文，选择正确答案") {
-            Read4(
-              this.form.ques_con,
-              this.form.type[i].ques_num_yixue,
-              this.form.type[i].ques_num_zonghe
-            ).then(
+          if (this.form.type[i].ques_type[1] == "选择正确词语填空") {
+            let grade = 1;
+            if (this.form.type[i].grade == "一级") {
+              grade = 1;
+            } else if (this.form.type[i].grade == "二级") {
+              grade = 2;
+            } else if (this.form.type[i].grade == "三级") {
+              grade = 3;
+            }
+            Read1(this.form.ques_con, grade, this.form.type[i].ques_num).then(
               (res) => {
-                loading.close()
                 console.log(res);
-                if(res.medical_data.length!=0){
-                  for(let j=0;j<res.medical_data.length;j++){
-                    global.auto.push(res.medical_data[j])
+                if(typeof(res)=="string") {
+                  this.$message({
+                    message: res,
+                    type: "warning",
+                  });
+                }else if (res.medical_data.length != 0) {
+                  for (let j = 0; j < res.medical_data.length; j++) {
+                    global.auto.push(res.medical_data[j]);
                   }
+                  success++;
+                }else if(res.medical_data.length == 0){
+                  this.$message({
+                    message: "无可出题目",
+                    type: "warning",
+                  });
                 }
-                if(res.synthesis_data.length!=0){
-                  for(let j=0;j<res.synthesis_data.length;j++){
-                    global.auto.push(res.synthesis_data[j])
-                  }
-                }
-                
+                finish++;
+                setTimeout(() => {
+                    if (finish == this.editableTabs[i].content.type.length) {
+                      loading.close();
+                      this.autoClose();
+                      if (success > 0) {
+                        sessionStorage.setItem("autoQues", "true");
+                        sessionStorage.setItem("make_out", "third");
+                        this.$router.push("/mcreatePaper");
+                      }
+                    }
+                  }, 1000);
+                // if (res.synthesis_data.length != 0) {
+                //   for (let j = 0; j < res.synthesis_data.length; j++) {
+                //     global.auto.push(res.synthesis_data[j]);
+                //   }
+                // }
+
                 // let questions = []
                 // let content = []
                 // for(let i=0;i<this.form.type.length;i++){
@@ -1087,19 +1145,76 @@ export default {
                 // for(let i=0;i<res.medical_data.length;i++){
                 //   let t = {
                 //   question_content: this.form.ques_con,
-                  
+
                 // }
                 // }
-                
-                this.autoClose();
-                Cookies.set("autoQues","true")
-                Cookies.set("make_out", "third");
-                this.$router.push("/mcreatePaper")
+
+                // Cookies.set("autoQues","true")
+                // Cookies.set("make_out", "third");
+                // sessionStorage.setItem("autoQues", "true");
+                // sessionStorage.setItem("make_out", "third");
+                // this.$router.push("/mcreatePaper");
               },
               (err) => {
-                this.$message.error("出题失败")
-                loading.close()
-                console.log(err)
+                this.$message.error("出题失败");
+                loading.close();
+                console.log(err);
+              }
+            );
+          }
+          if (this.form.type[i].ques_type[1] == "阅读短文，选择正确答案") {
+            Read4(
+              this.form.ques_con,
+              this.form.type[i].ques_num_yixue,
+              this.form.type[i].ques_num_zonghe,
+              this.form.type[i].grade
+            ).then(
+              (res) => {
+                console.log(res);
+                if (res.medical_data.length != 0) {
+                  for (let j = 0; j < res.medical_data.length; j++) {
+                    global.auto.push(res.medical_data[j]);
+                  }
+                  success++;
+                }
+                if (res.synthesis_data.length != 0) {
+                  for (let j = 0; j < res.synthesis_data.length; j++) {
+                    global.auto.push(res.synthesis_data[j]);
+                  }
+                }
+                finish++;
+                setTimeout(() => {
+                    if (finish == this.editableTabs[i].content.type.length) {
+                      loading.close();
+                      this.autoClose();
+                      if (success > 0) {
+                        sessionStorage.setItem("autoQues", "true");
+                        sessionStorage.setItem("make_out", "third");
+                        this.$router.push("/mcreatePaper");
+                      }
+                    }
+                  }, 1000);
+                // let questions = []
+                // let content = []
+                // for(let i=0;i<this.form.type.length;i++){
+                //   let s = {
+                //     temp: this.form.ques_con
+                //   }
+                // }
+                // for(let i=0;i<res.medical_data.length;i++){
+                //   let t = {
+                //   question_content: this.form.ques_con,
+
+                // }
+                // }
+
+                // Cookies.set("autoQues","true")
+                // Cookies.set("make_out", "third");
+              },
+              (err) => {
+                this.$message.error("出题失败");
+                loading.close();
+                console.log(err);
               }
             );
           }
@@ -1112,7 +1227,7 @@ export default {
         ques_num: 1,
         ques_num_yixue: 1,
         ques_num_zonghe: 1,
-        grade: "不限等级",
+        grade: "一级",
       };
       this.form.type.push(t);
     },
@@ -1121,13 +1236,17 @@ export default {
       this.form.type.splice(val, 1);
     },
     trash() {
-      Cookies.set("make_out", "third");
-      Cookies.set("trash", "content");
+      // Cookies.set("make_out", "third");
+      // Cookies.set("trash", "content");
+      sessionStorage.setItem("make_out", "third");
+      sessionStorage.setItem("trash", "content");
       this.$router.push("/trash_list");
     },
     checkMaterial(id) {
-      Cookies.set("make_out", "third");
-      Cookies.set("material_id", id);
+      // Cookies.set("make_out", "third");
+      // Cookies.set("material_id", id);
+      sessionStorage.setItem("make_out", "third");
+      sessionStorage.setItem("material_id", id);
       this.$router.push("/checkMaterial");
     },
     handleSizeChange(val) {

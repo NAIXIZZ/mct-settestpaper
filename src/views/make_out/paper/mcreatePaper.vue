@@ -269,25 +269,37 @@
                 questions[currentQues - 1].primary_ques_type == '听力'
               "
             ></audio>
-            <el-upload
+            <div
               v-if="
                 questions[currentQues - 1].secondary_ques_type ==
                 '阅读材料，选择正确答案'
               "
-              ref="upload"
-              action=""
-              class="upload-demo"
-              :multiple="false"
-              accept=".xls,.xlsx"
-              :auto-upload="false"
-              :on-change="excelChange"
-              :on-exceed="handleExceed"
-              :on-remove="excelRemove"
-              :limit="1"
-              :file-list="questions[currentQues - 1].excelfileList"
+              style="display: flex; flex-direction: row; align-items: center"
             >
-              <el-button>上传表格</el-button>
-            </el-upload>
+              <el-upload
+                ref="upload"
+                action=""
+                class="upload-demo"
+                :multiple="false"
+                accept=".xls,.xlsx"
+                :auto-upload="false"
+                :on-change="excelChange"
+                :on-exceed="handleExceed"
+                :on-remove="excelRemove"
+                :limit="1"
+                :file-list="questions[currentQues - 1].excelfileList"
+              >
+                <el-button>上传表格</el-button>
+              </el-upload>
+              <el-tooltip
+                class="item"
+                effect="light"
+                content="点击查看上传格式"
+                placement="right"
+              >
+                <i class="el-icon-info" @click="excelMode = true"></i>
+              </el-tooltip>
+            </div>
           </div>
           <el-collapse v-model="activeNames">
             <el-collapse-item
@@ -432,7 +444,7 @@
                 </div> -->
                 <div class="knowledge">
                   MCT等级：
-                  <el-cascader
+                  <!-- <el-cascader
                     v-model="s.grade_value"
                     :options="grade_standard"
                     :props="props"
@@ -440,7 +452,35 @@
                     clearable
                     placeholder="请选择等级标准"
                     @change="(type) => grade(type, s.sub_sequence)"
-                  ></el-cascader>
+                  ></el-cascader> -->
+                  <el-select
+                    v-model="s.grade_value1"
+                    placeholder="请选择"
+                    @change="levelChange(s.sub_sequence), $forceUpdate()"
+                    clearable
+                  >
+                    <el-option
+                      v-for="item in grade_standard1"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    >
+                    </el-option>
+                  </el-select>
+                  <el-select
+                    v-model="s.grade_value2"
+                    placeholder="请选择"
+                    v-if="s.grade_value1 != ''"
+                    @change="$forceUpdate()"
+                  >
+                    <el-option
+                      v-for="item in grade_standard2"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    >
+                    </el-option>
+                  </el-select>
                   <el-tooltip
                     class="item"
                     effect="light"
@@ -454,7 +494,7 @@
                 </div>
                 <div class="knowledge">
                   话题大纲：
-                  <el-cascader
+                  <!-- <el-cascader
                     v-model="s.topic_value"
                     :options="topic_outline"
                     :props="props"
@@ -462,7 +502,77 @@
                     clearable
                     placeholder="请选择话题大纲"
                     @change="(type) => topic(type, s.sub_sequence)"
-                  ></el-cascader>
+                  ></el-cascader> -->
+                  <el-select
+                    v-model="s.topic_value1"
+                    placeholder="请选择"
+                    @change="topicChange(s.sub_sequence), $forceUpdate()"
+                    clearable
+                  >
+                    <el-option
+                      v-for="item in topic_outline1"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    >
+                    </el-option>
+                  </el-select>
+                  <el-select
+                    v-model="s.topic_value2"
+                    placeholder="请选择"
+                    v-if="s.topic_value1 == '医生-医生'"
+                    @change="$forceUpdate()"
+                  >
+                    <el-option
+                      v-for="item in topic_outline2_1"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    >
+                    </el-option>
+                  </el-select>
+                  <el-select
+                    v-model="s.topic_value2"
+                    placeholder="请选择"
+                    v-if="s.topic_value1 == '医生-患者'"
+                    @change="$forceUpdate()"
+                  >
+                    <el-option
+                      v-for="item in topic_outline2_2"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    >
+                    </el-option>
+                  </el-select>
+                  <el-select
+                    v-model="s.topic_value2"
+                    placeholder="请选择"
+                    v-if="s.topic_value1 == '医生-护士'"
+                    @change="$forceUpdate()"
+                  >
+                    <el-option
+                      v-for="item in topic_outline2_3"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    >
+                    </el-option>
+                  </el-select>
+                  <el-select
+                    v-model="s.topic_value2"
+                    placeholder="请选择"
+                    v-if="s.topic_value1 == '患者-护士'"
+                    @change="$forceUpdate()"
+                  >
+                    <el-option
+                      v-for="item in topic_outline2_4"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    >
+                    </el-option>
+                  </el-select>
                   <el-tooltip
                     class="item"
                     effect="light"
@@ -565,12 +675,10 @@
                 </div>
                 <div class="knowledge">
                   题目创作日期：
-                  <el-date-picker
+                  <el-input
                     v-model="s.time_created"
-                    type="date"
                     placeholder="选择题目创作日期"
-                  >
-                  </el-date-picker>
+                  ></el-input>
                 </div>
               </div>
               <div class="sub_ques_check">
@@ -660,6 +768,15 @@
         ></el-button>
       </span>
     </el-dialog>
+    <el-dialog title="表格上传格式" :visible.sync="excelMode">
+      <p>表格模板</p>
+      <el-image src="excelMode.jpg" :preview-src-list="srcList"> </el-image>
+      <p>结果提示字典</p>
+      <el-image src="hint.jpg" :preview-src-list="srcList"> </el-image>
+      <span slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="excelMode = false">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -667,7 +784,7 @@
 const JSZip = require("jszip");
 var XLSX = require("xlsx");
 import Cookie from "js-cookie";
-import Cookies from "js-cookie";
+// import Cookies from "js-cookie";
 import global from "@/util/global.js";
 import E from "wangeditor";
 var BaaS = require("minapp-sdk");
@@ -679,6 +796,8 @@ export default {
   props: {},
   data() {
     return {
+      srcList: ["excelMode.jpg", "hint.jpg"],
+      excelMode: false,
       fileNum: 0,
       sureClick: true,
       fileList: [],
@@ -794,180 +913,298 @@ export default {
       lastClick: 0,
       ques_type: [],
       props: { multiple: true, expandTrigger: "hover" },
-      grade_value: [],
-      grade_standard: [
+      // grade_value: [],
+      // grade_standard: [
+      //   {
+      //     value: "医学汉语能力总体等级",
+      //     label: "医学汉语能力总体等级",
+      //     children: [
+      //       {
+      //         value: "一级",
+      //         label: "一级",
+      //       },
+      //       {
+      //         value: "二级",
+      //         label: "二级",
+      //       },
+      //       {
+      //         value: "三级",
+      //         label: "三级",
+      //       },
+      //     ],
+      //   },
+      //   {
+      //     value: "医学汉语口头理解能力（听）",
+      //     label: "医学汉语口头理解能力（听）",
+      //     children: [
+      //       {
+      //         value: "一级",
+      //         label: "一级",
+      //       },
+      //       {
+      //         value: "二级",
+      //         label: "二级",
+      //       },
+      //       {
+      //         value: "三级",
+      //         label: "三级",
+      //       },
+      //     ],
+      //   },
+      //   {
+      //     value: "医学汉语口头理解能力（说）",
+      //     label: "医学汉语口头理解能力（说）",
+      //     children: [
+      //       {
+      //         value: "一级",
+      //         label: "一级",
+      //       },
+      //       {
+      //         value: "二级",
+      //         label: "二级",
+      //       },
+      //       {
+      //         value: "三级",
+      //         label: "三级",
+      //       },
+      //     ],
+      //   },
+      //   {
+      //     value: "医学汉语口头理解能力（读）",
+      //     label: "医学汉语口头理解能力（读）",
+      //     children: [
+      //       {
+      //         value: "一级",
+      //         label: "一级",
+      //       },
+      //       {
+      //         value: "二级",
+      //         label: "二级",
+      //       },
+      //       {
+      //         value: "三级",
+      //         label: "三级",
+      //       },
+      //     ],
+      //   },
+      //   {
+      //     value: "医学汉语口头理解能力（写）",
+      //     label: "医学汉语口头理解能力（写）",
+      //     children: [
+      //       {
+      //         value: "一级",
+      //         label: "一级",
+      //       },
+      //       {
+      //         value: "二级",
+      //         label: "二级",
+      //       },
+      //       {
+      //         value: "三级",
+      //         label: "三级",
+      //       },
+      //     ],
+      //   },
+      // ],
+      // topic_value: [],
+      // topic_outline: [
+      //   {
+      //     value: "医生-医生",
+      //     label: "医生-医生",
+      //     children: [
+      //       {
+      //         value: "询问",
+      //         label: "询问",
+      //       },
+      //       {
+      //         value: "交流",
+      //         label: "交流",
+      //       },
+      //       {
+      //         value: "指令",
+      //         label: "指令",
+      //       },
+      //     ],
+      //   },
+      //   {
+      //     value: "医生-患者",
+      //     label: "医生-患者",
+      //     children: [
+      //       {
+      //         value: "问诊",
+      //         label: "问诊",
+      //       },
+      //       {
+      //         value: "诊断",
+      //         label: "诊断",
+      //       },
+      //       {
+      //         value: "治疗",
+      //         label: "治疗",
+      //       },
+      //       {
+      //         value: "主诉",
+      //         label: "主诉",
+      //       },
+      //       {
+      //         value: "交流",
+      //         label: "交流",
+      //       },
+      //       {
+      //         value: "指令",
+      //         label: "指令",
+      //       },
+      //     ],
+      //   },
+      //   {
+      //     value: "医生-护士",
+      //     label: "医生-护士",
+      //     children: [
+      //       {
+      //         value: "交流",
+      //         label: "交流",
+      //       },
+      //       {
+      //         value: "指令",
+      //         label: "指令",
+      //       },
+      //     ],
+      //   },
+      //   {
+      //     value: "患者-护士",
+      //     label: "患者-护士",
+      //     children: [
+      //       {
+      //         value: "交流",
+      //         label: "交流",
+      //       },
+      //       {
+      //         value: "指令",
+      //         label: "指令",
+      //       },
+      //       {
+      //         value: "咨询",
+      //         label: "咨询",
+      //       },
+      //     ],
+      //   },
+      // ],
+      grade_standard1: [
         {
           value: "医学汉语能力总体等级",
           label: "医学汉语能力总体等级",
-          children: [
-            {
-              value: "一级",
-              label: "一级",
-            },
-            {
-              value: "二级",
-              label: "二级",
-            },
-            {
-              value: "三级",
-              label: "三级",
-            },
-          ],
         },
         {
           value: "医学汉语口头理解能力（听）",
           label: "医学汉语口头理解能力（听）",
-          children: [
-            {
-              value: "一级",
-              label: "一级",
-            },
-            {
-              value: "二级",
-              label: "二级",
-            },
-            {
-              value: "三级",
-              label: "三级",
-            },
-          ],
         },
         {
           value: "医学汉语口头理解能力（说）",
           label: "医学汉语口头理解能力（说）",
-          children: [
-            {
-              value: "一级",
-              label: "一级",
-            },
-            {
-              value: "二级",
-              label: "二级",
-            },
-            {
-              value: "三级",
-              label: "三级",
-            },
-          ],
         },
         {
           value: "医学汉语口头理解能力（读）",
           label: "医学汉语口头理解能力（读）",
-          children: [
-            {
-              value: "一级",
-              label: "一级",
-            },
-            {
-              value: "二级",
-              label: "二级",
-            },
-            {
-              value: "三级",
-              label: "三级",
-            },
-          ],
         },
         {
           value: "医学汉语口头理解能力（写）",
           label: "医学汉语口头理解能力（写）",
-          children: [
-            {
-              value: "一级",
-              label: "一级",
-            },
-            {
-              value: "二级",
-              label: "二级",
-            },
-            {
-              value: "三级",
-              label: "三级",
-            },
-          ],
         },
       ],
-      topic_value: [],
-      topic_outline: [
+      grade_standard2: [
+        {
+          value: "一级",
+          label: "一级",
+        },
+        {
+          value: "二级",
+          label: "二级",
+        },
+        {
+          value: "三级",
+          label: "三级",
+        },
+      ],
+      topic_outline1: [
         {
           value: "医生-医生",
           label: "医生-医生",
-          children: [
-            {
-              value: "询问",
-              label: "询问",
-            },
-            {
-              value: "交流",
-              label: "交流",
-            },
-            {
-              value: "指令",
-              label: "指令",
-            },
-          ],
         },
         {
           value: "医生-患者",
           label: "医生-患者",
-          children: [
-            {
-              value: "问诊",
-              label: "问诊",
-            },
-            {
-              value: "诊断",
-              label: "诊断",
-            },
-            {
-              value: "治疗",
-              label: "治疗",
-            },
-            {
-              value: "主诉",
-              label: "主诉",
-            },
-            {
-              value: "交流",
-              label: "交流",
-            },
-            {
-              value: "指令",
-              label: "指令",
-            },
-          ],
         },
         {
           value: "医生-护士",
           label: "医生-护士",
-          children: [
-            {
-              value: "交流",
-              label: "交流",
-            },
-            {
-              value: "指令",
-              label: "指令",
-            },
-          ],
         },
         {
           value: "患者-护士",
           label: "患者-护士",
-          children: [
-            {
-              value: "交流",
-              label: "交流",
-            },
-            {
-              value: "指令",
-              label: "指令",
-            },
-            {
-              value: "咨询",
-              label: "咨询",
-            },
-          ],
+        },
+      ],
+      topic_outline2_1: [
+        {
+          value: "询问",
+          label: "询问",
+        },
+        {
+          value: "交流",
+          label: "交流",
+        },
+        {
+          value: "指令",
+          label: "指令",
+        },
+      ],
+      topic_outline2_2: [
+        {
+          value: "问诊",
+          label: "问诊",
+        },
+        {
+          value: "诊断",
+          label: "诊断",
+        },
+        {
+          value: "治疗",
+          label: "治疗",
+        },
+        {
+          value: "主诉",
+          label: "主诉",
+        },
+        {
+          value: "交流",
+          label: "交流",
+        },
+        {
+          value: "指令",
+          label: "指令",
+        },
+      ],
+      topic_outline2_3: [
+        {
+          value: "交流",
+          label: "交流",
+        },
+        {
+          value: "指令",
+          label: "指令",
+        },
+      ],
+      topic_outline2_4: [
+        {
+          value: "交流",
+          label: "交流",
+        },
+        {
+          value: "指令",
+          label: "指令",
+        },
+        {
+          value: "咨询",
+          label: "咨询",
         },
       ],
       task_outline: [
@@ -1011,6 +1248,16 @@ export default {
   watch: {},
   computed: {},
   methods: {
+    levelChange(s) {
+      this.questions[this.currentQues - 1].saveQ = false;
+      this.questions[this.currentQues - 1].sub_question[s - 1].grade_value2 =
+        "";
+    },
+    topicChange(s) {
+      this.questions[this.currentQues - 1].saveQ = false;
+      this.questions[this.currentQues - 1].sub_question[s - 1].topic_value2 =
+        "";
+    },
     beforeAvatarUpload(file) {
       let isFile =
         file.name.split(".")[file.name.split(".").length - 1] == "mp3" ||
@@ -1049,9 +1296,10 @@ export default {
       this.questions[this.currentQues - 1].audio = "";
     },
     handleExceed(files, fileList) {
+      console.log(fileList);
       this.$message.warning(
         `当前限制选择 1 个文件，本次选择了 ${files.length} 个文件，共选择了 ${
-          files.length + fileList.length
+          files.length + this.questions[this.currentQues - 1].fileList.length
         } 个文件`
       );
     },
@@ -1082,103 +1330,128 @@ export default {
     //   return blob;
     // },
     async init() {
-      let Knowledge_All = new BaaS.TableObject("knowledge_point");
-      Knowledge_All.find().then(
-        (res) => {
-          this.knowledge = res.data.objects;
-        },
-        (err) => {
-          console.log(err);
-        }
-      );
-      // let Department = new BaaS.TableObject("department");
-      // Department.find().then(
-      //   (res) => {
-      //     this.department = res.data.objects;
-      //   },
-      //   (err) => {
-      //     console.log(err);
-      //   }
-      // );
-      let Test = new BaaS.TableObject("test");
-      Test.find().then(
-        (res) => {
-          this.test = res.data.objects;
-        },
-        (err) => {
-          console.log(err);
-        }
-      );
-      let Source = new BaaS.TableObject("source");
-      Source.find().then(
-        (res) => {
-          this.source = res.data.objects;
-        },
-        (err) => {
-          console.log(err);
-        }
-      );
-
-      if (sessionStorage.getItem("questions") == null) {
+      if (sessionStorage.getItem("questions") == "") {
         if (this.autoQues == "true") {
           let temp = [];
           let quess = [];
           temp = global.auto;
-          temp.forEach((element) => {
-            if (element.catalogue == undefined || element.catalogue == "") {
-              element.catalogue = null;
+          let autoCatalog = ""
+          var date = new Date()
+          var year = date.getFullYear()+""
+          var month = date.getMonth()+1
+          if(month<10){
+            month = "0"+month
+          }
+          var day = date.getDate()
+          if(day<10){
+            day = "0"+day
+          }
+          let cata = year+month+day
+          console.log(cata)
+          let findc = new BaaS.Query()
+          findc.contains('catalog',cata)
+          let findCata = new BaaS.TableObject("questions_information")
+          findCata.setQuery(findc).find().then(res=>{
+            console.log(res)
+            if(res.data.objects.length==0){
+              autoCatalog = cata+"001"
+              console.log(autoCatalog)
+            }else{
+              let ct = 0
+              res.data.objects.forEach(item=>{
+                let ctnum = item.catalog*1
+                if(ct<ctnum){
+                  ct = ctnum
+                }
+              })
+              ct=ct+""
+              ct = ct.split(cata)
+              console.log("!!!",ct)
+              let num = ct[1]
+              num = num *1 +1
+              if(num<10){
+                num = "00"+num
+              }else if(num>=10&&num<100){
+                num = "0" + num
+              }
+              autoCatalog = cata +num
+              console.log(autoCatalog)
             }
+            temp.forEach((element) => {
+            // if (
+            //   element.catalog == undefined ||
+            //   element.catalog == "" ||
+            //   element.catalog == "无"
+            // ) {
+            //   element.catalog = null;
+            // }
+            element.catalog = autoCatalog
             if (
               element.primary_ques_type == undefined ||
-              element.primary_ques_type == ""
+              element.primary_ques_type == "" ||
+              element.primary_ques_type == "无"
             ) {
               element.primary_ques_type = null;
             }
             if (
               element.secondary_ques_type == undefined ||
-              element.secondary_ques_type == ""
+              element.secondary_ques_type == "" ||
+              element.secondary_ques_type == "无"
             ) {
               element.secondary_ques_type = null;
             }
             if (
               element.question_content == undefined ||
-              element.question_content == ""
+              element.question_content == "" ||
+              element.question_content == "无"
             ) {
               element.question_content = null;
             }
-            if (element.question == undefined || element.question == "") {
+            if (
+              element.question == undefined ||
+              element.question == "" ||
+              element.question == "无"
+            ) {
               element.question = null;
             }
-            if (element.options == undefined || element.options == "") {
+            if (
+              element.options == undefined ||
+              element.options == "" ||
+              element.options == "无"
+            ) {
               element.options = null;
             }
             if (element.answer == undefined || element.answer == "") {
               element.answer = null;
             }
-            if (element.analysis == undefined || element.analysis == "") {
+            if (
+              element.analysis == undefined ||
+              element.analysis == "" ||
+              element.analysis == "无"
+            ) {
               element.analysis = null;
             }
-            if (element.department == undefined || element.department == "") {
+            if (
+              element.department == undefined ||
+              element.department == "" ||
+              element.department == "无" ||
+              element.department == null
+            ) {
               element.department = null;
-            }
-            if (element.ques_level == undefined || element.ques_level == "") {
-              element.grade_standard = null;
-            } else if (element.ques_level == "一级") {
-              element.grade_standard = ["医学汉语能力总体等级,一级"];
-            } else if (element.ques_level == "二级") {
-              element.grade_standard = ["医学汉语能力总体等级,二级"];
-            } else if (element.ques_level == "三级") {
-              element.grade_standard = ["医学汉语能力总体等级,三级"];
+            } else {
+              element.department = element.department.split("，");
             }
             if (
               element.question_class == undefined ||
-              element.question_class == ""
+              element.question_class == "" ||
+              element.question_class == "无"
             ) {
               element.question_class = null;
             }
             if (
               element.question_type_5he == undefined ||
-              element.question_type_5he == ""
+              element.question_type_5he == "" ||
+              element.question_type_5he == "无"
             ) {
               element.question_type_5he = null;
             }
@@ -1190,28 +1463,52 @@ export default {
             }
             if (
               element.time_created == undefined ||
-              element.time_created == ""
+              element.time_created == "" ||
+              element.time_created == "无"
             ) {
               element.time_created = null;
             }
             if (
               element.grade_standard == undefined ||
-              element.grade_standard == ""
+              element.grade_standard == "" ||
+              element.grade_standard == "无"
             ) {
-              element.grade_standard = null;
+              element.grade_standard=null
+              element.grade_standard1 = "";
+              element.grade_standard2 = "";
+            } else {
+              element.grade_standard = element.grade_standard.split("，");
+              element.grade_standard1 = element.grade_standard[0];
+              element.grade_standard2 = element.grade_standard[1];
             }
-            if (element.topic == undefined || element.topic == "") {
-              element.topic = null;
+            if (
+              element.topic == undefined ||
+              element.topic == "" ||
+              element.topic == "无"
+            ) {
+              element.topic=null
+              element.topic1 = "";
+              element.topic2 = "";
+            } else {
+              element.topic = element.topic.split("，");
+              element.topic1 = element.topic[0];
+              element.topic2 = element.topic[1];
             }
-            if (element.task == undefined || element.task == "") {
+            if (
+              element.task == undefined ||
+              element.task == "" ||
+              element.task == "无"
+            ) {
               element.task = null;
+            } else {
+              element.task = element.task.split("，");
             }
+            element.file_name = "";
+            element.excel = "";
             element.file_url = "";
             element.audio = "";
             element.fileList = [];
             element.excelfileList = [];
-            element.file_name = "";
-            element.excel = "";
             if (
               element.question_content.search(".png") != -1 ||
               element.question_content.search(".jpg") != -1 ||
@@ -1252,7 +1549,7 @@ export default {
               element.question_content = "";
             }
             var a = {
-              catalog: element.catalogue,
+              catalog: element.catalog,
               primary_ques_type: element.primary_ques_type,
               secondary_ques_type: element.secondary_ques_type,
               question_content_id: element.question_content,
@@ -1269,9 +1566,14 @@ export default {
               time_created: element.time_created,
               grade_standard: element.grade_standard,
               topic_outline: element.topic,
+              grade_standard1: element.grade_standard1,
+              topic_outline1: element.topic1,
+              grade_standard2: element.grade_standard2,
+              topic_outline2: element.topic2,
               task_outline: element.task,
               file_name: element.file_name,
               audio: element.audio,
+              excel: element.excel,
               file_url: element.file_url,
             };
             quess.push(a);
@@ -1291,6 +1593,7 @@ export default {
                   ) {
                     ques.push(global.totalSelect[i].sel[j]);
                     let temp = {
+                      catalog:global.totalSelect[i].sel[j].catalog,
                       question_content_id:
                         global.totalSelect[i].sel[j].question_content_id,
                       primary_ques_type:
@@ -1298,6 +1601,7 @@ export default {
                       secondary_ques_type:
                         global.totalSelect[i].sel[j].secondary_ques_type,
                       audio: global.totalSelect[i].sel[j].audio,
+                      excel: global.totalSelect[i].sel[j].excel,
                       fileList: global.totalSelect[i].sel[j].fileList,
                       excelfileList: [],
                       file_url: global.totalSelect[i].sel[j].file_url,
@@ -1328,6 +1632,7 @@ export default {
                   }
                 }
                 let question = {
+                  catalog:qc[i].catalog,
                   primary_ques_type: qc[i].primary_ques_type,
                   secondary_ques_type: qc[i].secondary_ques_type,
                   question_content: qc[i].question_content_id,
@@ -1335,6 +1640,7 @@ export default {
                   saveT: false,
                   sub_question: [],
                   audio: qc[i].audio,
+                  excel: qc[i].excel,
                   fileList: qc[i].fileList,
                   excelfileList: qc[i].excelfileList,
                   file_url: qc[i].file_url,
@@ -1352,6 +1658,10 @@ export default {
                     answer: qtemp[k].answer,
                     analysis: qtemp[k].analysis,
                     // level_value: qtemp[k].ques_level,
+                    grade_value1: qtemp[k].grade_standard1,
+                    grade_value2: qtemp[k].grade_standard2,
+                    topic_value1: qtemp[k].topic_outline1,
+                    topic_value2: qtemp[k].topic_outline2,
                     grade_value: qtemp[k].grade_standard,
                     topic_value: qtemp[k].topic_outline,
                     task_value: qtemp[k].task_outline,
@@ -1611,20 +1921,26 @@ export default {
                     sub++;
                     seq++;
                   }
+                  this.currentSubQues = sub-1
                 }
                 setTimeout(() => {
+                  console.log(this.questions)
+                  console.log(this.currentSubQues)
                   this.createEdit();
-                }, 1000);
-                sessionStorage.clear();
-                global.totalSelect = [];
+                  global.totalSelect = [];
                 global.auto = [];
                 setTimeout(() => {
                   this.questions[this.currentQues - 1].saveQ = true;
                   this.questions[this.currentQues - 1].saveT = true;
                 }, 1000);
+                }, 3000);
+                // sessionStorage.clear();
               }
             }
           });
+          },err=>{
+            console.log(err)
+          })
         } else {
           this.max_sequence = this.ques_num;
           this.SCurrentQues = this.currentQues.toString();
@@ -1656,8 +1972,12 @@ export default {
             analysis: "",
             // level_value: "",
             // knowledge_value: "",
-            grade_value: "",
-            topic_value: "",
+            grade_value1: "",
+            topic_value1: "",
+            grade_value2: "",
+            topic_value2: "",
+            grade_value: [],
+            topic_value: [],
             task_value: "",
             department_value: "",
             // test_value: "",
@@ -1674,9 +1994,12 @@ export default {
           };
           question.sub_question.push(sub);
           await this.questions.push(question);
-          this.createEdit();
+          setTimeout(() => {
+                  this.createEdit();
+                }, 1000);
         }
       } else {
+        console.log(global);
         this.questions = JSON.parse(sessionStorage.getItem("questions"));
         this.ques_type = JSON.parse(sessionStorage.getItem("ques_type"));
         this.currentQues = sessionStorage.getItem("currentQues") * 1;
@@ -1702,6 +2025,24 @@ export default {
             this.questions[i].sub_question[j].actual_sequence *= 1;
             this.questions[i].sub_question[j].sub_sequence *= 1;
             this.questions[i].sub_question[j].score *= 1;
+            if (this.questions[i].sub_question[j].grade_value) {
+              this.questions[i].sub_question[j].grade_value1 =
+                this.questions[i].sub_question[j].grade_value[0];
+              this.questions[i].sub_question[j].grade_value2 =
+                this.questions[i].sub_question[j].grade_value[1];
+            } else {
+              this.questions[i].sub_question[j].grade_value1 = "";
+              this.questions[i].sub_question[j].grade_value2 = "";
+            }
+            if (this.questions[i].sub_question[j].topic_value) {
+              this.questions[i].sub_question[j].topic_value1 =
+                this.questions[i].sub_question[j].topic_value[0];
+              this.questions[i].sub_question[j].topic_value2 =
+                this.questions[i].sub_question[j].topic_value[1];
+            } else {
+              this.questions[i].sub_question[j].topic_value1 = "";
+              this.questions[i].sub_question[j].topic_value2 = "";
+            }
           }
         }
         let ques = [];
@@ -1710,9 +2051,44 @@ export default {
           for (let i = 0; i < global.totalSelect.length; i++) {
             for (let j = 0; j < global.totalSelect[i].sel.length; j++) {
               if (
-                global.totalSelect[i].sel[j].question_content_id != null ||
+                !(
+                  global.totalSelect[i].name == "out" &&
+                  global.totalSelect[i].sel[j].catalog != null
+                ) &&
+                global.totalSelect[i].sel[j].question_content_id != null &&
                 global.totalSelect[i].sel[j].question_content_id != ""
               ) {
+                if (
+                  global.totalSelect[i].sel[j].grade_standard == undefined ||
+                  global.totalSelect[i].sel[j].grade_standard == "" ||
+                  global.totalSelect[i].sel[j].grade_standard == "无"
+                ) {
+                  global.totalSelect[i].sel[j].grade_standard1 = "";
+                  global.totalSelect[i].sel[j].grade_standard2 = "";
+                } else {
+                  global.totalSelect[i].sel[j].grade_standard1 =
+                    global.totalSelect[i].sel[j].grade_standard[0];
+                  global.totalSelect[i].sel[j].grade_standard2 =
+                    global.totalSelect[i].sel[j].grade_standard[1];
+                }
+                if (
+                  global.totalSelect[i].sel[j].topic == undefined ||
+                  global.totalSelect[i].sel[j].topic == "" ||
+                  global.totalSelect[i].sel[j].topic == "无"
+                ) {
+                  global.totalSelect[i].sel[j].topic1 = "";
+                  global.totalSelect[i].sel[j].topic2 = "";
+                } else {
+                  global.totalSelect[i].sel[j].topic1 =
+                    global.totalSelect[i].sel[j].topic[0];
+                  global.totalSelect[i].sel[j].topic2 =
+                    global.totalSelect[i].sel[j].topic[1];
+                }
+                global.totalSelect[i].sel[j].audio = "";
+                global.totalSelect[i].sel[j].file_url = "";
+                global.totalSelect[i].sel[j].excel = "";
+                global.totalSelect[i].sel[j].excelfileList = [];
+                global.totalSelect[i].sel[j].fileList = [];
                 if (
                   global.totalSelect[i].sel[j].question_content_id.search(
                     ".png"
@@ -1745,6 +2121,22 @@ export default {
                       url: global.totalSelect[i].sel[j].audio,
                     },
                   ];
+                } else if (
+                  global.totalSelect[i].sel[j].question_content_id.search(
+                    ".xlsx"
+                  ) != -1 ||
+                  global.totalSelect[i].sel[j].question_content_id.search(
+                    ".xls"
+                  ) != -1
+                ) {
+                  global.totalSelect[i].sel[j].excel =
+                    global.totalSelect[i].sel[j].question_content_id;
+                  global.totalSelect[i].sel[j].excelfileList = [
+                    {
+                      name: global.totalSelect[i].sel[j].excel,
+                      url: global.totalSelect[i].sel[j].excel,
+                    },
+                  ];
                 }
                 ques.push(global.totalSelect[i].sel[j]);
                 let temp = {
@@ -1755,6 +2147,7 @@ export default {
                   secondary_ques_type:
                     global.totalSelect[i].sel[j].secondary_ques_type,
                   audio: global.totalSelect[i].sel[j].audio,
+                  excel: global.totalSelect[i].sel[j].excel,
                   fileList: global.totalSelect[i].sel[j].fileList,
                   excelfileList: [],
                   file_url: global.totalSelect[i].sel[j].file_url,
@@ -1791,6 +2184,7 @@ export default {
               saveT: false,
               sub_question: [],
               audio: qc[i].audio,
+              excel: qc[i].excel,
               fileList: qc[i].fileList,
               excelfileList: qc[i].excelfileList,
               file_url: qc[i].file_url,
@@ -1804,10 +2198,14 @@ export default {
                 sub_sequence: num,
                 score: qtemp[k].score,
                 question: qtemp[k].question,
-                options: JSON.parse(qtemp[k].options),
+                options: qtemp[k].options,
                 answer: qtemp[k].answer,
                 analysis: qtemp[k].analysis,
                 // level_value: qtemp[k].ques_level,
+                grade_value1: qtemp[k].grade_standard1,
+                topic_value1: qtemp[k].topic_outline1,
+                grade_value2: qtemp[k].grade_standard2,
+                topic_value2: qtemp[k].topic_outline2,
                 grade_value: qtemp[k].grade_standard,
                 topic_value: qtemp[k].topic_outline,
                 task_value: qtemp[k].task_outline,
@@ -1822,24 +2220,89 @@ export default {
                 author_org: "",
                 time_created: "",
               };
-              let t = JSON.parse(qtemp[k].options);
-              if (t != null) {
-                for (let m = 0; m < t.length; m++) {
-                  if (t[m].index == "A") {
-                    sub.A = t[m].content;
-                  } else if (t[m].index == "B") {
-                    sub.B = t[m].content;
-                  } else if (t[m].index == "C") {
-                    sub.C = t[m].content;
-                  } else if (t[m].index == "D") {
-                    sub.D = t[m].content;
-                  }
+              if (qtemp[k].options != null) {
+                let str = qtemp[k].options.replace(/\s*/g, "");
+                let tempa = -1;
+                let tempb = -1;
+                let tempc = -1;
+                let tempd = -1;
+                if (str.indexOf('","index":"A"') != -1) {
+                  tempa = str.indexOf('","index":"A"');
+                } else if (str.indexOf("','index':'A'") != -1) {
+                  tempa = str.indexOf("','index':'A'");
                 }
+                if (str.indexOf('","index":"B"') != -1) {
+                  tempb = str.indexOf('","index":"B"');
+                } else if (str.indexOf("','index':'B'") != -1) {
+                  tempb = str.indexOf("','index':'B'");
+                }
+                if (str.indexOf('","index":"C"') != -1) {
+                  tempc = str.indexOf('","index":"C"');
+                } else if (str.indexOf("','index':'C'") != -1) {
+                  tempc = str.indexOf("','index':'C'");
+                }
+                if (str.indexOf('","index":"D"') != -1) {
+                  tempd = str.indexOf('","index":"D"');
+                } else if (str.indexOf("','index':'D'") != -1) {
+                  tempd = str.indexOf("','index':'D'");
+                }
+                let a = "";
+                let b = "";
+                let c = "";
+                let d = "";
+                if (tempa != -1) {
+                  while (str[tempa - 1] != '"' && str[tempa - 1] != "'") {
+                    a += str[tempa - 1];
+                    tempa--;
+                  }
+                  sub.A = a.split("").reverse().join("");
+                }
+                if (tempb != -1) {
+                  while (str[tempb - 1] != '"' && str[tempb - 1] != "'") {
+                    b += str[tempb - 1];
+                    tempb--;
+                  }
+                  sub.B = b.split("").reverse().join("");
+                }
+                if (tempc != -1) {
+                  while (str[tempc - 1] != '"' && str[tempc - 1] != "'") {
+                    c += str[tempc - 1];
+                    tempc--;
+                  }
+                  sub.C = c.split("").reverse().join("");
+                }
+                if (tempd != -1) {
+                  while (str[tempd - 1] != '"' && str[tempd - 1] != "'") {
+                    d += str[tempd - 1];
+                    tempd--;
+                  }
+                  sub.D = d.split("").reverse().join("");
+                }
+                let o = [
+                  {
+                    content: sub.A,
+                    index: "A",
+                  },
+                  {
+                    content: sub.B,
+                    index: "B",
+                  },
+                  {
+                    content: sub.C,
+                    index: "C",
+                  },
+                  {
+                    content: sub.D,
+                    index: "D",
+                  },
+                ];
+                sub.options = o;
               }
               question.sub_question.push(sub);
               num++;
             }
             allQues.push(question);
+            console.log(allQues);
           }
           for (let z = 0; z < allQues.length; z++) {
             if (this.questions[this.questions.length - 1].saveQ == false) {
@@ -2060,14 +2523,21 @@ export default {
             this.questions[this.currentQues - 1].saveQ = true;
             this.questions[this.currentQues - 1].saveT = true;
           }
+          for (let i = 0; i < this.questions.length; i++) {
+            if (
+              this.questions[i].file_url ==
+                this.questions[i].question_content ||
+              this.questions[i].audio == this.questions[i].question_content ||
+              this.questions[i].excel == this.questions[i].question_content
+            ) {
+              this.questions[i].question_content = "";
+            }
+          }
         }
-        // for(let i=0;i<this.questions.length;i++){
-        //   this.questions[i].file_url=this.questions[i].question_content
-        // }
         setTimeout(() => {
           this.createEdit();
         }, 100);
-        sessionStorage.clear();
+        // sessionStorage.clear();
         global.totalSelect = [];
         setTimeout(() => {
           this.questions[this.currentQues - 1].saveQ = true;
@@ -2076,10 +2546,23 @@ export default {
       }
     },
     back() {
-      Cookies.set("paperEdit", "");
-      Cookies.set("paperInfo", "");
-      Cookies.set("selectQues", "");
-      Cookies.set("autoQues", "");
+      // Cookies.set("paperEdit", "");
+      // Cookies.set("paperInfo", "");
+      // Cookies.set("selectQues", "");
+      // Cookies.set("autoQues", "");
+      sessionStorage.setItem("paperEdit", "");
+      sessionStorage.setItem("paperInfo", "");
+      sessionStorage.setItem("selectQues", "");
+      sessionStorage.setItem("autoQues", "");
+      sessionStorage.setItem("ques_type", "");
+      sessionStorage.setItem("paper_id", "");
+      sessionStorage.setItem("ques_num", "");
+      sessionStorage.setItem("autoQues", "");
+      sessionStorage.setItem("title", "");
+      sessionStorage.setItem("paper_title", "");
+      sessionStorage.setItem("questions_detail", "");
+      sessionStorage.setItem("ques_score", "");
+      sessionStorage.setItem("questions", "");
       this.$router.go(-1);
     },
     createEdit() {
@@ -2099,32 +2582,22 @@ export default {
         quest[current - 1].saveQ = false;
       };
       material.create();
-      if (this.questions[this.currentQues - 1].question_content != "") {
+      if (this.questions[this.currentQues - 1].file_url != "") {
         if (
-          this.questions[this.currentQues - 1].question_content.search(
-            ".png"
-          ) != -1 ||
-          this.questions[this.currentQues - 1].question_content.search(
-            ".jpg"
-          ) != -1 ||
-          this.questions[this.currentQues - 1].question_content.search(
-            ".gif"
-          ) != -1
+          this.questions[this.currentQues - 1].file_url.search(".png") != -1 ||
+          this.questions[this.currentQues - 1].file_url.search(".jpg") != -1 ||
+          this.questions[this.currentQues - 1].file_url.search(".gif") != -1
         ) {
-          this.questions[this.currentQues - 1].file_url =
-            this.questions[this.currentQues - 1].question_content;
           material.txt.html(
             "<img alt='' src='" +
               this.questions[this.currentQues - 1].file_url +
               "' />"
           );
-        } else {
-          material.txt.html(
-            "<p>" +
-              this.questions[this.currentQues - 1].question_content +
-              "</p>"
-          );
         }
+      } else {
+        material.txt.html(
+          "<p>" + this.questions[this.currentQues - 1].question_content + "</p>"
+        );
       }
       this.editor.push(material);
       for (let i = 1; i <= this.currentSubQues; i++) {
@@ -2267,16 +2740,16 @@ export default {
         sub_sequence: this.currentSubQues + 1,
         score: "",
         question: "",
-        judge: "",
-        radio: "",
         options: [],
         answer: "",
         analysis: "",
-        // level_value: "",
-        knowledge_value: "",
+        grade_value1: "",
+        grade_value2: "",
+        topic_value1: "",
+        topic_value2: "",
+        grade_value: [],
+        topic_value: [],
         department_value: "",
-        test_value: "",
-        source_value: "",
         qclass_value: "",
         fivehe_value: "",
         A: "",
@@ -2393,11 +2866,13 @@ export default {
         options: [],
         answer: "",
         analysis: "",
-        // level_value: "",
-        knowledge_value: "",
         department_value: "",
-        test_value: "",
-        source_value: "",
+        grade_value1: "",
+        grade_value2: "",
+        topic_value1: "",
+        topic_value2: "",
+        grade_value: [],
+        topic_value: [],
         qclass_value: "",
         fivehe_value: "",
         A: "",
@@ -2444,10 +2919,39 @@ export default {
         // }
         if (
           this.questions[this.currentQues - 1].sub_question[j - 1]
-            .grade_value == ""
+            .grade_value1 == "" ||
+          this.questions[this.currentQues - 1].sub_question[j - 1]
+            .grade_value1 == undefined ||
+          this.questions[this.currentQues - 1].sub_question[j - 1]
+            .grade_value1 == null
         ) {
           this.questions[this.currentQues - 1].sub_question[j - 1].grade_value =
             null;
+        } else {
+          if (
+            this.questions[this.currentQues - 1].sub_question[j - 1]
+              .grade_value2 == ""
+          ) {
+            this.$message({
+              message: "请选择MCT等级",
+              type: "warning",
+            });
+            valid = false;
+            break;
+          } else {
+            this.questions[this.currentQues - 1].sub_question[
+              j - 1
+            ].grade_value = [
+              this.questions[this.currentQues - 1].sub_question[j - 1]
+                .grade_value1,
+              this.questions[this.currentQues - 1].sub_question[j - 1]
+                .grade_value2,
+            ];
+            console.log(
+              this.questions[this.currentQues - 1].sub_question[j - 1]
+                .grade_value
+            );
+          }
         }
         if (
           this.questions[this.currentQues - 1].sub_question[j - 1]
@@ -2466,10 +2970,35 @@ export default {
         }
         if (
           this.questions[this.currentQues - 1].sub_question[j - 1]
-            .topic_value == ""
+            .topic_value1 == "" ||
+          this.questions[this.currentQues - 1].sub_question[j - 1]
+            .topic_value1 == undefined ||
+          this.questions[this.currentQues - 1].sub_question[j - 1]
+            .topic_value1 == null
         ) {
           this.questions[this.currentQues - 1].sub_question[j - 1].topic_value =
             null;
+        } else {
+          if (
+            this.questions[this.currentQues - 1].sub_question[j - 1]
+              .topic_value2 == ""
+          ) {
+            this.$message({
+              message: "请选择话题大纲",
+              type: "warning",
+            });
+            valid = false;
+            break;
+          } else {
+            this.questions[this.currentQues - 1].sub_question[
+              j - 1
+            ].topic_value = [
+              this.questions[this.currentQues - 1].sub_question[j - 1]
+                .topic_value1,
+              this.questions[this.currentQues - 1].sub_question[j - 1]
+                .topic_value2,
+            ];
+          }
         }
         if (
           this.questions[this.currentQues - 1].sub_question[j - 1]
@@ -5292,30 +5821,30 @@ export default {
         });
       }
     },
-    grade(type, se) {
-      if (type != undefined) {
-        var arr = new Array();
-        for (let i = 0; i < type.length; i++) {
-          let temp;
-          temp = type[i][0] + "," + type[i][1];
-          arr.push(temp);
-        }
-        this.questions[this.currentQues - 1].sub_question[se - 1].grade_value =
-          arr;
-      }
-    },
-    topic(type, se) {
-      if (type != undefined) {
-        var arr = new Array();
-        for (let i = 0; i < type.length; i++) {
-          let temp;
-          temp = type[i][0] + "," + type[i][1];
-          arr.push(temp);
-        }
-        this.questions[this.currentQues - 1].sub_question[se - 1].topic_value =
-          arr;
-      }
-    },
+    // grade(type, se) {
+    //   if (type != undefined) {
+    //     var arr = new Array();
+    //     for (let i = 0; i < type.length; i++) {
+    //       let temp;
+    //       temp = type[i][0] + "," + type[i][1];
+    //       arr.push(temp);
+    //     }
+    //     this.questions[this.currentQues - 1].sub_question[se - 1].grade_value =
+    //       arr;
+    //   }
+    // },
+    // topic(type, se) {
+    //   if (type != undefined) {
+    //     var arr = new Array();
+    //     for (let i = 0; i < type.length; i++) {
+    //       let temp;
+    //       temp = type[i][0] + "," + type[i][1];
+    //       arr.push(temp);
+    //     }
+    //     this.questions[this.currentQues - 1].sub_question[se - 1].topic_value =
+    //       arr;
+    //   }
+    // },
     dataURLtoFile(dataURL, fileName) {
       /**
        * 注意：【不同文件不同类型】，例如【图片类型】就是`data:image/png;base64,${dataURL}`.split(',')
@@ -5356,7 +5885,8 @@ export default {
         // valid = false
         return;
       }
-      if (Cookie.get("paperEdit") == "true") {
+      // if (Cookie.get("paperEdit") == "true") {
+      if (sessionStorage.getItem("paperEdit") == "true") {
         // let paper = new BaaS.TableObject("test_paper");
         // paper.delete(Cookie.get("paperInfo")).then(
         //   (res) => {
@@ -5371,12 +5901,19 @@ export default {
             let find_paper = new BaaS.Query();
             let q2 = new BaaS.Query();
             let q3 = new BaaS.Query();
+            let q4 = new BaaS.Query();
+            q4.compare("created_by", "=", Cookie.get("user_id") * 1);
             find_paper.compare("paper_title", "=", this.title);
             q2.compare("is_delete", "=", false);
-            q3.compare("paper_title", "!=", Cookie.get("paper_title"));
-            let andQuery = BaaS.Query.and(find_paper, q2, q3);
+            // q3.compare("paper_title", "!=", Cookie.get("paper_title"));
+            q3.compare(
+              "paper_title",
+              "!=",
+              sessionStorage.getItem("paper_title")
+            );
+            let andQuery = BaaS.Query.and(find_paper, q2, q3, q4);
             findPaper
-              .setQuery(andQuery)
+              .setQuery(andQuery).limit(1000)
               .find()
               .then((res0) => {
                 if (res0.data.objects.length != 0) {
@@ -5396,10 +5933,8 @@ export default {
                   for (let i = 0; i < this.questions.length; i++) {
                     if (
                       this.questions[i].file_url != "" &&
-                      this.questions[i].audio == "" &&
-                      this.questions[i].excel == "" &&
-                      this.questions[i].file_url !=
-                        this.questions[i].initial_file
+                      this.questions[i].file_url.search("cloud-minapp-42820") ==
+                        -1
                     ) {
                       // console.log(this.questions)
                       const result = this.dataURLtoFile(
@@ -5415,10 +5950,11 @@ export default {
                           );
                           let savec = saveContent.create();
                           savec.set({
-                            content: this.questions[i].question_content,
+                            content: "",
                             file_url: res.data.file,
                             catalog: null,
                             is_delete: false,
+                            excel: null,
                           });
                           savec.save().then(
                             (res) => {
@@ -5441,6 +5977,47 @@ export default {
                                   this.questions[i].primary_ques_type ==
                                     "判断题"
                                 ) {
+                                  if (
+                                    this.questions[i].sub_question[j].D != ""
+                                  ) {
+                                    this.questions[i].sub_question[j].options =
+                                      [
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].A,
+                                          index: "A",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].B,
+                                          index: "B",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].C,
+                                          index: "C",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].D,
+                                          index: "D",
+                                        },
+                                      ];
+                                  } else {
+                                    this.questions[i].sub_question[j].options =
+                                      [
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].A,
+                                          index: "A",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].B,
+                                          index: "B",
+                                        },
+                                      ];
+                                  }
                                   tempq = {
                                     question_content_id: res.data.id,
                                     primary_ques_type:
@@ -5502,6 +6079,47 @@ export default {
                                   this.questions[i].primary_ques_type ==
                                     "填空题"
                                 ) {
+                                  if (
+                                    this.questions[i].sub_question[j].D != ""
+                                  ) {
+                                    this.questions[i].sub_question[j].options =
+                                      [
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].A,
+                                          index: "A",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].B,
+                                          index: "B",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].C,
+                                          index: "C",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].D,
+                                          index: "D",
+                                        },
+                                      ];
+                                  } else {
+                                    this.questions[i].sub_question[j].options =
+                                      [
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].A,
+                                          index: "A",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].B,
+                                          index: "B",
+                                        },
+                                      ];
+                                  }
                                   tempq = {
                                     question_content_id: res.data.id,
                                     primary_ques_type:
@@ -5622,10 +6240,19 @@ export default {
                                         let savePaper = new BaaS.TableObject(
                                           "test_paper"
                                         );
+                                        // let save_paper =
+                                        //   savePaper.getWithoutData(
+                                        //     Cookie.get("paper_id")
+                                        //   );
                                         let save_paper =
-                                          savePaper.getWithoutData(
-                                            Cookie.get("paper_id")
+                                          savePaper.limit(1000).getWithoutData(
+                                            sessionStorage.getItem("paper_id")
                                           );
+                                        question_detail.sort(function (a, b) {
+                                          return (
+                                            a.sub_sequence - b.sub_sequence
+                                          );
+                                        });
                                         let paper_type;
                                         paper_type = "练习";
                                         let p = {
@@ -5637,6 +6264,9 @@ export default {
                                             JSON.stringify(question_detail),
                                           ques_type: JSON.stringify(
                                             this.ques_type
+                                          ),
+                                          questions: JSON.stringify(
+                                            this.questions
                                           ),
                                         };
                                         save_paper.set(p);
@@ -5671,11 +6301,16 @@ export default {
                           console.log(err);
                         }
                       );
+                      // } else if (
+                      //   this.questions[i].file_url == "" &&
+                      //   this.questions[i].audio != "" &&
+                      //   this.questions[i].excel == "" &&
+                      //   this.questions[i].audio != this.questions[i].initial_audio
+                      // ) {
                     } else if (
-                      this.questions[i].file_url == "" &&
+                      this.questions[i].primary_ques_type == "听力" &&
                       this.questions[i].audio != "" &&
-                      this.questions[i].excel == "" &&
-                      this.questions[i].audio != this.questions[i].initial_audio
+                      this.questions[i].audio.search("cloud-minapp-42820") == -1
                     ) {
                       const result = this.dataURLtoFile(
                         this.questions[i].audio,
@@ -5694,6 +6329,7 @@ export default {
                             file_url: res.data.file,
                             catalog: null,
                             is_delete: false,
+                            excel: null,
                           });
                           savec.save().then(
                             (res) => {
@@ -5716,6 +6352,47 @@ export default {
                                   this.questions[i].primary_ques_type ==
                                     "判断题"
                                 ) {
+                                  if (
+                                    this.questions[i].sub_question[j].D != ""
+                                  ) {
+                                    this.questions[i].sub_question[j].options =
+                                      [
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].A,
+                                          index: "A",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].B,
+                                          index: "B",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].C,
+                                          index: "C",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].D,
+                                          index: "D",
+                                        },
+                                      ];
+                                  } else {
+                                    this.questions[i].sub_question[j].options =
+                                      [
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].A,
+                                          index: "A",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].B,
+                                          index: "B",
+                                        },
+                                      ];
+                                  }
                                   tempq = {
                                     question_content_id: res.data.id,
                                     primary_ques_type:
@@ -5777,6 +6454,47 @@ export default {
                                   this.questions[i].primary_ques_type ==
                                     "填空题"
                                 ) {
+                                  if (
+                                    this.questions[i].sub_question[j].D != ""
+                                  ) {
+                                    this.questions[i].sub_question[j].options =
+                                      [
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].A,
+                                          index: "A",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].B,
+                                          index: "B",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].C,
+                                          index: "C",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].D,
+                                          index: "D",
+                                        },
+                                      ];
+                                  } else {
+                                    this.questions[i].sub_question[j].options =
+                                      [
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].A,
+                                          index: "A",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].B,
+                                          index: "B",
+                                        },
+                                      ];
+                                  }
                                   tempq = {
                                     question_content_id: res.data.id,
                                     primary_ques_type:
@@ -5897,10 +6615,19 @@ export default {
                                         let savePaper = new BaaS.TableObject(
                                           "test_paper"
                                         );
+                                        // let save_paper =
+                                        //   savePaper.getWithoutData(
+                                        //     Cookie.get("paper_id")
+                                        //   );
                                         let save_paper =
-                                          savePaper.getWithoutData(
-                                            Cookie.get("paper_id")
+                                          savePaper.limit(1000).getWithoutData(
+                                            sessionStorage.getItem("paper_id")
                                           );
+                                        question_detail.sort(function (a, b) {
+                                          return (
+                                            a.sub_sequence - b.sub_sequence
+                                          );
+                                        });
                                         let paper_type;
                                         paper_type = "练习";
                                         let p = {
@@ -5913,6 +6640,9 @@ export default {
                                           ques_type: JSON.stringify(
                                             this.ques_type
                                           ),
+                                          questions: JSON.stringify(
+                                            this.questions
+                                          ),
                                         };
                                         save_paper.set(p);
                                         save_paper.update().then(
@@ -5923,7 +6653,11 @@ export default {
                                               message: "保存成功",
                                               type: "success",
                                             });
-                                            Cookies.set(
+                                            // Cookies.set(
+                                            //   "paperInfo",
+                                            //   res.data.id
+                                            // );
+                                            sessionStorage.setItem(
                                               "paperInfo",
                                               res.data.id
                                             );
@@ -5950,10 +6684,15 @@ export default {
                           console.log(err);
                         }
                       );
+                      // } else if (
+                      //   this.questions[i].file_url == "" &&
+                      //   this.questions[i].audio == "" &&
+                      //   this.questions[i].excel != ""
+                      // ) {
                     } else if (
-                      this.questions[i].file_url == "" &&
-                      this.questions[i].audio == "" &&
-                      this.questions[i].excel != ""
+                      this.questions[i].secondary_ques_type ==
+                        "阅读材料，选择正确答案" &&
+                      this.questions[i].excelfileList.length != 0
                     ) {
                       const result = this.dataURLtoFile(
                         this.questions[i].excel,
@@ -5969,7 +6708,7 @@ export default {
                           let savec = saveContent.create();
                           savec.set({
                             content: this.questions[i].question_content,
-                            file_url: res.data.file,
+                            file_url: null,
                             excel: res.data.file,
                             catalog: null,
                             is_delete: false,
@@ -5995,6 +6734,47 @@ export default {
                                   this.questions[i].primary_ques_type ==
                                     "判断题"
                                 ) {
+                                  if (
+                                    this.questions[i].sub_question[j].D != ""
+                                  ) {
+                                    this.questions[i].sub_question[j].options =
+                                      [
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].A,
+                                          index: "A",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].B,
+                                          index: "B",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].C,
+                                          index: "C",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].D,
+                                          index: "D",
+                                        },
+                                      ];
+                                  } else {
+                                    this.questions[i].sub_question[j].options =
+                                      [
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].A,
+                                          index: "A",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].B,
+                                          index: "B",
+                                        },
+                                      ];
+                                  }
                                   tempq = {
                                     question_content_id: res.data.id,
                                     primary_ques_type:
@@ -6056,6 +6836,47 @@ export default {
                                   this.questions[i].primary_ques_type ==
                                     "填空题"
                                 ) {
+                                  if (
+                                    this.questions[i].sub_question[j].D != ""
+                                  ) {
+                                    this.questions[i].sub_question[j].options =
+                                      [
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].A,
+                                          index: "A",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].B,
+                                          index: "B",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].C,
+                                          index: "C",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].D,
+                                          index: "D",
+                                        },
+                                      ];
+                                  } else {
+                                    this.questions[i].sub_question[j].options =
+                                      [
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].A,
+                                          index: "A",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].B,
+                                          index: "B",
+                                        },
+                                      ];
+                                  }
                                   tempq = {
                                     question_content_id: res.data.id,
                                     primary_ques_type:
@@ -6176,10 +6997,19 @@ export default {
                                         let savePaper = new BaaS.TableObject(
                                           "test_paper"
                                         );
+                                        // let save_paper =
+                                        //   savePaper.getWithoutData(
+                                        //     Cookie.get("paper_id")
+                                        //   );
                                         let save_paper =
-                                          savePaper.getWithoutData(
-                                            Cookie.get("paper_id")
+                                          savePaper.limit(1000).getWithoutData(
+                                            sessionStorage.getItem("paper_id")
                                           );
+                                        question_detail.sort(function (a, b) {
+                                          return (
+                                            a.sub_sequence - b.sub_sequence
+                                          );
+                                        });
                                         let paper_type;
                                         paper_type = "练习";
                                         let p = {
@@ -6192,6 +7022,9 @@ export default {
                                           ques_type: JSON.stringify(
                                             this.ques_type
                                           ),
+                                          questions: JSON.stringify(
+                                            this.questions
+                                          ),
                                         };
                                         save_paper.set(p);
                                         save_paper.update().then(
@@ -6202,7 +7035,11 @@ export default {
                                               message: "保存成功",
                                               type: "success",
                                             });
-                                            Cookies.set(
+                                            // Cookies.set(
+                                            //   "paperInfo",
+                                            //   res.data.id
+                                            // );
+                                            sessionStorage.setItem(
                                               "paperInfo",
                                               res.data.id
                                             );
@@ -6240,8 +7077,11 @@ export default {
                         "=",
                         this.questions[i].question_content
                       );
+                      let q4 = new BaaS.Query();
+                      q4.compare("created_by", "=", Cookie.get("user_id") * 1);
+                      let andQuery = BaaS.Query.and(find_content, q4);
                       findContent
-                        .setQuery(find_content)
+                        .setQuery(andQuery).limit(1000)
                         .find()
                         .then(
                           (res1) => {
@@ -6274,6 +7114,12 @@ export default {
                                 let author = new BaaS.Query();
                                 let author_org = new BaaS.Query();
                                 let time_created = new BaaS.Query();
+                                let q4 = new BaaS.Query();
+                                q4.compare(
+                                  "created_by",
+                                  "=",
+                                  Cookie.get("user_id") * 1
+                                );
                                 question_content_id.compare(
                                   "question_content_id",
                                   "=",
@@ -6476,10 +7322,11 @@ export default {
                                   question_type_5he,
                                   author,
                                   author_org,
-                                  time_created
+                                  time_created,
+                                  q4
                                 );
                                 findQuestion
-                                  .setQuery(andQuery)
+                                  .setQuery(andQuery).limit(1000)
                                   .find()
                                   .then(
                                     (res2) => {
@@ -6501,6 +7348,56 @@ export default {
                                           this.questions[i].primary_ques_type ==
                                             "判断题"
                                         ) {
+                                          if (
+                                            this.questions[i].sub_question[j]
+                                              .D != ""
+                                          ) {
+                                            this.questions[i].sub_question[
+                                              j
+                                            ].options = [
+                                              {
+                                                content:
+                                                  this.questions[i]
+                                                    .sub_question[j].A,
+                                                index: "A",
+                                              },
+                                              {
+                                                content:
+                                                  this.questions[i]
+                                                    .sub_question[j].B,
+                                                index: "B",
+                                              },
+                                              {
+                                                content:
+                                                  this.questions[i]
+                                                    .sub_question[j].C,
+                                                index: "C",
+                                              },
+                                              {
+                                                content:
+                                                  this.questions[i]
+                                                    .sub_question[j].D,
+                                                index: "D",
+                                              },
+                                            ];
+                                          } else {
+                                            this.questions[i].sub_question[
+                                              j
+                                            ].options = [
+                                              {
+                                                content:
+                                                  this.questions[i]
+                                                    .sub_question[j].A,
+                                                index: "A",
+                                              },
+                                              {
+                                                content:
+                                                  this.questions[i]
+                                                    .sub_question[j].B,
+                                                index: "B",
+                                              },
+                                            ];
+                                          }
                                           temp1 = {
                                             question_content_id: contentId,
                                             primary_ques_type:
@@ -6574,6 +7471,56 @@ export default {
                                           this.questions[i].primary_ques_type ==
                                             "填空题"
                                         ) {
+                                          if (
+                                            this.questions[i].sub_question[j]
+                                              .D != ""
+                                          ) {
+                                            this.questions[i].sub_question[
+                                              j
+                                            ].options = [
+                                              {
+                                                content:
+                                                  this.questions[i]
+                                                    .sub_question[j].A,
+                                                index: "A",
+                                              },
+                                              {
+                                                content:
+                                                  this.questions[i]
+                                                    .sub_question[j].B,
+                                                index: "B",
+                                              },
+                                              {
+                                                content:
+                                                  this.questions[i]
+                                                    .sub_question[j].C,
+                                                index: "C",
+                                              },
+                                              {
+                                                content:
+                                                  this.questions[i]
+                                                    .sub_question[j].D,
+                                                index: "D",
+                                              },
+                                            ];
+                                          } else {
+                                            this.questions[i].sub_question[
+                                              j
+                                            ].options = [
+                                              {
+                                                content:
+                                                  this.questions[i]
+                                                    .sub_question[j].A,
+                                                index: "A",
+                                              },
+                                              {
+                                                content:
+                                                  this.questions[i]
+                                                    .sub_question[j].B,
+                                                index: "B",
+                                              },
+                                            ];
+                                          }
                                           temp1 = {
                                             question_content_id: contentId,
                                             primary_ques_type:
@@ -6706,10 +7653,25 @@ export default {
                                                   new BaaS.TableObject(
                                                     "test_paper"
                                                   );
+                                                // let save_paper =
+                                                //   savePaper.getWithoutData(
+                                                //     Cookie.get("paper_id")
+                                                //   );
                                                 let save_paper =
-                                                  savePaper.getWithoutData(
-                                                    Cookie.get("paper_id")
+                                                  savePaper.limit(1000).getWithoutData(
+                                                    sessionStorage.getItem(
+                                                      "paper_id"
+                                                    )
                                                   );
+                                                question_detail.sort(function (
+                                                  a,
+                                                  b
+                                                ) {
+                                                  return (
+                                                    a.sub_sequence -
+                                                    b.sub_sequence
+                                                  );
+                                                });
                                                 let paper_type;
                                                 paper_type = "练习";
                                                 let p = {
@@ -6724,6 +7686,9 @@ export default {
                                                   ques_type: JSON.stringify(
                                                     this.ques_type
                                                   ),
+                                                  questions: JSON.stringify(
+                                                    this.questions
+                                                  ),
                                                 };
                                                 save_paper.set(p);
                                                 save_paper.update().then(
@@ -6734,7 +7699,11 @@ export default {
                                                       message: "保存成功",
                                                       type: "success",
                                                     });
-                                                    Cookies.set(
+                                                    // Cookies.set(
+                                                    //   "paperInfo",
+                                                    //   res.data.id
+                                                    // );
+                                                    sessionStorage.setItem(
                                                       "paperInfo",
                                                       res.data.id
                                                     );
@@ -6769,10 +7738,19 @@ export default {
                                           let savePaper = new BaaS.TableObject(
                                             "test_paper"
                                           );
+                                          // let save_paper =
+                                          //   savePaper.getWithoutData(
+                                          //     Cookie.get("paper_id")
+                                          //   );
                                           let save_paper =
-                                            savePaper.getWithoutData(
-                                              Cookie.get("paper_id")
+                                            savePaper.limit(1000).getWithoutData(
+                                              sessionStorage.getItem("paper_id")
                                             );
+                                          question_detail.sort(function (a, b) {
+                                            return (
+                                              a.sub_sequence - b.sub_sequence
+                                            );
+                                          });
                                           let paper_type;
                                           paper_type = "练习";
                                           let p = {
@@ -6785,6 +7763,9 @@ export default {
                                             ques_type: JSON.stringify(
                                               this.ques_type
                                             ),
+                                            questions: JSON.stringify(
+                                              this.questions
+                                            ),
                                           };
                                           save_paper.set(p);
                                           save_paper.update().then(
@@ -6795,7 +7776,11 @@ export default {
                                                 message: "保存成功",
                                                 type: "success",
                                               });
-                                              Cookies.set(
+                                              // Cookies.set(
+                                              //   "paperInfo",
+                                              //   res.data.id
+                                              // );
+                                              sessionStorage.setItem(
                                                 "paperInfo",
                                                 res.data.id
                                               );
@@ -6823,6 +7808,7 @@ export default {
                                 content: this.questions[i].question_content,
                                 file_url: null,
                                 catalog: null,
+                                excel: null,
                               };
                               save_content
                                 .set(tempc)
@@ -6849,6 +7835,62 @@ export default {
                                         this.questions[i].primary_ques_type ==
                                           "判断题"
                                       ) {
+                                        if (
+                                          this.questions[i].sub_question[j].D !=
+                                          ""
+                                        ) {
+                                          this.questions[i].sub_question[
+                                            j
+                                          ].options = [
+                                            {
+                                              content:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].A,
+                                              index: "A",
+                                            },
+                                            {
+                                              content:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].B,
+                                              index: "B",
+                                            },
+                                            {
+                                              content:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].C,
+                                              index: "C",
+                                            },
+                                            {
+                                              content:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].D,
+                                              index: "D",
+                                            },
+                                          ];
+                                        } else {
+                                          this.questions[i].sub_question[
+                                            j
+                                          ].options = [
+                                            {
+                                              content:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].A,
+                                              index: "A",
+                                            },
+                                            {
+                                              content:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].B,
+                                              index: "B",
+                                            },
+                                          ];
+                                        }
                                         tempq = {
                                           question_content_id: res4.data.id,
                                           primary_ques_type:
@@ -6915,6 +7957,62 @@ export default {
                                         this.questions[i].primary_ques_type ==
                                           "填空题"
                                       ) {
+                                        if (
+                                          this.questions[i].sub_question[j].D !=
+                                          ""
+                                        ) {
+                                          this.questions[i].sub_question[
+                                            j
+                                          ].options = [
+                                            {
+                                              content:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].A,
+                                              index: "A",
+                                            },
+                                            {
+                                              content:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].B,
+                                              index: "B",
+                                            },
+                                            {
+                                              content:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].C,
+                                              index: "C",
+                                            },
+                                            {
+                                              content:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].D,
+                                              index: "D",
+                                            },
+                                          ];
+                                        } else {
+                                          this.questions[i].sub_question[
+                                            j
+                                          ].options = [
+                                            {
+                                              content:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].A,
+                                              index: "A",
+                                            },
+                                            {
+                                              content:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].B,
+                                              index: "B",
+                                            },
+                                          ];
+                                        }
                                         tempq = {
                                           question_content_id: res4.data.id,
                                           primary_ques_type:
@@ -7046,10 +8144,25 @@ export default {
                                                 new BaaS.TableObject(
                                                   "test_paper"
                                                 );
+                                              // let save_paper =
+                                              //   savePaper.getWithoutData(
+                                              //     Cookie.get("paper_id")
+                                              //   );
                                               let save_paper =
-                                                savePaper.getWithoutData(
-                                                  Cookie.get("paper_id")
+                                                savePaper.limit(1000).getWithoutData(
+                                                  sessionStorage.getItem(
+                                                    "paper_id"
+                                                  )
                                                 );
+                                              question_detail.sort(function (
+                                                a,
+                                                b
+                                              ) {
+                                                return (
+                                                  a.sub_sequence -
+                                                  b.sub_sequence
+                                                );
+                                              });
                                               let paper_type;
                                               paper_type = "练习";
                                               let p = {
@@ -7064,6 +8177,9 @@ export default {
                                                 ques_type: JSON.stringify(
                                                   this.ques_type
                                                 ),
+                                                questions: JSON.stringify(
+                                                  this.questions
+                                                ),
                                               };
                                               save_paper.set(p);
                                               save_paper.update().then(
@@ -7074,7 +8190,11 @@ export default {
                                                     message: "保存成功",
                                                     type: "success",
                                                   });
-                                                  Cookies.set(
+                                                  // Cookies.set(
+                                                  //   "paperInfo",
+                                                  //   res.data.id
+                                                  // );
+                                                  sessionStorage.setItem(
                                                     "paperInfo",
                                                     res.data.id
                                                   );
@@ -7208,8 +8328,19 @@ export default {
                 let findPaper = new BaaS.TableObject("test_paper");
                 let find_paper = new BaaS.Query();
                 find_paper.compare("paper_title", "=", this.title);
+                let q2 = new BaaS.Query();
+                let q3 = new BaaS.Query();
+                q2.compare("is_delete", "=", false);
+                q3.compare(
+                  "paper_title",
+                  "!=",
+                  sessionStorage.getItem("paper_title")
+                );
+                let q4 = new BaaS.Query();
+                q4.compare("created_by", "=", Cookie.get("user_id") * 1);
+                let andQuery = BaaS.Query.and(find_paper, q2, q3, q4);
                 findPaper
-                  .setQuery(find_paper)
+                  .setQuery(andQuery).limit(1000)
                   .find()
                   .then((res0) => {
                     if (res0.data.objects.length != 0) {
@@ -7229,10 +8360,9 @@ export default {
                       for (let i = 0; i < this.questions.length; i++) {
                         if (
                           this.questions[i].file_url != "" &&
-                          this.questions[i].audio == "" &&
-                          this.questions[i].excel == "" &&
-                          this.questions[i].file_url !=
-                            this.questions[i].initial_file
+                          this.questions[i].file_url.search(
+                            "cloud-minapp-42820"
+                          ) == -1
                         ) {
                           const result = this.dataURLtoFile(
                             this.questions[i].file_url,
@@ -7247,8 +8377,9 @@ export default {
                               );
                               let savec = saveContent.create();
                               savec.set({
-                                content: null,
+                                content: "",
                                 file_url: res.data.file,
+                                excel: null,
                                 catalog: null,
                                 is_delete: false,
                               });
@@ -7273,6 +8404,56 @@ export default {
                                       this.questions[i].primary_ques_type ==
                                         "判断题"
                                     ) {
+                                      if (
+                                        this.questions[i].sub_question[j].D !=
+                                        ""
+                                      ) {
+                                        this.questions[i].sub_question[
+                                          j
+                                        ].options = [
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .A,
+                                            index: "A",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .B,
+                                            index: "B",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .C,
+                                            index: "C",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .D,
+                                            index: "D",
+                                          },
+                                        ];
+                                      } else {
+                                        this.questions[i].sub_question[
+                                          j
+                                        ].options = [
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .A,
+                                            index: "A",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .B,
+                                            index: "B",
+                                          },
+                                        ];
+                                      }
                                       tempq = {
                                         question_content_id: res.data.id,
                                         primary_ques_type:
@@ -7337,6 +8518,56 @@ export default {
                                       this.questions[i].primary_ques_type ==
                                         "填空题"
                                     ) {
+                                      if (
+                                        this.questions[i].sub_question[j].D !=
+                                        ""
+                                      ) {
+                                        this.questions[i].sub_question[
+                                          j
+                                        ].options = [
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .A,
+                                            index: "A",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .B,
+                                            index: "B",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .C,
+                                            index: "C",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .D,
+                                            index: "D",
+                                          },
+                                        ];
+                                      } else {
+                                        this.questions[i].sub_question[
+                                          j
+                                        ].options = [
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .A,
+                                            index: "A",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .B,
+                                            index: "B",
+                                          },
+                                        ];
+                                      }
                                       tempq = {
                                         question_content_id: res.data.id,
                                         primary_ques_type:
@@ -7464,10 +8695,24 @@ export default {
                                               new BaaS.TableObject(
                                                 "test_paper"
                                               );
+                                            // let save_paper =
+                                            //   savePaper.getWithoutData(
+                                            //     Cookie.get("paper_id")
+                                            //   );
                                             let save_paper =
-                                              savePaper.getWithoutData(
-                                                Cookie.get("paper_id")
+                                              savePaper.limit(1000).getWithoutData(
+                                                sessionStorage.getItem(
+                                                  "paper_id"
+                                                )
                                               );
+                                            question_detail.sort(function (
+                                              a,
+                                              b
+                                            ) {
+                                              return (
+                                                a.sub_sequence - b.sub_sequence
+                                              );
+                                            });
                                             let paper_type;
                                             paper_type = "练习";
                                             let p = {
@@ -7480,6 +8725,9 @@ export default {
                                               ques_type: JSON.stringify(
                                                 this.ques_type
                                               ),
+                                              questions: JSON.stringify(
+                                                this.questions
+                                              ),
                                             };
                                             save_paper.set(p);
                                             save_paper.update().then(
@@ -7490,7 +8738,11 @@ export default {
                                                   message: "保存成功",
                                                   type: "success",
                                                 });
-                                                Cookies.set(
+                                                // Cookies.set(
+                                                //   "paperInfo",
+                                                //   res.data.id
+                                                // );
+                                                sessionStorage.setItem(
                                                   "paperInfo",
                                                   res.data.id
                                                 );
@@ -7517,12 +8769,19 @@ export default {
                               console.log(err);
                             }
                           );
+                          // } else if (
+                          //   this.questions[i].file_url == "" &&
+                          //   this.questions[i].audio != "" &&
+                          //   this.questions[i].excel == "" &&
+                          //   this.questions[i].audio !=
+                          //     this.questions[i].initial_audio
+                          // ) {
                         } else if (
-                          this.questions[i].file_url == "" &&
+                          this.questions[i].primary_ques_type == "听力" &&
                           this.questions[i].audio != "" &&
-                          this.questions[i].excel == "" &&
-                          this.questions[i].audio !=
-                            this.questions[i].initial_audio
+                          this.questions[i].audio.search(
+                            "cloud-minapp-42820"
+                          ) == -1
                         ) {
                           const result = this.dataURLtoFile(
                             this.questions[i].audio,
@@ -7539,6 +8798,7 @@ export default {
                               savec.set({
                                 content: null,
                                 file_url: res.data.file,
+                                excel: null,
                                 catalog: null,
                                 is_delete: false,
                               });
@@ -7563,6 +8823,56 @@ export default {
                                       this.questions[i].primary_ques_type ==
                                         "判断题"
                                     ) {
+                                      if (
+                                        this.questions[i].sub_question[j].D !=
+                                        ""
+                                      ) {
+                                        this.questions[i].sub_question[
+                                          j
+                                        ].options = [
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .A,
+                                            index: "A",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .B,
+                                            index: "B",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .C,
+                                            index: "C",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .D,
+                                            index: "D",
+                                          },
+                                        ];
+                                      } else {
+                                        this.questions[i].sub_question[
+                                          j
+                                        ].options = [
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .A,
+                                            index: "A",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .B,
+                                            index: "B",
+                                          },
+                                        ];
+                                      }
                                       tempq = {
                                         question_content_id: res.data.id,
                                         primary_ques_type:
@@ -7627,6 +8937,56 @@ export default {
                                       this.questions[i].primary_ques_type ==
                                         "填空题"
                                     ) {
+                                      if (
+                                        this.questions[i].sub_question[j].D !=
+                                        ""
+                                      ) {
+                                        this.questions[i].sub_question[
+                                          j
+                                        ].options = [
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .A,
+                                            index: "A",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .B,
+                                            index: "B",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .C,
+                                            index: "C",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .D,
+                                            index: "D",
+                                          },
+                                        ];
+                                      } else {
+                                        this.questions[i].sub_question[
+                                          j
+                                        ].options = [
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .A,
+                                            index: "A",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .B,
+                                            index: "B",
+                                          },
+                                        ];
+                                      }
                                       tempq = {
                                         question_content_id: res.data.id,
                                         primary_ques_type:
@@ -7754,10 +9114,24 @@ export default {
                                               new BaaS.TableObject(
                                                 "test_paper"
                                               );
+                                            // let save_paper =
+                                            //   savePaper.getWithoutData(
+                                            //     Cookie.get("paper_id")
+                                            //   );
                                             let save_paper =
-                                              savePaper.getWithoutData(
-                                                Cookie.get("paper_id")
+                                              savePaper.limit(1000).getWithoutData(
+                                                sessionStorage.getItem(
+                                                  "paper_id"
+                                                )
                                               );
+                                            question_detail.sort(function (
+                                              a,
+                                              b
+                                            ) {
+                                              return (
+                                                a.sub_sequence - b.sub_sequence
+                                              );
+                                            });
                                             let paper_type;
                                             paper_type = "练习";
                                             let p = {
@@ -7770,6 +9144,9 @@ export default {
                                               ques_type: JSON.stringify(
                                                 this.ques_type
                                               ),
+                                              questions: JSON.stringify(
+                                                this.questions
+                                              ),
                                             };
                                             save_paper.set(p);
                                             save_paper.update().then(
@@ -7780,7 +9157,11 @@ export default {
                                                   message: "保存成功",
                                                   type: "success",
                                                 });
-                                                Cookies.set(
+                                                // Cookies.set(
+                                                //   "paperInfo",
+                                                //   res.data.id
+                                                // );
+                                                sessionStorage.setItem(
                                                   "paperInfo",
                                                   res.data.id
                                                 );
@@ -7807,9 +9188,14 @@ export default {
                               console.log(err);
                             }
                           );
+                          // } else if (
+                          //   this.questions[i].file_url == "" &&
+                          //   this.questions[i].audio == "" &&
+                          //   this.questions[i].excel != ""
+                          // ) {
                         } else if (
-                          this.questions[i].file_url == "" &&
-                          this.questions[i].audio == "" &&
+                          this.questions[i].secondary_ques_type ==
+                            "阅读材料，选择正确答案" &&
                           this.questions[i].excel != ""
                         ) {
                           const result = this.dataURLtoFile(
@@ -7826,7 +9212,7 @@ export default {
                               let savec = saveContent.create();
                               savec.set({
                                 content: null,
-                                file_url: res.data.file,
+                                file_url: null,
                                 excel: res.data.file,
                                 catalog: null,
                                 is_delete: false,
@@ -7852,6 +9238,56 @@ export default {
                                       this.questions[i].primary_ques_type ==
                                         "判断题"
                                     ) {
+                                      if (
+                                        this.questions[i].sub_question[j].D !=
+                                        ""
+                                      ) {
+                                        this.questions[i].sub_question[
+                                          j
+                                        ].options = [
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .A,
+                                            index: "A",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .B,
+                                            index: "B",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .C,
+                                            index: "C",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .D,
+                                            index: "D",
+                                          },
+                                        ];
+                                      } else {
+                                        this.questions[i].sub_question[
+                                          j
+                                        ].options = [
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .A,
+                                            index: "A",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .B,
+                                            index: "B",
+                                          },
+                                        ];
+                                      }
                                       tempq = {
                                         question_content_id: res.data.id,
                                         primary_ques_type:
@@ -7916,6 +9352,56 @@ export default {
                                       this.questions[i].primary_ques_type ==
                                         "填空题"
                                     ) {
+                                      if (
+                                        this.questions[i].sub_question[j].D !=
+                                        ""
+                                      ) {
+                                        this.questions[i].sub_question[
+                                          j
+                                        ].options = [
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .A,
+                                            index: "A",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .B,
+                                            index: "B",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .C,
+                                            index: "C",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .D,
+                                            index: "D",
+                                          },
+                                        ];
+                                      } else {
+                                        this.questions[i].sub_question[
+                                          j
+                                        ].options = [
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .A,
+                                            index: "A",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .B,
+                                            index: "B",
+                                          },
+                                        ];
+                                      }
                                       tempq = {
                                         question_content_id: res.data.id,
                                         primary_ques_type:
@@ -8043,10 +9529,24 @@ export default {
                                               new BaaS.TableObject(
                                                 "test_paper"
                                               );
+                                            // let save_paper =
+                                            //   savePaper.getWithoutData(
+                                            //     Cookie.get("paper_id")
+                                            //   );
                                             let save_paper =
-                                              savePaper.getWithoutData(
-                                                Cookie.get("paper_id")
+                                              savePaper.limit(1000).getWithoutData(
+                                                sessionStorage.getItem(
+                                                  "paper_id"
+                                                )
                                               );
+                                            question_detail.sort(function (
+                                              a,
+                                              b
+                                            ) {
+                                              return (
+                                                a.sub_sequence - b.sub_sequence
+                                              );
+                                            });
                                             let paper_type;
                                             paper_type = "练习";
                                             let p = {
@@ -8059,6 +9559,9 @@ export default {
                                               ques_type: JSON.stringify(
                                                 this.ques_type
                                               ),
+                                              questions: JSON.stringify(
+                                                this.questions
+                                              ),
                                             };
                                             save_paper.set(p);
                                             save_paper.update().then(
@@ -8069,7 +9572,11 @@ export default {
                                                   message: "保存成功",
                                                   type: "success",
                                                 });
-                                                Cookies.set(
+                                                // Cookies.set(
+                                                //   "paperInfo",
+                                                //   res.data.id
+                                                // );
+                                                sessionStorage.setItem(
                                                   "paperInfo",
                                                   res.data.id
                                                 );
@@ -8107,8 +9614,15 @@ export default {
                             "=",
                             this.questions[i].question_content
                           );
+                          let q4 = new BaaS.Query();
+                          q4.compare(
+                            "created_by",
+                            "=",
+                            Cookie.get("user_id") * 1
+                          );
+                          let andQuery = BaaS.Query.and(find_content, q4);
                           findContent
-                            .setQuery(find_content)
+                            .setQuery(andQuery).limit(1000)
                             .find()
                             .then(
                               (res1) => {
@@ -8141,6 +9655,12 @@ export default {
                                     let author = new BaaS.Query();
                                     let author_org = new BaaS.Query();
                                     let time_created = new BaaS.Query();
+                                    let q4 = new BaaS.Query();
+                                    q4.compare(
+                                      "created_by",
+                                      "=",
+                                      Cookie.get("user_id") * 1
+                                    );
                                     question_content_id.compare(
                                       "question_content_id",
                                       "=",
@@ -8350,10 +9870,11 @@ export default {
                                       question_type_5he,
                                       author,
                                       author_org,
-                                      time_created
+                                      time_created,
+                                      q4
                                     );
                                     findQuestion
-                                      .setQuery(andQuery)
+                                      .setQuery(andQuery).limit(1000)
                                       .find()
                                       .then(
                                         (res2) => {
@@ -8376,6 +9897,57 @@ export default {
                                               this.questions[i]
                                                 .primary_ques_type == "判断题"
                                             ) {
+                                              if (
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].D != ""
+                                              ) {
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].options = [
+                                                  {
+                                                    content:
+                                                      this.questions[i]
+                                                        .sub_question[j].A,
+                                                    index: "A",
+                                                  },
+                                                  {
+                                                    content:
+                                                      this.questions[i]
+                                                        .sub_question[j].B,
+                                                    index: "B",
+                                                  },
+                                                  {
+                                                    content:
+                                                      this.questions[i]
+                                                        .sub_question[j].C,
+                                                    index: "C",
+                                                  },
+                                                  {
+                                                    content:
+                                                      this.questions[i]
+                                                        .sub_question[j].D,
+                                                    index: "D",
+                                                  },
+                                                ];
+                                              } else {
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].options = [
+                                                  {
+                                                    content:
+                                                      this.questions[i]
+                                                        .sub_question[j].A,
+                                                    index: "A",
+                                                  },
+                                                  {
+                                                    content:
+                                                      this.questions[i]
+                                                        .sub_question[j].B,
+                                                    index: "B",
+                                                  },
+                                                ];
+                                              }
                                               temp1 = {
                                                 question_content_id: contentId,
                                                 primary_ques_type:
@@ -8458,6 +10030,57 @@ export default {
                                               this.questions[i]
                                                 .primary_ques_type == "填空题"
                                             ) {
+                                              if (
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].D != ""
+                                              ) {
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].options = [
+                                                  {
+                                                    content:
+                                                      this.questions[i]
+                                                        .sub_question[j].A,
+                                                    index: "A",
+                                                  },
+                                                  {
+                                                    content:
+                                                      this.questions[i]
+                                                        .sub_question[j].B,
+                                                    index: "B",
+                                                  },
+                                                  {
+                                                    content:
+                                                      this.questions[i]
+                                                        .sub_question[j].C,
+                                                    index: "C",
+                                                  },
+                                                  {
+                                                    content:
+                                                      this.questions[i]
+                                                        .sub_question[j].D,
+                                                    index: "D",
+                                                  },
+                                                ];
+                                              } else {
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].options = [
+                                                  {
+                                                    content:
+                                                      this.questions[i]
+                                                        .sub_question[j].A,
+                                                    index: "A",
+                                                  },
+                                                  {
+                                                    content:
+                                                      this.questions[i]
+                                                        .sub_question[j].B,
+                                                    index: "B",
+                                                  },
+                                                ];
+                                              }
                                               temp1 = {
                                                 question_content_id: contentId,
                                                 primary_ques_type:
@@ -8605,10 +10228,24 @@ export default {
                                                       new BaaS.TableObject(
                                                         "test_paper"
                                                       );
+                                                    // let save_paper =
+                                                    //   savePaper.getWithoutData(
+                                                    //     Cookie.get("paper_id")
+                                                    //   );
                                                     let save_paper =
-                                                      savePaper.getWithoutData(
-                                                        Cookie.get("paper_id")
+                                                      savePaper.limit(1000).getWithoutData(
+                                                        sessionStorage.getItem(
+                                                          "paper_id"
+                                                        )
                                                       );
+                                                    question_detail.sort(
+                                                      function (a, b) {
+                                                        return (
+                                                          a.sub_sequence -
+                                                          b.sub_sequence
+                                                        );
+                                                      }
+                                                    );
                                                     let paper_type;
                                                     paper_type = "模考";
                                                     let p = {
@@ -8624,6 +10261,9 @@ export default {
                                                       ques_type: JSON.stringify(
                                                         this.ques_type
                                                       ),
+                                                      questions: JSON.stringify(
+                                                        this.questions
+                                                      ),
                                                     };
                                                     save_paper.set(p);
                                                     save_paper.update().then(
@@ -8634,7 +10274,11 @@ export default {
                                                           message: "保存成功",
                                                           type: "success",
                                                         });
-                                                        Cookies.set(
+                                                        // Cookies.set(
+                                                        //   "paperInfo",
+                                                        //   res.data.id
+                                                        // );
+                                                        sessionStorage.setItem(
                                                           "paperInfo",
                                                           res.data.id
                                                         );
@@ -8672,10 +10316,25 @@ export default {
                                                 new BaaS.TableObject(
                                                   "test_paper"
                                                 );
+                                              // let save_paper =
+                                              //   savePaper.getWithoutData(
+                                              //     Cookie.get("paper_id")
+                                              //   );
                                               let save_paper =
-                                                savePaper.getWithoutData(
-                                                  Cookie.get("paper_id")
+                                                savePaper.limit(1000).getWithoutData(
+                                                  sessionStorage.getItem(
+                                                    "paper_id"
+                                                  )
                                                 );
+                                              question_detail.sort(function (
+                                                a,
+                                                b
+                                              ) {
+                                                return (
+                                                  a.sub_sequence -
+                                                  b.sub_sequence
+                                                );
+                                              });
                                               let paper_type;
                                               paper_type = "模考";
                                               let p = {
@@ -8690,6 +10349,9 @@ export default {
                                                 ques_type: JSON.stringify(
                                                   this.ques_type
                                                 ),
+                                                questions: JSON.stringify(
+                                                  this.questions
+                                                ),
                                               };
                                               save_paper.set(p);
                                               save_paper.update().then(
@@ -8700,7 +10362,11 @@ export default {
                                                     message: "保存成功",
                                                     type: "success",
                                                   });
-                                                  Cookies.set(
+                                                  // Cookies.set(
+                                                  //   "paperInfo",
+                                                  //   res.data.id
+                                                  // );
+                                                  sessionStorage.setItem(
                                                     "paperInfo",
                                                     res.data.id
                                                   );
@@ -8728,6 +10394,7 @@ export default {
                                     content: this.questions[i].question_content,
                                     file_url: null,
                                     catalog: null,
+                                    excel: null,
                                   };
                                   save_content
                                     .set(tempc)
@@ -8758,6 +10425,56 @@ export default {
                                             this.questions[i]
                                               .primary_ques_type == "判断题"
                                           ) {
+                                            if (
+                                              this.questions[i].sub_question[j]
+                                                .D != ""
+                                            ) {
+                                              this.questions[i].sub_question[
+                                                j
+                                              ].options = [
+                                                {
+                                                  content:
+                                                    this.questions[i]
+                                                      .sub_question[j].A,
+                                                  index: "A",
+                                                },
+                                                {
+                                                  content:
+                                                    this.questions[i]
+                                                      .sub_question[j].B,
+                                                  index: "B",
+                                                },
+                                                {
+                                                  content:
+                                                    this.questions[i]
+                                                      .sub_question[j].C,
+                                                  index: "C",
+                                                },
+                                                {
+                                                  content:
+                                                    this.questions[i]
+                                                      .sub_question[j].D,
+                                                  index: "D",
+                                                },
+                                              ];
+                                            } else {
+                                              this.questions[i].sub_question[
+                                                j
+                                              ].options = [
+                                                {
+                                                  content:
+                                                    this.questions[i]
+                                                      .sub_question[j].A,
+                                                  index: "A",
+                                                },
+                                                {
+                                                  content:
+                                                    this.questions[i]
+                                                      .sub_question[j].B,
+                                                  index: "B",
+                                                },
+                                              ];
+                                            }
                                             tempq = {
                                               question_content_id: res4.data.id,
                                               primary_ques_type:
@@ -8839,6 +10556,56 @@ export default {
                                             this.questions[i]
                                               .primary_ques_type == "填空题"
                                           ) {
+                                            if (
+                                              this.questions[i].sub_question[j]
+                                                .D != ""
+                                            ) {
+                                              this.questions[i].sub_question[
+                                                j
+                                              ].options = [
+                                                {
+                                                  content:
+                                                    this.questions[i]
+                                                      .sub_question[j].A,
+                                                  index: "A",
+                                                },
+                                                {
+                                                  content:
+                                                    this.questions[i]
+                                                      .sub_question[j].B,
+                                                  index: "B",
+                                                },
+                                                {
+                                                  content:
+                                                    this.questions[i]
+                                                      .sub_question[j].C,
+                                                  index: "C",
+                                                },
+                                                {
+                                                  content:
+                                                    this.questions[i]
+                                                      .sub_question[j].D,
+                                                  index: "D",
+                                                },
+                                              ];
+                                            } else {
+                                              this.questions[i].sub_question[
+                                                j
+                                              ].options = [
+                                                {
+                                                  content:
+                                                    this.questions[i]
+                                                      .sub_question[j].A,
+                                                  index: "A",
+                                                },
+                                                {
+                                                  content:
+                                                    this.questions[i]
+                                                      .sub_question[j].B,
+                                                  index: "B",
+                                                },
+                                              ];
+                                            }
                                             tempq = {
                                               question_content_id: res4.data.id,
                                               primary_ques_type:
@@ -8999,10 +10766,24 @@ export default {
                                                     new BaaS.TableObject(
                                                       "test_paper"
                                                     );
+                                                  // let save_paper =
+                                                  //   savePaper.getWithoutData(
+                                                  //     Cookie.get("paper_id")
+                                                  //   );
                                                   let save_paper =
-                                                    savePaper.getWithoutData(
-                                                      Cookie.get("paper_id")
+                                                    savePaper.limit(1000).getWithoutData(
+                                                      sessionStorage.getItem(
+                                                        "paper_id"
+                                                      )
                                                     );
+                                                  question_detail.sort(
+                                                    function (a, b) {
+                                                      return (
+                                                        a.sub_sequence -
+                                                        b.sub_sequence
+                                                      );
+                                                    }
+                                                  );
                                                   let paper_type;
                                                   paper_type = "模考";
                                                   let p = {
@@ -9018,6 +10799,9 @@ export default {
                                                     ques_type: JSON.stringify(
                                                       this.ques_type
                                                     ),
+                                                    questions: JSON.stringify(
+                                                      this.questions
+                                                    ),
                                                   };
                                                   save_paper.set(p);
                                                   save_paper.update().then(
@@ -9028,7 +10812,11 @@ export default {
                                                         message: "保存成功",
                                                         type: "success",
                                                       });
-                                                      Cookies.set(
+                                                      // Cookies.set(
+                                                      //   "paperInfo",
+                                                      //   res.data.id
+                                                      // );
+                                                      sessionStorage.setItem(
                                                         "paperInfo",
                                                         res.data.id
                                                       );
@@ -9081,8 +10869,10 @@ export default {
         // );
       } else {
         let cata = "";
-        if (Cookie.get("catalog") != "") {
-          cata = Cookie.get("catalog");
+        // if (Cookie.get("catalog") != "") {
+        if (sessionStorage.getItem("catalog") != "") {
+          // cata = Cookie.get("catalog");
+          cata = sessionStorage.getItem("catalog");
         } else {
           cata = null;
         }
@@ -9095,8 +10885,19 @@ export default {
             let findPaper = new BaaS.TableObject("test_paper");
             let find_paper = new BaaS.Query();
             find_paper.compare("paper_title", "=", this.title);
+            let q2 = new BaaS.Query();
+            q2.compare("is_delete", "=", false);
+            let q3 = new BaaS.Query();
+            q3.compare(
+              "paper_title",
+              "!=",
+              sessionStorage.getItem("paper_title")
+            );
+            let q4 = new BaaS.Query();
+            q4.compare("created_by", "=", Cookie.get("user_id") * 1);
+            let andQuery = BaaS.Query.and(find_paper, q2, q3, q4);
             findPaper
-              .setQuery(find_paper)
+              .setQuery(andQuery).limit(1000)
               .find()
               .then((res0) => {
                 if (res0.data.objects.length != 0) {
@@ -9116,11 +10917,14 @@ export default {
                   for (let i = 0; i < this.questions.length; i++) {
                     if (
                       this.questions[i].file_url != "" &&
-                      this.questions[i].audio == "" &&
-                      this.questions[i].excel == "" &&
-                      this.questions[i].file_url !=
-                        this.questions[i].initial_file
+                      this.questions[i].file_url.search("cloud-minapp-42820") ==
+                        -1
                     ) {
+                      console.log(
+                        "1",
+                        this.questions[i],
+                        this.questions[i].file_url
+                      );
                       const result = this.dataURLtoFile(
                         this.questions[i].file_url,
                         "图片.png"
@@ -9134,10 +10938,11 @@ export default {
                           );
                           let savec = saveContent.create();
                           savec.set({
-                            content: this.questions[i].question_content,
+                            content: "",
                             file_url: res.data.file,
                             catalog: null,
                             is_delete: false,
+                            excel: null,
                           });
                           savec.save().then(
                             (res) => {
@@ -9160,7 +10965,49 @@ export default {
                                   this.questions[i].primary_ques_type ==
                                     "判断题"
                                 ) {
+                                  if (
+                                    this.questions[i].sub_question[j].D != ""
+                                  ) {
+                                    this.questions[i].sub_question[j].options =
+                                      [
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].A,
+                                          index: "A",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].B,
+                                          index: "B",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].C,
+                                          index: "C",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].D,
+                                          index: "D",
+                                        },
+                                      ];
+                                  } else {
+                                    this.questions[i].sub_question[j].options =
+                                      [
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].A,
+                                          index: "A",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].B,
+                                          index: "B",
+                                        },
+                                      ];
+                                  }
                                   tempq = {
+                                    catalog:cata,
                                     question_content_id: res.data.id,
                                     primary_ques_type:
                                       this.questions[i].primary_ques_type,
@@ -9221,7 +11068,49 @@ export default {
                                   this.questions[i].primary_ques_type ==
                                     "填空题"
                                 ) {
+                                  if (
+                                    this.questions[i].sub_question[j].D != ""
+                                  ) {
+                                    this.questions[i].sub_question[j].options =
+                                      [
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].A,
+                                          index: "A",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].B,
+                                          index: "B",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].C,
+                                          index: "C",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].D,
+                                          index: "D",
+                                        },
+                                      ];
+                                  } else {
+                                    this.questions[i].sub_question[j].options =
+                                      [
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].A,
+                                          index: "A",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].B,
+                                          index: "B",
+                                        },
+                                      ];
+                                  }
                                   tempq = {
+                                    catalog:cata,
                                     question_content_id: res.data.id,
                                     primary_ques_type:
                                       this.questions[i].primary_ques_type,
@@ -9275,6 +11164,7 @@ export default {
                                     "简答题"
                                 ) {
                                   tempq = {
+                                    catalog:cata,
                                     question_content_id: res.data.id,
                                     primary_ques_type:
                                       this.questions[i].primary_ques_type,
@@ -9341,6 +11231,11 @@ export default {
                                         let savePaper = new BaaS.TableObject(
                                           "test_paper"
                                         );
+                                        question_detail.sort(function (a, b) {
+                                          return (
+                                            a.sub_sequence - b.sub_sequence
+                                          );
+                                        });
                                         let save_paper = savePaper.create();
                                         let paper_type;
                                         paper_type = "练习";
@@ -9353,6 +11248,9 @@ export default {
                                             JSON.stringify(question_detail),
                                           ques_type: JSON.stringify(
                                             this.ques_type
+                                          ),
+                                          questions: JSON.stringify(
+                                            this.questions
                                           ),
                                           catalog: cata,
                                         };
@@ -9367,7 +11265,11 @@ export default {
                                                 message: "保存成功",
                                                 type: "success",
                                               });
-                                              Cookies.set(
+                                              // Cookies.set(
+                                              //   "paperInfo",
+                                              //   res.data.id
+                                              // );
+                                              sessionStorage.setItem(
                                                 "paperInfo",
                                                 res.data.id
                                               );
@@ -9394,20 +11296,28 @@ export default {
                           console.log(err);
                         }
                       );
+                      // } else if (
+                      //   this.questions[i].file_url == "" &&
+                      //   this.questions[i].audio != "" &&
+                      //   this.questions[i].excel == "" &&
+                      //   this.questions[i].audio != this.questions[i].initial_audio
+                      // ) {
                     } else if (
-                      this.questions[i].file_url == "" &&
+                      this.questions[i].primary_ques_type == "听力" &&
                       this.questions[i].audio != "" &&
-                      this.questions[i].excel == "" &&
-                      this.questions[i].audio != this.questions[i].initial_audio
+                      this.questions[i].audio.search("cloud-minapp-42820") == -1
                     ) {
+                      console.log("2", this.questions[i]);
                       const result = this.dataURLtoFile(
                         this.questions[i].audio,
                         "yinpin.mp3"
                       );
+                      console.log(result);
                       let addFile = new BaaS.File();
                       let file = { fileObj: result };
                       addFile.upload(file).then(
                         (res) => {
+                          console.log(res);
                           let saveContent = new BaaS.TableObject(
                             "question_content"
                           );
@@ -9417,6 +11327,7 @@ export default {
                             file_url: res.data.file,
                             catalog: null,
                             is_delete: false,
+                            excel: null,
                           });
                           savec.save().then(
                             (res) => {
@@ -9439,7 +11350,49 @@ export default {
                                   this.questions[i].primary_ques_type ==
                                     "判断题"
                                 ) {
+                                  if (
+                                    this.questions[i].sub_question[j].D != ""
+                                  ) {
+                                    this.questions[i].sub_question[j].options =
+                                      [
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].A,
+                                          index: "A",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].B,
+                                          index: "B",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].C,
+                                          index: "C",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].D,
+                                          index: "D",
+                                        },
+                                      ];
+                                  } else {
+                                    this.questions[i].sub_question[j].options =
+                                      [
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].A,
+                                          index: "A",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].B,
+                                          index: "B",
+                                        },
+                                      ];
+                                  }
                                   tempq = {
+                                    catalog:cata,
                                     question_content_id: res.data.id,
                                     primary_ques_type:
                                       this.questions[i].primary_ques_type,
@@ -9500,7 +11453,49 @@ export default {
                                   this.questions[i].primary_ques_type ==
                                     "填空题"
                                 ) {
+                                  if (
+                                    this.questions[i].sub_question[j].D != ""
+                                  ) {
+                                    this.questions[i].sub_question[j].options =
+                                      [
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].A,
+                                          index: "A",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].B,
+                                          index: "B",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].C,
+                                          index: "C",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].D,
+                                          index: "D",
+                                        },
+                                      ];
+                                  } else {
+                                    this.questions[i].sub_question[j].options =
+                                      [
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].A,
+                                          index: "A",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].B,
+                                          index: "B",
+                                        },
+                                      ];
+                                  }
                                   tempq = {
+                                    catalog:cata,
                                     question_content_id: res.data.id,
                                     primary_ques_type:
                                       this.questions[i].primary_ques_type,
@@ -9554,6 +11549,7 @@ export default {
                                     "简答题"
                                 ) {
                                   tempq = {
+                                    catalog:cata,
                                     question_content_id: res.data.id,
                                     primary_ques_type:
                                       this.questions[i].primary_ques_type,
@@ -9617,6 +11613,11 @@ export default {
                                       if (
                                         question_detail.length == this.ques_num
                                       ) {
+                                        question_detail.sort(function (a, b) {
+                                          return (
+                                            a.sub_sequence - b.sub_sequence
+                                          );
+                                        });
                                         let savePaper = new BaaS.TableObject(
                                           "test_paper"
                                         );
@@ -9633,6 +11634,9 @@ export default {
                                           ques_type: JSON.stringify(
                                             this.ques_type
                                           ),
+                                          questions: JSON.stringify(
+                                            this.questions
+                                          ),
                                           catalog: cata,
                                         };
                                         save_paper
@@ -9646,7 +11650,11 @@ export default {
                                                 message: "保存成功",
                                                 type: "success",
                                               });
-                                              Cookies.set(
+                                              // Cookies.set(
+                                              //   "paperInfo",
+                                              //   res.data.id
+                                              // );
+                                              sessionStorage.setItem(
                                                 "paperInfo",
                                                 res.data.id
                                               );
@@ -9673,11 +11681,21 @@ export default {
                           console.log(err);
                         }
                       );
+                      // } else if (
+                      //   this.questions[i].file_url == "" &&
+                      //   this.questions[i].audio == "" &&
+                      //   this.questions[i].excel != ""
+                      // ) {
                     } else if (
-                      this.questions[i].file_url == "" &&
-                      this.questions[i].audio == "" &&
-                      this.questions[i].excel != ""
+                      this.questions[i].secondary_ques_type ==
+                        "阅读材料，选择正确答案" &&
+                      this.questions[i].excelfileList.length != 0
                     ) {
+                      console.log(
+                        "3",
+                        this.questions[i],
+                        this.questions[i].excel
+                      );
                       const result = this.dataURLtoFile(
                         this.questions[i].excel,
                         "biaoge.xlsx"
@@ -9692,9 +11710,10 @@ export default {
                           let savec = saveContent.create();
                           savec.set({
                             content: this.questions[i].question_content,
-                            file_url: res.data.file,
+                            file_url: null,
                             catalog: null,
                             is_delete: false,
+                            excel: res.data.file,
                           });
                           savec.save().then(
                             (res) => {
@@ -9717,7 +11736,49 @@ export default {
                                   this.questions[i].primary_ques_type ==
                                     "判断题"
                                 ) {
+                                  if (
+                                    this.questions[i].sub_question[j].D != ""
+                                  ) {
+                                    this.questions[i].sub_question[j].options =
+                                      [
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].A,
+                                          index: "A",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].B,
+                                          index: "B",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].C,
+                                          index: "C",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].D,
+                                          index: "D",
+                                        },
+                                      ];
+                                  } else {
+                                    this.questions[i].sub_question[j].options =
+                                      [
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].A,
+                                          index: "A",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].B,
+                                          index: "B",
+                                        },
+                                      ];
+                                  }
                                   tempq = {
+                                    catalog:cata,
                                     question_content_id: res.data.id,
                                     primary_ques_type:
                                       this.questions[i].primary_ques_type,
@@ -9778,7 +11839,49 @@ export default {
                                   this.questions[i].primary_ques_type ==
                                     "填空题"
                                 ) {
+                                  if (
+                                    this.questions[i].sub_question[j].D != ""
+                                  ) {
+                                    this.questions[i].sub_question[j].options =
+                                      [
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].A,
+                                          index: "A",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].B,
+                                          index: "B",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].C,
+                                          index: "C",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].D,
+                                          index: "D",
+                                        },
+                                      ];
+                                  } else {
+                                    this.questions[i].sub_question[j].options =
+                                      [
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].A,
+                                          index: "A",
+                                        },
+                                        {
+                                          content:
+                                            this.questions[i].sub_question[j].B,
+                                          index: "B",
+                                        },
+                                      ];
+                                  }
                                   tempq = {
+                                    catalog:cata,
                                     question_content_id: res.data.id,
                                     primary_ques_type:
                                       this.questions[i].primary_ques_type,
@@ -9832,6 +11935,7 @@ export default {
                                     "简答题"
                                 ) {
                                   tempq = {
+                                    catalog:cata,
                                     question_content_id: res.data.id,
                                     primary_ques_type:
                                       this.questions[i].primary_ques_type,
@@ -9895,6 +11999,11 @@ export default {
                                       if (
                                         question_detail.length == this.ques_num
                                       ) {
+                                        question_detail.sort(function (a, b) {
+                                          return (
+                                            a.sub_sequence - b.sub_sequence
+                                          );
+                                        });
                                         let savePaper = new BaaS.TableObject(
                                           "test_paper"
                                         );
@@ -9911,6 +12020,9 @@ export default {
                                           ques_type: JSON.stringify(
                                             this.ques_type
                                           ),
+                                          questions: JSON.stringify(
+                                            this.questions
+                                          ),
                                           catalog: cata,
                                         };
                                         save_paper
@@ -9924,7 +12036,11 @@ export default {
                                                 message: "保存成功",
                                                 type: "success",
                                               });
-                                              Cookies.set(
+                                              // Cookies.set(
+                                              //   "paperInfo",
+                                              //   res.data.id
+                                              // );
+                                              sessionStorage.setItem(
                                                 "paperInfo",
                                                 res.data.id
                                               );
@@ -9952,18 +12068,43 @@ export default {
                         }
                       );
                     } else {
+                      console.log("2222", this.questions[i]);
                       //找是否有已存在题干
                       let findContent = new BaaS.TableObject(
                         "question_content"
                       );
                       let find_content = new BaaS.Query();
-                      find_content.compare(
-                        "content",
-                        "=",
-                        this.questions[i].question_content
-                      );
+                      let q4 = new BaaS.Query();
+                      let andQuery = BaaS.Query.and(find_content, q4);
+                      if (
+                        this.questions[i].question_content.search(
+                          "cloud-minapp-42820"
+                        ) == -1
+                      ) {
+                        //   const result = this.dataURLtoFile(
+                        //   this.questions[i].question_content,
+                        //   "tigan"
+                        // );
+                        //   find_content.compare(
+                        //     "file_url",
+                        //     "=",
+                        //     result
+                        //   );
+                        // } else {
+                        find_content.compare(
+                          "content",
+                          "=",
+                          this.questions[i].question_content
+                        );
+
+                        q4.compare(
+                          "created_by",
+                          "=",
+                          Cookie.get("user_id") * 1
+                        );
+                      }
                       findContent
-                        .setQuery(find_content)
+                        .setQuery(andQuery).limit(1000)
                         .find()
                         .then(
                           (res1) => {
@@ -9996,6 +12137,7 @@ export default {
                                 let author = new BaaS.Query();
                                 let author_org = new BaaS.Query();
                                 let time_created = new BaaS.Query();
+                                let created_by = new BaaS.Query();
                                 question_content_id.compare(
                                   "question_content_id",
                                   "=",
@@ -10181,6 +12323,11 @@ export default {
                                 } else {
                                   time_created.isNull("time_created");
                                 }
+                                created_by.compare(
+                                  "created_by",
+                                  "=",
+                                  Cookie.get("user_id") * 1
+                                );
                                 let andQuery = BaaS.Query.and(
                                   question_content_id,
                                   primary_ques_type,
@@ -10198,10 +12345,11 @@ export default {
                                   question_type_5he,
                                   author,
                                   author_org,
-                                  time_created
+                                  time_created,
+                                  created_by
                                 );
                                 findQuestion
-                                  .setQuery(andQuery)
+                                  .setQuery(andQuery).limit(1000)
                                   .find()
                                   .then(
                                     (res2) => {
@@ -10223,7 +12371,58 @@ export default {
                                           this.questions[i].primary_ques_type ==
                                             "判断题"
                                         ) {
+                                          if (
+                                            this.questions[i].sub_question[j]
+                                              .D != ""
+                                          ) {
+                                            this.questions[i].sub_question[
+                                              j
+                                            ].options = [
+                                              {
+                                                content:
+                                                  this.questions[i]
+                                                    .sub_question[j].A,
+                                                index: "A",
+                                              },
+                                              {
+                                                content:
+                                                  this.questions[i]
+                                                    .sub_question[j].B,
+                                                index: "B",
+                                              },
+                                              {
+                                                content:
+                                                  this.questions[i]
+                                                    .sub_question[j].C,
+                                                index: "C",
+                                              },
+                                              {
+                                                content:
+                                                  this.questions[i]
+                                                    .sub_question[j].D,
+                                                index: "D",
+                                              },
+                                            ];
+                                          } else {
+                                            this.questions[i].sub_question[
+                                              j
+                                            ].options = [
+                                              {
+                                                content:
+                                                  this.questions[i]
+                                                    .sub_question[j].A,
+                                                index: "A",
+                                              },
+                                              {
+                                                content:
+                                                  this.questions[i]
+                                                    .sub_question[j].B,
+                                                index: "B",
+                                              },
+                                            ];
+                                          }
                                           temp1 = {
+                                            catalog: cata,
                                             question_content_id: contentId,
                                             primary_ques_type:
                                               this.questions[i]
@@ -10296,7 +12495,58 @@ export default {
                                           this.questions[i].primary_ques_type ==
                                             "填空题"
                                         ) {
+                                          if (
+                                            this.questions[i].sub_question[j]
+                                              .D != ""
+                                          ) {
+                                            this.questions[i].sub_question[
+                                              j
+                                            ].options = [
+                                              {
+                                                content:
+                                                  this.questions[i]
+                                                    .sub_question[j].A,
+                                                index: "A",
+                                              },
+                                              {
+                                                content:
+                                                  this.questions[i]
+                                                    .sub_question[j].B,
+                                                index: "B",
+                                              },
+                                              {
+                                                content:
+                                                  this.questions[i]
+                                                    .sub_question[j].C,
+                                                index: "C",
+                                              },
+                                              {
+                                                content:
+                                                  this.questions[i]
+                                                    .sub_question[j].D,
+                                                index: "D",
+                                              },
+                                            ];
+                                          } else {
+                                            this.questions[i].sub_question[
+                                              j
+                                            ].options = [
+                                              {
+                                                content:
+                                                  this.questions[i]
+                                                    .sub_question[j].A,
+                                                index: "A",
+                                              },
+                                              {
+                                                content:
+                                                  this.questions[i]
+                                                    .sub_question[j].B,
+                                                index: "B",
+                                              },
+                                            ];
+                                          }
                                           temp1 = {
+                                            catalog: cata,
                                             question_content_id: contentId,
                                             primary_ques_type:
                                               this.questions[i]
@@ -10355,6 +12605,7 @@ export default {
                                             "简答题"
                                         ) {
                                           temp1 = {
+                                            catalog: cata,
                                             question_content_id: contentId,
                                             primary_ques_type:
                                               this.questions[i]
@@ -10424,6 +12675,15 @@ export default {
                                                 question_detail.length ==
                                                 this.ques_num
                                               ) {
+                                                question_detail.sort(function (
+                                                  a,
+                                                  b
+                                                ) {
+                                                  return (
+                                                    a.sub_sequence -
+                                                    b.sub_sequence
+                                                  );
+                                                });
                                                 let savePaper =
                                                   new BaaS.TableObject(
                                                     "test_paper"
@@ -10444,6 +12704,9 @@ export default {
                                                   ques_type: JSON.stringify(
                                                     this.ques_type
                                                   ),
+                                                  questions: JSON.stringify(
+                                                    this.questions
+                                                  ),
                                                   catalog: cata,
                                                 };
                                                 save_paper
@@ -10457,7 +12720,11 @@ export default {
                                                         message: "保存成功",
                                                         type: "success",
                                                       });
-                                                      Cookies.set(
+                                                      // Cookies.set(
+                                                      //   "paperInfo",
+                                                      //   res.data.id
+                                                      // );
+                                                      sessionStorage.setItem(
                                                         "paperInfo",
                                                         res.data.id
                                                       );
@@ -10489,6 +12756,11 @@ export default {
                                           question_detail.length ==
                                           this.ques_num
                                         ) {
+                                          question_detail.sort(function (a, b) {
+                                            return (
+                                              a.sub_sequence - b.sub_sequence
+                                            );
+                                          });
                                           let savePaper = new BaaS.TableObject(
                                             "test_paper"
                                           );
@@ -10505,6 +12777,9 @@ export default {
                                             ques_type: JSON.stringify(
                                               this.ques_type
                                             ),
+                                            questions: JSON.stringify(
+                                              this.questions
+                                            ),
                                             catalog: cata,
                                           };
                                           save_paper
@@ -10518,7 +12793,11 @@ export default {
                                                   message: "保存成功",
                                                   type: "success",
                                                 });
-                                                Cookies.set(
+                                                // Cookies.set(
+                                                //   "paperInfo",
+                                                //   res.data.id
+                                                // );
+                                                sessionStorage.setItem(
                                                   "paperInfo",
                                                   res.data.id
                                                 );
@@ -10546,6 +12825,8 @@ export default {
                                 content: this.questions[i].question_content,
                                 file_url: null,
                                 catalog: null,
+                                is_delete: false,
+                                excel: null,
                               };
                               save_content
                                 .set(tempc)
@@ -10572,7 +12853,64 @@ export default {
                                         this.questions[i].primary_ques_type ==
                                           "判断题"
                                       ) {
+                                        if (
+                                          this.questions[i].sub_question[j].D !=
+                                          ""
+                                        ) {
+                                          this.questions[i].sub_question[
+                                            j
+                                          ].options = [
+                                            {
+                                              content:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].A,
+                                              index: "A",
+                                            },
+                                            {
+                                              content:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].B,
+                                              index: "B",
+                                            },
+                                            {
+                                              content:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].C,
+                                              index: "C",
+                                            },
+                                            {
+                                              content:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].D,
+                                              index: "D",
+                                            },
+                                          ];
+                                        } else {
+                                          this.questions[i].sub_question[
+                                            j
+                                          ].options = [
+                                            {
+                                              content:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].A,
+                                              index: "A",
+                                            },
+                                            {
+                                              content:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].B,
+                                              index: "B",
+                                            },
+                                          ];
+                                        }
                                         tempq = {
+                                          catalog:cata,
                                           question_content_id: res4.data.id,
                                           primary_ques_type:
                                             this.questions[i].primary_ques_type,
@@ -10638,7 +12976,64 @@ export default {
                                         this.questions[i].primary_ques_type ==
                                           "填空题"
                                       ) {
+                                        if (
+                                          this.questions[i].sub_question[j].D !=
+                                          ""
+                                        ) {
+                                          this.questions[i].sub_question[
+                                            j
+                                          ].options = [
+                                            {
+                                              content:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].A,
+                                              index: "A",
+                                            },
+                                            {
+                                              content:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].B,
+                                              index: "B",
+                                            },
+                                            {
+                                              content:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].C,
+                                              index: "C",
+                                            },
+                                            {
+                                              content:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].D,
+                                              index: "D",
+                                            },
+                                          ];
+                                        } else {
+                                          this.questions[i].sub_question[
+                                            j
+                                          ].options = [
+                                            {
+                                              content:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].A,
+                                              index: "A",
+                                            },
+                                            {
+                                              content:
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].B,
+                                              index: "B",
+                                            },
+                                          ];
+                                        }
                                         tempq = {
+                                          catalog:cata,
                                           question_content_id: res4.data.id,
                                           primary_ques_type:
                                             this.questions[i].primary_ques_type,
@@ -10696,6 +13091,7 @@ export default {
                                           "简答题"
                                       ) {
                                         tempq = {
+                                          catalog:cata,
                                           question_content_id: res4.data.id,
                                           primary_ques_type:
                                             this.questions[i].primary_ques_type,
@@ -10765,6 +13161,15 @@ export default {
                                               question_detail.length ==
                                               this.ques_num
                                             ) {
+                                              question_detail.sort(function (
+                                                a,
+                                                b
+                                              ) {
+                                                return (
+                                                  a.sub_sequence -
+                                                  b.sub_sequence
+                                                );
+                                              });
                                               let savePaper =
                                                 new BaaS.TableObject(
                                                   "test_paper"
@@ -10785,6 +13190,9 @@ export default {
                                                 ques_type: JSON.stringify(
                                                   this.ques_type
                                                 ),
+                                                questions: JSON.stringify(
+                                                  this.questions
+                                                ),
                                                 catalog: cata,
                                               };
                                               save_paper
@@ -10798,7 +13206,11 @@ export default {
                                                       message: "保存成功",
                                                       type: "success",
                                                     });
-                                                    Cookies.set(
+                                                    // Cookies.set(
+                                                    //   "paperInfo",
+                                                    //   res.data.id
+                                                    // );
+                                                    sessionStorage.setItem(
                                                       "paperInfo",
                                                       res.data.id
                                                     );
@@ -10833,6 +13245,7 @@ export default {
           }
         } else {
           //模考卷
+          console.log(this.ques_num, this.ques_score);
           if (this.ques_num == 101 && this.ques_score == 300) {
             let ln1 = 0,
               ls1 = 0,
@@ -10892,13 +13305,13 @@ export default {
                 rs3 += this.questions[f].total_score;
               } else if (
                 this.questions[f].secondary_ques_type ==
-                "阅读短文，选出正确答案"
+                "阅读短文，选择正确答案"
               ) {
                 rn4 += this.questions[f].sub_question.length;
                 rs4 += this.questions[f].total_score;
               } else if (
                 this.questions[f].secondary_ques_type ==
-                "根据一段长对话完成门诊病历记录"
+                "根据一段长对话写门诊病历记录"
               ) {
                 wn += this.questions[f].sub_question.length;
                 ws += this.questions[f].total_score;
@@ -10910,6 +13323,26 @@ export default {
                 break;
               }
             }
+            console.log(
+              ln1,
+              ls1,
+              ln2,
+              ls2,
+              ln3,
+              ls3,
+              ln4,
+              ls4,
+              rn1,
+              rs1,
+              rn2,
+              rs2,
+              rn3,
+              rs3,
+              rn4,
+              rs4,
+              wn,
+              ws
+            );
             if (
               ln1 == 10 &&
               ln2 == 10 &&
@@ -10932,8 +13365,19 @@ export default {
                 let findPaper = new BaaS.TableObject("test_paper");
                 let find_paper = new BaaS.Query();
                 find_paper.compare("paper_title", "=", this.title);
+                let q2 = new BaaS.Query();
+                q2.compare("is_delete", "=", false);
+                let q3 = new BaaS.Query();
+                q3.compare(
+                  "paper_title",
+                  "!=",
+                  sessionStorage.getItem("paper_title")
+                );
+                let q4 = new BaaS.Query();
+                q4.compare("created_by", "=", Cookie.get("user_id") * 1);
+                let andQuery = BaaS.Query.and(find_paper, q2, q3, q4);
                 findPaper
-                  .setQuery(find_paper)
+                  .setQuery(andQuery).limit(1000)
                   .find()
                   .then((res0) => {
                     if (res0.data.objects.length != 0) {
@@ -11059,10 +13503,9 @@ export default {
                       for (let i = 0; i < this.questions.length; i++) {
                         if (
                           this.questions[i].file_url != "" &&
-                          this.questions[i].audio == "" &&
-                          this.questions[i].excel == "" &&
-                          this.questions[i].file_url !=
-                            this.questions[i].initial_file
+                          this.questions[i].file_url.search(
+                            "cloud-minapp-42820"
+                          ) == -1
                         ) {
                           const result = this.dataURLtoFile(
                             this.questions[i].file_url,
@@ -11077,10 +13520,11 @@ export default {
                               );
                               let savec = saveContent.create();
                               savec.set({
-                                content: this.questions[i].question_content,
+                                content: "",
                                 file_url: res.data.file,
                                 catalog: null,
                                 is_delete: false,
+                                excel: null,
                               });
                               savec.save().then(
                                 (res) => {
@@ -11103,7 +13547,58 @@ export default {
                                       this.questions[i].primary_ques_type ==
                                         "判断题"
                                     ) {
+                                      if (
+                                        this.questions[i].sub_question[j].D !=
+                                        ""
+                                      ) {
+                                        this.questions[i].sub_question[
+                                          j
+                                        ].options = [
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .A,
+                                            index: "A",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .B,
+                                            index: "B",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .C,
+                                            index: "C",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .D,
+                                            index: "D",
+                                          },
+                                        ];
+                                      } else {
+                                        this.questions[i].sub_question[
+                                          j
+                                        ].options = [
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .A,
+                                            index: "A",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .B,
+                                            index: "B",
+                                          },
+                                        ];
+                                      }
                                       tempq = {
+                                        catalog:cata,
                                         question_content_id: res.data.id,
                                         primary_ques_type:
                                           this.questions[i].primary_ques_type,
@@ -11167,7 +13662,58 @@ export default {
                                       this.questions[i].primary_ques_type ==
                                         "填空题"
                                     ) {
+                                      if (
+                                        this.questions[i].sub_question[j].D !=
+                                        ""
+                                      ) {
+                                        this.questions[i].sub_question[
+                                          j
+                                        ].options = [
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .A,
+                                            index: "A",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .B,
+                                            index: "B",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .C,
+                                            index: "C",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .D,
+                                            index: "D",
+                                          },
+                                        ];
+                                      } else {
+                                        this.questions[i].sub_question[
+                                          j
+                                        ].options = [
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .A,
+                                            index: "A",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .B,
+                                            index: "B",
+                                          },
+                                        ];
+                                      }
                                       tempq = {
+                                        catalog:cata,
                                         question_content_id: res.data.id,
                                         primary_ques_type:
                                           this.questions[i].primary_ques_type,
@@ -11224,6 +13770,7 @@ export default {
                                         "简答题"
                                     ) {
                                       tempq = {
+                                        catalog:cata,
                                         question_content_id: res.data.id,
                                         primary_ques_type:
                                           this.questions[i].primary_ques_type,
@@ -11290,6 +13837,14 @@ export default {
                                             question_detail.length ==
                                             this.ques_num
                                           ) {
+                                            question_detail.sort(function (
+                                              a,
+                                              b
+                                            ) {
+                                              return (
+                                                a.sub_sequence - b.sub_sequence
+                                              );
+                                            });
                                             let savePaper =
                                               new BaaS.TableObject(
                                                 "test_paper"
@@ -11307,6 +13862,9 @@ export default {
                                               ques_type: JSON.stringify(
                                                 this.ques_type
                                               ),
+                                              questions: JSON.stringify(
+                                                this.questions
+                                              ),
                                               catalog: cata,
                                             };
                                             save_paper
@@ -11320,7 +13878,11 @@ export default {
                                                     message: "保存成功",
                                                     type: "success",
                                                   });
-                                                  Cookies.set(
+                                                  // Cookies.set(
+                                                  //   "paperInfo",
+                                                  //   res.data.id
+                                                  // );
+                                                  sessionStorage.setItem(
                                                     "paperInfo",
                                                     res.data.id
                                                   );
@@ -11348,11 +13910,11 @@ export default {
                             }
                           );
                         } else if (
-                          this.questions[i].file_url == "" &&
+                          this.questions[i].primary_ques_type == "听力" &&
                           this.questions[i].audio != "" &&
-                          this.questions[i].excel == "" &&
-                          this.questions[i].audio !=
-                            this.questions[i].initial_audio
+                          this.questions[i].audio.search(
+                            "cloud-minapp-42820"
+                          ) == -1
                         ) {
                           const result = this.dataURLtoFile(
                             this.questions[i].audio,
@@ -11371,6 +13933,7 @@ export default {
                                 file_url: res.data.file,
                                 catalog: null,
                                 is_delete: false,
+                                excel: null,
                               });
                               savec.save().then(
                                 (res) => {
@@ -11393,7 +13956,58 @@ export default {
                                       this.questions[i].primary_ques_type ==
                                         "判断题"
                                     ) {
+                                      if (
+                                        this.questions[i].sub_question[j].D !=
+                                        ""
+                                      ) {
+                                        this.questions[i].sub_question[
+                                          j
+                                        ].options = [
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .A,
+                                            index: "A",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .B,
+                                            index: "B",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .C,
+                                            index: "C",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .D,
+                                            index: "D",
+                                          },
+                                        ];
+                                      } else {
+                                        this.questions[i].sub_question[
+                                          j
+                                        ].options = [
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .A,
+                                            index: "A",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .B,
+                                            index: "B",
+                                          },
+                                        ];
+                                      }
                                       tempq = {
+                                        catalog:cata,
                                         question_content_id: res.data.id,
                                         primary_ques_type:
                                           this.questions[i].primary_ques_type,
@@ -11457,7 +14071,58 @@ export default {
                                       this.questions[i].primary_ques_type ==
                                         "填空题"
                                     ) {
+                                      if (
+                                        this.questions[i].sub_question[j].D !=
+                                        ""
+                                      ) {
+                                        this.questions[i].sub_question[
+                                          j
+                                        ].options = [
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .A,
+                                            index: "A",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .B,
+                                            index: "B",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .C,
+                                            index: "C",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .D,
+                                            index: "D",
+                                          },
+                                        ];
+                                      } else {
+                                        this.questions[i].sub_question[
+                                          j
+                                        ].options = [
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .A,
+                                            index: "A",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .B,
+                                            index: "B",
+                                          },
+                                        ];
+                                      }
                                       tempq = {
+                                        catalog:cata,
                                         question_content_id: res.data.id,
                                         primary_ques_type:
                                           this.questions[i].primary_ques_type,
@@ -11514,6 +14179,7 @@ export default {
                                         "简答题"
                                     ) {
                                       tempq = {
+                                        catalog:cata,
                                         question_content_id: res.data.id,
                                         primary_ques_type:
                                           this.questions[i].primary_ques_type,
@@ -11580,6 +14246,14 @@ export default {
                                             question_detail.length ==
                                             this.ques_num
                                           ) {
+                                            question_detail.sort(function (
+                                              a,
+                                              b
+                                            ) {
+                                              return (
+                                                a.sub_sequence - b.sub_sequence
+                                              );
+                                            });
                                             let savePaper =
                                               new BaaS.TableObject(
                                                 "test_paper"
@@ -11597,6 +14271,9 @@ export default {
                                               ques_type: JSON.stringify(
                                                 this.ques_type
                                               ),
+                                              questions: JSON.stringify(
+                                                this.questions
+                                              ),
                                               catalog: cata,
                                             };
                                             save_paper
@@ -11610,7 +14287,11 @@ export default {
                                                     message: "保存成功",
                                                     type: "success",
                                                   });
-                                                  Cookies.set(
+                                                  // Cookies.set(
+                                                  //   "paperInfo",
+                                                  //   res.data.id
+                                                  // );
+                                                  sessionStorage.setItem(
                                                     "paperInfo",
                                                     res.data.id
                                                   );
@@ -11638,9 +14319,9 @@ export default {
                             }
                           );
                         } else if (
-                          this.questions[i].file_url == "" &&
-                          this.questions[i].audio == "" &&
-                          this.questions[i].excel != ""
+                          this.questions[i].secondary_ques_type ==
+                            "阅读材料，选择正确答案" &&
+                          this.questions[i].excelfileList.length != 0
                         ) {
                           const result = this.dataURLtoFile(
                             this.questions[i].excel,
@@ -11656,9 +14337,10 @@ export default {
                               let savec = saveContent.create();
                               savec.set({
                                 content: this.questions[i].question_content,
-                                file_url: res.data.file,
+                                file_url: null,
                                 catalog: null,
                                 is_delete: false,
+                                excel: res.data.file,
                               });
                               savec.save().then(
                                 (res) => {
@@ -11681,7 +14363,58 @@ export default {
                                       this.questions[i].primary_ques_type ==
                                         "判断题"
                                     ) {
+                                      if (
+                                        this.questions[i].sub_question[j].D !=
+                                        ""
+                                      ) {
+                                        this.questions[i].sub_question[
+                                          j
+                                        ].options = [
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .A,
+                                            index: "A",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .B,
+                                            index: "B",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .C,
+                                            index: "C",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .D,
+                                            index: "D",
+                                          },
+                                        ];
+                                      } else {
+                                        this.questions[i].sub_question[
+                                          j
+                                        ].options = [
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .A,
+                                            index: "A",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .B,
+                                            index: "B",
+                                          },
+                                        ];
+                                      }
                                       tempq = {
+                                        catalog:cata,
                                         question_content_id: res.data.id,
                                         primary_ques_type:
                                           this.questions[i].primary_ques_type,
@@ -11745,7 +14478,58 @@ export default {
                                       this.questions[i].primary_ques_type ==
                                         "填空题"
                                     ) {
+                                      if (
+                                        this.questions[i].sub_question[j].D !=
+                                        ""
+                                      ) {
+                                        this.questions[i].sub_question[
+                                          j
+                                        ].options = [
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .A,
+                                            index: "A",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .B,
+                                            index: "B",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .C,
+                                            index: "C",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .D,
+                                            index: "D",
+                                          },
+                                        ];
+                                      } else {
+                                        this.questions[i].sub_question[
+                                          j
+                                        ].options = [
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .A,
+                                            index: "A",
+                                          },
+                                          {
+                                            content:
+                                              this.questions[i].sub_question[j]
+                                                .B,
+                                            index: "B",
+                                          },
+                                        ];
+                                      }
                                       tempq = {
+                                        catalog:cata,
                                         question_content_id: res.data.id,
                                         primary_ques_type:
                                           this.questions[i].primary_ques_type,
@@ -11802,6 +14586,7 @@ export default {
                                         "简答题"
                                     ) {
                                       tempq = {
+                                        catalog:cata,
                                         question_content_id: res.data.id,
                                         primary_ques_type:
                                           this.questions[i].primary_ques_type,
@@ -11868,6 +14653,14 @@ export default {
                                             question_detail.length ==
                                             this.ques_num
                                           ) {
+                                            question_detail.sort(function (
+                                              a,
+                                              b
+                                            ) {
+                                              return (
+                                                a.sub_sequence - b.sub_sequence
+                                              );
+                                            });
                                             let savePaper =
                                               new BaaS.TableObject(
                                                 "test_paper"
@@ -11885,6 +14678,9 @@ export default {
                                               ques_type: JSON.stringify(
                                                 this.ques_type
                                               ),
+                                              questions: JSON.stringify(
+                                                this.questions
+                                              ),
                                               catalog: cata,
                                             };
                                             save_paper
@@ -11898,7 +14694,11 @@ export default {
                                                     message: "保存成功",
                                                     type: "success",
                                                   });
-                                                  Cookies.set(
+                                                  // Cookies.set(
+                                                  //   "paperInfo",
+                                                  //   res.data.id
+                                                  // );
+                                                  sessionStorage.setItem(
                                                     "paperInfo",
                                                     res.data.id
                                                   );
@@ -11936,8 +14736,15 @@ export default {
                             "=",
                             this.questions[i].question_content
                           );
+                          let q4 = new BaaS.Query();
+                          q4.compare(
+                            "created_by",
+                            "=",
+                            Cookie.get("user_id") * 1
+                          );
+                          let andQuery = BaaS.Query.and(find_content, q4);
                           findContent
-                            .setQuery(find_content)
+                            .setQuery(andQuery).limit(1000)
                             .find()
                             .then(
                               (res1) => {
@@ -11970,6 +14777,12 @@ export default {
                                     let author = new BaaS.Query();
                                     let author_org = new BaaS.Query();
                                     let time_created = new BaaS.Query();
+                                    let q4 = new BaaS.Query();
+                                    q4.compare(
+                                      "created_by",
+                                      "=",
+                                      Cookie.get("user_id") * 1
+                                    );
                                     question_content_id.compare(
                                       "question_content_id",
                                       "=",
@@ -12179,10 +14992,11 @@ export default {
                                       question_type_5he,
                                       author,
                                       author_org,
-                                      time_created
+                                      time_created,
+                                      q4
                                     );
                                     findQuestion
-                                      .setQuery(andQuery)
+                                      .setQuery(andQuery).limit(1000)
                                       .find()
                                       .then(
                                         (res2) => {
@@ -12205,7 +15019,59 @@ export default {
                                               this.questions[i]
                                                 .primary_ques_type == "判断题"
                                             ) {
+                                              if (
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].D != ""
+                                              ) {
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].options = [
+                                                  {
+                                                    content:
+                                                      this.questions[i]
+                                                        .sub_question[j].A,
+                                                    index: "A",
+                                                  },
+                                                  {
+                                                    content:
+                                                      this.questions[i]
+                                                        .sub_question[j].B,
+                                                    index: "B",
+                                                  },
+                                                  {
+                                                    content:
+                                                      this.questions[i]
+                                                        .sub_question[j].C,
+                                                    index: "C",
+                                                  },
+                                                  {
+                                                    content:
+                                                      this.questions[i]
+                                                        .sub_question[j].D,
+                                                    index: "D",
+                                                  },
+                                                ];
+                                              } else {
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].options = [
+                                                  {
+                                                    content:
+                                                      this.questions[i]
+                                                        .sub_question[j].A,
+                                                    index: "A",
+                                                  },
+                                                  {
+                                                    content:
+                                                      this.questions[i]
+                                                        .sub_question[j].B,
+                                                    index: "B",
+                                                  },
+                                                ];
+                                              }
                                               temp1 = {
+                                                catalog: cata,
                                                 question_content_id: contentId,
                                                 primary_ques_type:
                                                   this.questions[i]
@@ -12287,7 +15153,59 @@ export default {
                                               this.questions[i]
                                                 .primary_ques_type == "填空题"
                                             ) {
+                                              if (
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].D != ""
+                                              ) {
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].options = [
+                                                  {
+                                                    content:
+                                                      this.questions[i]
+                                                        .sub_question[j].A,
+                                                    index: "A",
+                                                  },
+                                                  {
+                                                    content:
+                                                      this.questions[i]
+                                                        .sub_question[j].B,
+                                                    index: "B",
+                                                  },
+                                                  {
+                                                    content:
+                                                      this.questions[i]
+                                                        .sub_question[j].C,
+                                                    index: "C",
+                                                  },
+                                                  {
+                                                    content:
+                                                      this.questions[i]
+                                                        .sub_question[j].D,
+                                                    index: "D",
+                                                  },
+                                                ];
+                                              } else {
+                                                this.questions[i].sub_question[
+                                                  j
+                                                ].options = [
+                                                  {
+                                                    content:
+                                                      this.questions[i]
+                                                        .sub_question[j].A,
+                                                    index: "A",
+                                                  },
+                                                  {
+                                                    content:
+                                                      this.questions[i]
+                                                        .sub_question[j].B,
+                                                    index: "B",
+                                                  },
+                                                ];
+                                              }
                                               temp1 = {
+                                                catalog: cata,
                                                 question_content_id: contentId,
                                                 primary_ques_type:
                                                   this.questions[i]
@@ -12353,6 +15271,7 @@ export default {
                                                 .primary_ques_type == "简答题"
                                             ) {
                                               temp1 = {
+                                                catalog: cata,
                                                 question_content_id: contentId,
                                                 primary_ques_type:
                                                   this.questions[i]
@@ -12430,6 +15349,14 @@ export default {
                                                     question_detail.length ==
                                                     this.ques_num
                                                   ) {
+                                                    question_detail.sort(
+                                                      function (a, b) {
+                                                        return (
+                                                          a.sub_sequence -
+                                                          b.sub_sequence
+                                                        );
+                                                      }
+                                                    );
                                                     let savePaper =
                                                       new BaaS.TableObject(
                                                         "test_paper"
@@ -12451,6 +15378,9 @@ export default {
                                                       ques_type: JSON.stringify(
                                                         this.ques_type
                                                       ),
+                                                      questions: JSON.stringify(
+                                                        this.questions
+                                                      ),
                                                       catalog: cata,
                                                     };
                                                     save_paper
@@ -12464,7 +15394,11 @@ export default {
                                                             message: "保存成功",
                                                             type: "success",
                                                           });
-                                                          Cookies.set(
+                                                          // Cookies.set(
+                                                          //   "paperInfo",
+                                                          //   res.data.id
+                                                          // );
+                                                          sessionStorage.setItem(
                                                             "paperInfo",
                                                             res.data.id
                                                           );
@@ -12498,6 +15432,15 @@ export default {
                                               question_detail.length ==
                                               this.ques_num
                                             ) {
+                                              question_detail.sort(function (
+                                                a,
+                                                b
+                                              ) {
+                                                return (
+                                                  a.sub_sequence -
+                                                  b.sub_sequence
+                                                );
+                                              });
                                               let savePaper =
                                                 new BaaS.TableObject(
                                                   "test_paper"
@@ -12518,6 +15461,9 @@ export default {
                                                 ques_type: JSON.stringify(
                                                   this.ques_type
                                                 ),
+                                                questions: JSON.stringify(
+                                                  this.questions
+                                                ),
                                                 catalog: cata,
                                               };
                                               save_paper
@@ -12531,7 +15477,11 @@ export default {
                                                       message: "保存成功",
                                                       type: "success",
                                                     });
-                                                    Cookies.set(
+                                                    // Cookies.set(
+                                                    //   "paperInfo",
+                                                    //   res.data.id
+                                                    // );
+                                                    sessionStorage.setItem(
                                                       "paperInfo",
                                                       res.data.id
                                                     );
@@ -12559,6 +15509,8 @@ export default {
                                     content: this.questions[i].question_content,
                                     file_url: null,
                                     catalog: null,
+                                    is_delete: false,
+                                    excel: null,
                                   };
                                   save_content
                                     .set(tempc)
@@ -12588,7 +15540,58 @@ export default {
                                             this.questions[i]
                                               .primary_ques_type == "判断题"
                                           ) {
+                                            if (
+                                              this.questions[i].sub_question[j]
+                                                .D != ""
+                                            ) {
+                                              this.questions[i].sub_question[
+                                                j
+                                              ].options = [
+                                                {
+                                                  content:
+                                                    this.questions[i]
+                                                      .sub_question[j].A,
+                                                  index: "A",
+                                                },
+                                                {
+                                                  content:
+                                                    this.questions[i]
+                                                      .sub_question[j].B,
+                                                  index: "B",
+                                                },
+                                                {
+                                                  content:
+                                                    this.questions[i]
+                                                      .sub_question[j].C,
+                                                  index: "C",
+                                                },
+                                                {
+                                                  content:
+                                                    this.questions[i]
+                                                      .sub_question[j].D,
+                                                  index: "D",
+                                                },
+                                              ];
+                                            } else {
+                                              this.questions[i].sub_question[
+                                                j
+                                              ].options = [
+                                                {
+                                                  content:
+                                                    this.questions[i]
+                                                      .sub_question[j].A,
+                                                  index: "A",
+                                                },
+                                                {
+                                                  content:
+                                                    this.questions[i]
+                                                      .sub_question[j].B,
+                                                  index: "B",
+                                                },
+                                              ];
+                                            }
                                             tempq = {
+                                              catalog:cata,
                                               question_content_id: res4.data.id,
                                               primary_ques_type:
                                                 this.questions[i]
@@ -12669,7 +15672,58 @@ export default {
                                             this.questions[i]
                                               .primary_ques_type == "填空题"
                                           ) {
+                                            if (
+                                              this.questions[i].sub_question[j]
+                                                .D != ""
+                                            ) {
+                                              this.questions[i].sub_question[
+                                                j
+                                              ].options = [
+                                                {
+                                                  content:
+                                                    this.questions[i]
+                                                      .sub_question[j].A,
+                                                  index: "A",
+                                                },
+                                                {
+                                                  content:
+                                                    this.questions[i]
+                                                      .sub_question[j].B,
+                                                  index: "B",
+                                                },
+                                                {
+                                                  content:
+                                                    this.questions[i]
+                                                      .sub_question[j].C,
+                                                  index: "C",
+                                                },
+                                                {
+                                                  content:
+                                                    this.questions[i]
+                                                      .sub_question[j].D,
+                                                  index: "D",
+                                                },
+                                              ];
+                                            } else {
+                                              this.questions[i].sub_question[
+                                                j
+                                              ].options = [
+                                                {
+                                                  content:
+                                                    this.questions[i]
+                                                      .sub_question[j].A,
+                                                  index: "A",
+                                                },
+                                                {
+                                                  content:
+                                                    this.questions[i]
+                                                      .sub_question[j].B,
+                                                  index: "B",
+                                                },
+                                              ];
+                                            }
                                             tempq = {
+                                              catalog:cata,
                                               question_content_id: res4.data.id,
                                               primary_ques_type:
                                                 this.questions[i]
@@ -12742,6 +15796,7 @@ export default {
                                               .primary_ques_type == "简答题"
                                           ) {
                                             tempq = {
+                                              catalog:cata,
                                               question_content_id: res4.data.id,
                                               primary_ques_type:
                                                 this.questions[i]
@@ -12825,6 +15880,14 @@ export default {
                                                   question_detail.length ==
                                                   this.ques_num
                                                 ) {
+                                                  question_detail.sort(
+                                                    function (a, b) {
+                                                      return (
+                                                        a.sub_sequence -
+                                                        b.sub_sequence
+                                                      );
+                                                    }
+                                                  );
                                                   let savePaper =
                                                     new BaaS.TableObject(
                                                       "test_paper"
@@ -12846,6 +15909,9 @@ export default {
                                                     ques_type: JSON.stringify(
                                                       this.ques_type
                                                     ),
+                                                    questions: JSON.stringify(
+                                                      this.questions
+                                                    ),
                                                     catalog: cata,
                                                   };
                                                   save_paper
@@ -12859,7 +15925,11 @@ export default {
                                                           message: "保存成功",
                                                           type: "success",
                                                         });
-                                                        Cookies.set(
+                                                        // Cookies.set(
+                                                        //   "paperInfo",
+                                                        //   res.data.id
+                                                        // );
+                                                        sessionStorage.setItem(
                                                           "paperInfo",
                                                           res.data.id
                                                         );
@@ -12948,11 +16018,7 @@ export default {
       });
       let save = 0;
       for (let i = 0; i < this.questions.length; i++) {
-        if (
-          this.questions[i].file_url != "" &&
-          this.questions[i].audio == "" &&
-          this.questions[i].excelfileList.length == 0
-        ) {
+        if (this.questions[i].file_url != "") {
           const result = this.dataURLtoFile(
             this.questions[i].file_url,
             "图片.png"
@@ -12964,7 +16030,7 @@ export default {
               let saveContent = new BaaS.TableObject("question_content");
               let savec = saveContent.create();
               savec.set({
-                content: this.questions[i].question_content,
+                content: null,
                 file_url: res.data.file,
                 catalog: null,
                 is_delete: false,
@@ -12989,6 +16055,7 @@ export default {
                       this.questions[i].primary_ques_type == "判断题"
                     ) {
                       tempq = {
+                        catalog:this.questions[i].catalog,
                         question_content_id: res.data.id,
                         primary_ques_type: this.questions[i].primary_ques_type,
                         secondary_ques_type:
@@ -13029,6 +16096,7 @@ export default {
                       this.questions[i].primary_ques_type == "填空题"
                     ) {
                       tempq = {
+                        catalog:this.questions[i].catalog,
                         question_content_id: res.data.id,
                         primary_ques_type: this.questions[i].primary_ques_type,
                         secondary_ques_type:
@@ -13064,6 +16132,7 @@ export default {
                       this.questions[i].primary_ques_type == "简答题"
                     ) {
                       tempq = {
+                        catalog:this.questions[i].catalog,
                         question_content_id: res.data.id,
                         primary_ques_type: this.questions[i].primary_ques_type,
                         secondary_ques_type:
@@ -13165,6 +16234,7 @@ export default {
                       this.questions[i].primary_ques_type == "判断题"
                     ) {
                       tempq = {
+                        catalog:this.questions[i].catalog,
                         question_content_id: res.data.id,
                         primary_ques_type: this.questions[i].primary_ques_type,
                         secondary_ques_type:
@@ -13205,6 +16275,7 @@ export default {
                       this.questions[i].primary_ques_type == "填空题"
                     ) {
                       tempq = {
+                        catalog:this.questions[i].catalog,
                         question_content_id: res.data.id,
                         primary_ques_type: this.questions[i].primary_ques_type,
                         secondary_ques_type:
@@ -13240,6 +16311,7 @@ export default {
                       this.questions[i].primary_ques_type == "简答题"
                     ) {
                       tempq = {
+                        catalog:this.questions[i].catalog,
                         question_content_id: res.data.id,
                         primary_ques_type: this.questions[i].primary_ques_type,
                         secondary_ques_type:
@@ -13341,6 +16413,7 @@ export default {
                       this.questions[i].primary_ques_type == "判断题"
                     ) {
                       tempq = {
+                        catalog:this.questions[i].catalog,
                         question_content_id: res.data.id,
                         primary_ques_type: this.questions[i].primary_ques_type,
                         secondary_ques_type:
@@ -13381,6 +16454,7 @@ export default {
                       this.questions[i].primary_ques_type == "填空题"
                     ) {
                       tempq = {
+                        catalog:this.questions[i].catalog,
                         question_content_id: res.data.id,
                         primary_ques_type: this.questions[i].primary_ques_type,
                         secondary_ques_type:
@@ -13416,6 +16490,7 @@ export default {
                       this.questions[i].primary_ques_type == "简答题"
                     ) {
                       tempq = {
+                        catalog:this.questions[i].catalog,
                         question_content_id: res.data.id,
                         primary_ques_type: this.questions[i].primary_ques_type,
                         secondary_ques_type:
@@ -13485,8 +16560,11 @@ export default {
             "=",
             this.questions[i].question_content
           );
+          let q4 = new BaaS.Query();
+          q4.compare("created_by", "=", Cookie.get("user_id") * 1);
+          let andQuery = BaaS.Query.and(find_content, q4);
           findContent
-            .setQuery(find_content)
+            .setQuery(andQuery).limit(1000)
             .find()
             .then(
               (res1) => {
@@ -13519,6 +16597,8 @@ export default {
                     let author = new BaaS.Query();
                     let author_org = new BaaS.Query();
                     let time_created = new BaaS.Query();
+                    let q4 = new BaaS.Query();
+                    q4.compare("created_by", "=", Cookie.get("user_id") * 1);
                     question_content_id.compare(
                       "question_content_id",
                       "=",
@@ -13683,10 +16763,11 @@ export default {
                       question_type_5he,
                       author,
                       author_org,
-                      time_created
+                      time_created,
+                      q4
                     );
                     findQuestion
-                      .setQuery(andQuery)
+                      .setQuery(andQuery).limit(1000)
                       .find()
                       .then(
                         (res2) => {
@@ -13705,6 +16786,7 @@ export default {
                               this.questions[i].primary_ques_type == "判断题"
                             ) {
                               temp1 = {
+                                catalog:this.questions[i].catalog,
                                 question_content_id: contentId,
                                 primary_ques_type:
                                   this.questions[i].primary_ques_type,
@@ -13759,6 +16841,7 @@ export default {
                               this.questions[i].primary_ques_type == "填空题"
                             ) {
                               temp1 = {
+                                catalog:this.questions[i].catalog,
                                 question_content_id: contentId,
                                 primary_ques_type:
                                   this.questions[i].primary_ques_type,
@@ -13803,6 +16886,7 @@ export default {
                               this.questions[i].primary_ques_type == "简答题"
                             ) {
                               temp1 = {
+                                catalog:this.questions[i].catalog,
                                 question_content_id: contentId,
                                 primary_ques_type:
                                   this.questions[i].primary_ques_type,
@@ -13911,6 +16995,7 @@ export default {
                             this.questions[i].primary_ques_type == "判断题"
                           ) {
                             tempq = {
+                              catalog:this.questions[i].catalog,
                               question_content_id: res4.data.id,
                               primary_ques_type:
                                 this.questions[i].primary_ques_type,
@@ -13955,6 +17040,7 @@ export default {
                             this.questions[i].primary_ques_type == "填空题"
                           ) {
                             tempq = {
+                              catalog:this.questions[i].catalog,
                               question_content_id: res4.data.id,
                               primary_ques_type:
                                 this.questions[i].primary_ques_type,
@@ -13994,6 +17080,7 @@ export default {
                             this.questions[i].primary_ques_type == "简答题"
                           ) {
                             tempq = {
+                              catalog:this.questions[i].catalog,
                               question_content_id: res4.data.id,
                               primary_ques_type:
                                 this.questions[i].primary_ques_type,
@@ -14080,7 +17167,7 @@ export default {
     },
     downloadTemplate() {
       let Template = new BaaS.File();
-      Template.get("6266180e7a0c9a036e284d81").then(
+      Template.get("637b78dd973f017405db03ef").then(
         (res) => {
           // console.log(res);
           let viewUrl = res.data.path;
@@ -14203,70 +17290,84 @@ export default {
                 var ws = XLSX.utils.sheet_to_json(workbook.Sheets[wsname]); // 生成json表格内容
                 ws.forEach((element) => {
                   if (
-                    element.catalogue == undefined ||
-                    element.catalogue == ""
+                    element.catalog == undefined ||
+                    element.catalog == "" ||
+                    element.catalog == "无"
                   ) {
-                    element.catalogue = null;
+                    element.catalog = null;
                   }
                   if (
                     element.primary_ques_type == undefined ||
-                    element.primary_ques_type == ""
+                    element.primary_ques_type == "" ||
+                    element.primary_ques_type == "无"
                   ) {
                     element.primary_ques_type = null;
                   }
                   if (
                     element.secondary_ques_type == undefined ||
-                    element.secondary_ques_type == ""
+                    element.secondary_ques_type == "" ||
+                    element.secondary_ques_type == "无"
                   ) {
                     element.secondary_ques_type = null;
                   }
                   if (
                     element.question_content == undefined ||
-                    element.question_content == ""
+                    element.question_content == "" ||
+                    element.question_content == "无"
                   ) {
                     element.question_content = null;
                   }
-                  if (element.question == undefined || element.question == "") {
+                  if (
+                    element.question == undefined ||
+                    element.question == "" ||
+                    element.question == "无"
+                  ) {
                     element.question = null;
                   }
-                  if (element.options == undefined || element.options == "") {
+                  if (
+                    element.options == undefined ||
+                    element.options == "" ||
+                    element.options == "无"
+                  ) {
                     element.options = null;
                   }
                   if (element.answer == undefined || element.answer == "") {
                     element.answer = null;
                   }
-                  if (element.analysis == undefined || element.analysis == "") {
+                  if (
+                    element.analysis == undefined ||
+                    element.analysis == "" ||
+                    element.analysis == "无"
+                  ) {
                     element.analysis = null;
                   }
                   if (
                     element.department == undefined ||
-                    element.department == ""
+                    element.department == "" ||
+                    element.department == "无" ||
+                    element.department == null
                   ) {
                     element.department = null;
                   } else {
+                    // if(element.department.search("，")!=-1){
                     element.department = element.department.split("，");
-                  }
-                  if (
-                    element.ques_level == undefined ||
-                    element.ques_level == ""
-                  ) {
-                    element.grade_standard = null;
-                  } else if (element.ques_level == "一级") {
-                    element.grade_standard = ["医学汉语能力总体等级,一级"];
-                  } else if (element.ques_level == "二级") {
-                    element.grade_standard = ["医学汉语能力总体等级,二级"];
-                  } else if (element.ques_level == "三级") {
-                    element.grade_standard = ["医学汉语能力总体等级,三级"];
+                    // }else{
+                    //   let temp=element.department
+                    //   element.department=[]
+                    //   element.department.push(temp)
+                    // }
                   }
                   if (
                     element.question_class == undefined ||
-                    element.question_class == ""
+                    element.question_class == "" ||
+                    element.question_class == "无"
                   ) {
                     element.question_class = null;
                   }
                   if (
                     element.question_type_5he == undefined ||
-                    element.question_type_5he == ""
+                    element.question_type_5he == "" ||
+                    element.question_type_5he == "无"
                   ) {
                     element.question_type_5he = null;
                   }
@@ -14281,27 +17382,59 @@ export default {
                   }
                   if (
                     element.time_created == undefined ||
-                    element.time_created == ""
+                    element.time_created == "" ||
+                    element.time_created == "无"
                   ) {
                     element.time_created = null;
                   }
                   if (
                     element.grade_standard == undefined ||
-                    element.grade_standard == ""
+                    element.grade_standard == "" ||
+                    element.grade_standard == "无" ||
+                    element.grade_standard == null
                   ) {
-                    element.grade_standard = null;
+                    element.grade_standard1 = "";
+                    element.grade_standard2 = "";
+                  } else {
+                    element.grade_standard = element.grade_standard.split("，");
+                    element.grade_standard1 = element.grade_standard[0];
+                    element.grade_standard2 = element.grade_standard[1];
                   }
-                  if (element.topic == undefined || element.topic == "") {
-                    element.topic = null;
+                  if (
+                    element.topic == undefined ||
+                    element.topic == "" ||
+                    element.topic == "无" ||
+                    element.topic == null
+                  ) {
+                    element.topic1 = "";
+                    element.topic2 = "";
+                  } else {
+                    element.topic = element.topic.split("，");
+                    element.topic1 = element.topic[0];
+                    element.topic2 = element.topic[1];
                   }
-                  if (element.task == undefined || element.task == "") {
+                  if (
+                    element.task == undefined ||
+                    element.task == "" ||
+                    element.task == "无" ||
+                    element.task == null
+                  ) {
                     element.task = null;
+                  } else {
+                    // if(element.task.search("，")!=-1){
+                    element.task = element.task.split("，");
+                    // }else{
+                    //   let temp=element.task
+                    //   element.task=[]
+                    //   element.task.push(temp)
+                    // }
                   }
                   element.file_url = "";
                   element.audio = "";
+                  element.file_name = "";
+                  element.excel = "";
                   element.fileList = [];
                   element.excelfileList = [];
-                  element.file_name = "";
                   if (
                     element.question_content.search(".png") != -1 ||
                     element.question_content.search(".jpg") != -1 ||
@@ -14356,7 +17489,7 @@ export default {
                     }
                   }
                   var a = {
-                    catalog: element.catalogue,
+                    catalog: element.catalog,
                     primary_ques_type: element.primary_ques_type,
                     secondary_ques_type: element.secondary_ques_type,
                     question_content_id: element.question_content,
@@ -14371,12 +17504,19 @@ export default {
                     author: element.author,
                     author_org: element.author_org,
                     time_created: element.time_created,
-                    grade_standard: element.grade_standard,
-                    topic_outline: element.topic,
+                    grade_standard1: element.grade_standard1,
+                    topic_outline1: element.topic1,
+                    grade_standard2: element.grade_standard2,
+                    topic_outline2: element.topic2,
+                    grade_value: element.grade_standard,
+                    topic_value: element.topic_outline,
                     task_outline: element.task,
                     file_name: element.file_name,
                     audio: element.audio,
                     file_url: element.file_url,
+                    fileList: element.fileList,
+                    excel: element.excel,
+                    excelfileList: element.excelfileList,
                   };
                   quess.push(a);
                   if (quess.length == ws.length) {
@@ -14464,6 +17604,10 @@ export default {
                           answer: qtemp[k].answer,
                           analysis: qtemp[k].analysis,
                           // level_value: qtemp[k].ques_level,
+                          grade_value1: qtemp[k].grade_standard1,
+                          topic_value1: qtemp[k].topic_outline1,
+                          grade_value2: qtemp[k].grade_standard2,
+                          topic_value2: qtemp[k].topic_outline2,
                           grade_value: qtemp[k].grade_standard,
                           topic_value: qtemp[k].topic_outline,
                           task_value: qtemp[k].task_outline,
@@ -14479,72 +17623,94 @@ export default {
                           time_created: qtemp[k].time_created,
                         };
                         if (qtemp[k].options != null) {
-                          let op = [];
-                          let t = qtemp[k].options;
-                          let a = t.indexOf('","index":"A"');
-                          let b = t.indexOf('","index":"B"');
-                          let c = t.indexOf('","index":"C"');
-                          let d = t.indexOf('","index":"D"');
-                          let tempa = "";
-                          let tempb = "";
-                          let tempc = "";
-                          let tempd = "";
-                          while (t[a - 1] != '"') {
-                            tempa += t[a - 1];
-                            a--;
+                          let str = qtemp[k].options.replace(/\s*/g, "");
+                          let tempa = -1;
+                          let tempb = -1;
+                          let tempc = -1;
+                          let tempd = -1;
+                          if (str.indexOf('","index":"A"') != -1) {
+                            tempa = str.indexOf('","index":"A"');
+                          } else if (str.indexOf("','index':'A'") != -1) {
+                            tempa = str.indexOf("','index':'A'");
                           }
-                          tempa = tempa.split("").reverse().join("");
-                          sub.A = tempa;
-                          while (t[b - 1] != '"') {
-                            tempb += t[b - 1];
-                            b--;
+                          if (str.indexOf('","index":"B"') != -1) {
+                            tempb = str.indexOf('","index":"B"');
+                          } else if (str.indexOf("','index':'B'") != -1) {
+                            tempb = str.indexOf("','index':'B'");
                           }
-                          tempb = tempb.split("").reverse().join("");
-                          sub.B = tempb;
-                          if (c != -1 && d != -1) {
-                            while (t[c - 1] != '"') {
-                              tempc += t[c - 1];
-                              c--;
+                          if (str.indexOf('","index":"C"') != -1) {
+                            tempc = str.indexOf('","index":"C"');
+                          } else if (str.indexOf("','index':'C'") != -1) {
+                            tempc = str.indexOf("','index':'C'");
+                          }
+                          if (str.indexOf('","index":"D"') != -1) {
+                            tempd = str.indexOf('","index":"D"');
+                          } else if (str.indexOf("','index':'D'") != -1) {
+                            tempd = str.indexOf("','index':'D'");
+                          }
+                          let a = "";
+                          let b = "";
+                          let c = "";
+                          let d = "";
+                          if (tempa != -1) {
+                            while (
+                              str[tempa - 1] != '"' &&
+                              str[tempa - 1] != "'"
+                            ) {
+                              a += str[tempa - 1];
+                              tempa--;
                             }
-                            tempc = tempc.split("").reverse().join("");
-                            sub.C = tempc;
-                            while (t[d - 1] != '"') {
-                              tempd += t[d - 1];
-                              d--;
-                            }
-                            tempd = tempd.split("").reverse().join("");
-                            sub.D = tempd;
-                            op = [
-                              {
-                                content: tempa,
-                                index: "A",
-                              },
-                              {
-                                content: tempb,
-                                index: "B",
-                              },
-                              {
-                                content: tempc,
-                                index: "C",
-                              },
-                              {
-                                content: tempd,
-                                index: "D",
-                              },
-                            ];
-                          } else {
-                            op = [
-                              {
-                                content: tempa,
-                                index: "A",
-                              },
-                              {
-                                content: tempb,
-                                index: "B",
-                              },
-                            ];
+                            sub.A = a.split("").reverse().join("");
                           }
-                          sub.options = op;
+                          if (tempb != -1) {
+                            while (
+                              str[tempb - 1] != '"' &&
+                              str[tempb - 1] != "'"
+                            ) {
+                              b += str[tempb - 1];
+                              tempb--;
+                            }
+                            sub.B = b.split("").reverse().join("");
+                          }
+                          if (tempc != -1) {
+                            while (
+                              str[tempc - 1] != '"' &&
+                              str[tempc - 1] != "'"
+                            ) {
+                              c += str[tempc - 1];
+                              tempc--;
+                            }
+                            sub.C = c.split("").reverse().join("");
+                          }
+                          if (tempd != -1) {
+                            while (
+                              str[tempd - 1] != '"' &&
+                              str[tempd - 1] != "'"
+                            ) {
+                              d += str[tempd - 1];
+                              tempd--;
+                            }
+                            sub.D = d.split("").reverse().join("");
+                          }
+                          let o = [
+                            {
+                              content: sub.A,
+                              index: "A",
+                            },
+                            {
+                              content: sub.B,
+                              index: "B",
+                            },
+                            {
+                              content: sub.C,
+                              index: "C",
+                            },
+                            {
+                              content: sub.D,
+                              index: "D",
+                            },
+                          ];
+                          sub.options = o;
                         }
                         question.sub_question.push(sub);
                         num++;
@@ -14803,7 +17969,7 @@ export default {
                       }
                       this.questions[this.currentQues - 1].saveQ = true;
                       this.questions[this.currentQues - 1].saveT = true;
-                      sessionStorage.clear();
+                      // sessionStorage.clear();
                       global.totalSelect = [];
                       // setTimeout(() => {
                       //   this.createEdit()
@@ -14886,7 +18052,8 @@ export default {
   },
   created() {},
   mounted() {
-    this.autoQues = Cookie.get("autoQues");
+    // this.autoQues = Cookie.get("autoQues");
+    this.autoQues = sessionStorage.getItem("autoQues");
     this.init();
   },
 };
@@ -15077,8 +18244,6 @@ export default {
 .mcreatePaper .main_right_ques .select_bar .knowledge {
   display: flex;
   flex-direction: row;
-  width: 325px;
-  justify-content: center;
 }
 .mcreatePaper .main_right_ques .sub_ques_check {
   display: flex;

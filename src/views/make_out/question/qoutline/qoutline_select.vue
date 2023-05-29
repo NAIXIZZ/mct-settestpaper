@@ -36,8 +36,8 @@
 
 <script src="https://dl.ifanr.cn/hydrogen/sdk/sdk-web-latest.js"></script>
 <script>
-import Cookies from "js-cookie";
-import Cookie from "js-cookie";
+// import Cookies from "js-cookie";
+// import Cookie from "js-cookie";
 export default {
   name: "",
   components: {},
@@ -59,7 +59,7 @@ export default {
       let clientID = "395062a19e209a770059";
       BaaS.init(clientID);
       var query = new BaaS.Query();
-      this.title = Cookie.get("first_title");
+      this.title =sessionStorage.getItem("first_title");
       query.contains("first_title", this.title);
       let Topic = new BaaS.TableObject("topic_outline");
       Topic.setQuery(query)
@@ -79,7 +79,7 @@ export default {
       this.$router.go(-1);
     },
     pushto(val) {
-      Cookies.set("second_title", val);
+      sessionStorage.setItem("second_title", val);
       this.$router.push("/qknowledge");
     },
     search(val) {

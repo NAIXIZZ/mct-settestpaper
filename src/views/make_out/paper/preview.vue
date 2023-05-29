@@ -2,25 +2,22 @@
   <div class="preview">
     <div class="top">
       <h1 class="title">试卷预览</h1>
-      <el-button type="success" plain @click="exp">导出试卷</el-button>
       <!-- <el-col :span="2" style="margin-left: 50%"> -->
       <!-- <el-button type="success" @click="generate()">试卷导出</el-button> -->
       <!-- </el-col> -->
-      <!-- <el-col :span="2">
-          <template>
-            <el-checkbox v-model="isAnswer" style="margin-top: 10px"
-              >包含答案</el-checkbox
-            >
-          </template>
-        </el-col>
-        <el-col :span="2">
-          <template>
-            <el-checkbox v-model="isAnalysis" style="margin-top: 10px"
-              >包含解析</el-checkbox
-            >
-          </template>
-        </el-col> -->
-      <el-button @click="returnHome">返回</el-button>
+      <div>
+        <el-button type="success" plain @click="exp">导出试卷</el-button>
+        <el-checkbox v-model="isAnswer" style="margin-top: 10px;margin-left:10px"
+          >包含答案</el-checkbox
+        >
+        <el-checkbox
+          v-model="isAnalysis"
+          style="margin-top: 10px; margin-right: 10px"
+          >包含解析</el-checkbox
+        >
+
+        <el-button @click="returnHome">返回</el-button>
+      </div>
     </div>
     <!-- <el-row> -->
     <el-card class="box-card">
@@ -81,20 +78,21 @@
             <div v-for="item in listen_sentence" :key="item.id">
               <div class="question">
                 <audio
-                  :src="item.question_content"
+                  :src="item.audio"
                   controls="controls"
                   v-if="
-                    item.question_content.search('.mp3') != -1 ||
-                    item.question_content.search('.wav') != -1 ||
-                    item.question_content.search('.ogg') != -1
+                    item.audio.search('.mp3') != -1 ||
+                    item.audio.search('.wav') != -1 ||
+                    item.audio.search('.ogg') != -1
                   "
                 ></audio>
                 <img
-                  :src="item.question_content"
+                width="1000px"
+                  :src="item.file_url"
                   v-else-if="
-                    item.question_content.search('.png') != -1 ||
-                    item.question_content.search('.jpg') != -1 ||
-                    item.question_content.search('.gif') != -1
+                    item.file_url.search('.png') != -1 ||
+                    item.file_url.search('.jpg') != -1 ||
+                    item.file_url.search('.gif') != -1
                   "
                 />
                 <p v-else>{{ item.question_content }}</p>
@@ -135,6 +133,7 @@
                   "
                 ></audio>
                 <img
+                width="1000px"
                   :src="item.question_content"
                   v-else-if="
                     item.question_content.search('.png') != -1 ||
@@ -180,6 +179,7 @@
                   "
                 ></audio>
                 <img
+                width="1000px"
                   :src="item.question_content"
                   v-else-if="
                     item.question_content.search('.png') != -1 ||
@@ -223,6 +223,7 @@
                   "
                 ></audio>
                 <img
+                width="1000px"
                   :src="item.question_content"
                   v-else-if="
                     item.question_content.search('.png') != -1 ||
@@ -288,6 +289,7 @@
                   "
                 ></audio>
                 <img
+                width="1000px"
                   :src="item.question_content"
                   v-else-if="
                     item.question_content.search('.png') != -1 ||
@@ -331,6 +333,7 @@
                   "
                 ></audio>
                 <img
+                width="1000px"
                   :src="item.question_content"
                   v-else-if="
                     item.question_content.search('.png') != -1 ||
@@ -374,6 +377,7 @@
                   "
                 ></audio>
                 <img
+                width="1000px"
                   :src="item.question_content"
                   v-else-if="
                     item.question_content.search('.png') != -1 ||
@@ -417,6 +421,7 @@
                   "
                 ></audio>
                 <img
+                width="1000px"
                   :src="item.question_content"
                   v-else-if="
                     item.question_content.search('.png') != -1 ||
@@ -493,6 +498,7 @@
                   "
                 ></audio>
                 <img
+                width="1000px"
                   :src="item.question_content"
                   v-else-if="
                     item.question_content.search('.png') != -1 ||
@@ -569,6 +575,7 @@
                     "
                   ></audio>
                   <img
+                  width="1000px"
                     :src="item.file_url"
                     v-if="
                       item.file_url != '' &&
@@ -583,7 +590,7 @@
                     <div v-for="o in s.options" :key="o.index">
                       <p
                         class="options"
-                        v-if="stype.type == '听句子，判断对错'"
+                        v-if="item.secondary_ques_type == '听句子，判断对错'"
                       >
                         {{ o.content }}
                       </p>
@@ -625,7 +632,7 @@ import {
 } from "@/util/Export2Excel.js";
 const JSZip = require("jszip");
 var XLSX = require("xlsx");
-import Cookies from "js-cookie";
+// import Cookies from "js-cookie";
 import Cookie from "js-cookie";
 import "docxtemplater/build/docxtemplater.js";
 import "pizzip/dist/pizzip.js";
@@ -669,6 +676,8 @@ export default {
       rs: 0,
       wn: 0,
       ws: 0,
+      isAnswer: true,
+      isAnalysis: true,
     };
   },
   mounted() {
@@ -676,12 +685,13 @@ export default {
   },
   methods: {
     returnHome() {
-      sessionStorage.clear();
+      sessionStorage.setItem("paperCheck", "false");
       this.$router.go(-1);
     },
     getData() {
       this.paper_message.paper_title = sessionStorage.getItem("title");
       this.paper_message.created_user_id = Cookie.get("user_id");
+      // this.paper_message.created_user_id = sessionStorage.getItem("user_id");
       this.paper_message.questions_num = sessionStorage.getItem("ques_num");
       this.paper_message.points = sessionStorage.getItem("ques_score");
       if (sessionStorage.getItem("exam") == "true") {
@@ -691,6 +701,9 @@ export default {
       }
       this.questions = JSON.parse(sessionStorage.getItem("questions"));
       this.ques_type = JSON.parse(sessionStorage.getItem("ques_type"));
+      this.questions.sort(function (a, b) {
+        return a.sequence - b.sequence;
+      });
       if (this.exam == true) {
         for (let i = 0; i < this.ques_type.length; i++) {
           if (this.ques_type[i].primary == "听力") {
@@ -936,20 +949,22 @@ export default {
         for (let j = 0; j < this.questions[i].sub_question.length; j++) {
           let str = "";
           if (
-            this.questions[i].sub_question[j].options != null ||
-            this.questions[i].sub_question[j].options != "" ||
-            this.questions[i].sub_question[j].options.length != 0
+            this.questions[i].sub_question[j].options != null &&
+            this.questions[i].sub_question[j].options != "" &&
+            this.questions[i].sub_question[j].options != undefined
           ) {
             for (
               let k = 0;
               k < this.questions[i].sub_question[j].options.length;
               k++
             ) {
-              str +=
-                this.questions[i].sub_question[j].options[k].index +
-                "." +
-                this.questions[i].sub_question[j].options[k].content +
-                " ";
+              if (this.questions[i].sub_question[j].options[k].content != "") {
+                str +=
+                  this.questions[i].sub_question[j].options[k].index +
+                  "." +
+                  this.questions[i].sub_question[j].options[k].content +
+                  " ";
+              }
             }
           }
           let q = {
@@ -1337,7 +1352,21 @@ export default {
             var ImageModule = require("open-docxtemplater-image-module");
             // 点击导出word
             var that = this;
-            this.loadFile("export_paper.docx", function (error, content) {
+            var wordName = "";
+            if (!this.isAnswer && !this.isAnalysis) {
+              //无答案无解析
+              wordName = "export_paper3.docx";
+            } else if (this.isAnswer && !this.isAnalysis) {
+              //有答案无解析
+              wordName = "export_paper2.docx";
+            } else if (!this.isAnswer && this.isAnalysis) {
+              //无答案有解析
+              wordName = "export_paper1.docx";
+            } else if (this.isAnswer && this.isAnalysis) {
+              //有答案有解析
+              wordName = "export_paper.docx";
+            }
+            this.loadFile(wordName, function (error, content) {
               if (error) {
                 throw error;
               }
@@ -1435,6 +1464,7 @@ export default {
       var ImageModule = require("open-docxtemplater-image-module");
       // 点击导出word
       var that = this;
+
       this.loadFile("word.docx", function (error, content) {
         if (error) {
           throw error;

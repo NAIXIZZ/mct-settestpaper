@@ -70,7 +70,7 @@
 </template>
 
 <script>
-import Cookies from "js-cookie";
+// import Cookies from "js-cookie";
 
 export default {
   name: "",
@@ -82,15 +82,20 @@ export default {
   methods: {
     pushto(val) {
       let currentTab = "second";
-      Cookies.set("currentTab", currentTab);
+      // Cookies.set("currentTab", currentTab);
+      sessionStorage.setItem("currentTab", currentTab);
       if (val == "doc_doc") {
-        Cookies.set('first_title','医生-医生')
+        sessionStorage.setItem('first_title','医生-医生')
+        // Cookies.set('first_title','医生-医生')
       } else if (val == "doc_nur") {
-        Cookies.set('first_title','医生-护士')
+        sessionStorage.setItem('first_title','医生-护士')
+        // Cookies.set('first_title','医生-护士')
       } else if (val == "doc_pat") {
-        Cookies.set('first_title','医生-患者')
+        sessionStorage.setItem('first_title','医生-患者')
+        // Cookies.set('first_title','医生-患者')
       } else {
-        Cookies.set('first_title','患者-护士')
+        sessionStorage.setItem('first_title','患者-护士')
+        // Cookies.set('first_title','患者-护士')
       }
       this.$router.push("/outline_second");
     },

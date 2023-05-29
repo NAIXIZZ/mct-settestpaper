@@ -91,15 +91,18 @@ export default {
       BaaS.init(clientID);
       let query_id = new BaaS.Query()
       query_id.compare('created_by', '=', Cookies.get('user_id') * 1)
+      let query_delete = new BaaS.Query();
+      query_delete.compare("is_delete", "=", false);
+      let andQuery = BaaS.Query.and(query_id, query_delete)
       let test_paper = new BaaS.TableObject("test_paper")
       var nowDate = new Date()
       var nowYear = nowDate.getFullYear()
       var startYear = 2020
-      test_paper.limit(1000).setQuery(query_id).find().then(res => {
+      test_paper.limit(1000).setQuery(andQuery.exists('paper_title')).find().then(res => {
         this.number = res.data.objects.length
         this.paper_list = res.data.objects
         for (let j = 1; j < 10; j++) {
-          test_paper.limit(1000).offset(j * 1000).setQuery(query_id).find().then(res => {
+          test_paper.limit(1000).offset(j * 1000).setQuery(andQuery.exists('paper_title')).find().then(res => {
             this.number = this.number + res.data.objects.length
             Object.assign(this.paper_list, res.data.objects)
           }, err => {

@@ -170,9 +170,12 @@
           <!-- <el-table-column prop="source_id" label="来源"> </el-table-column> -->
           <el-table-column prop="created_at" label="创建日期" sortable>
           </el-table-column>
-          <el-table-column label="操作" width="400">
+          <el-table-column label="操作" width="450">
             <template slot-scope="scope">
               <div v-show="scope.row.primary_ques_type != null" class="btn">
+                <el-button type="text" @click="illegal(scope.row)"
+                  >合规检查</el-button
+                >
                 <el-button
                   type="success"
                   plain
@@ -260,9 +263,9 @@
       class="autoQP"
       :before-close="autoClose"
     >
-      <el-button size="small" @click="addTab(editableTabsValue)">
+      <!-- <el-button size="small" @click="addTab(editableTabsValue)">
         添加题干
-      </el-button>
+      </el-button> -->
       <el-tabs
         v-model="editableTabsValue"
         type="card"
@@ -478,14 +481,171 @@
         <el-button type="primary" @click="derive">确 定</el-button>
       </span>
     </el-dialog>
+    <el-dialog
+      title="合规检查"
+      :visible.sync="illegalVisible"
+      :before-close="handleClose"
+      width="50%"
+    >
+      <div class="ill">
+        长度合规性检查结果：
+        <p>{{ length_check.length_result }}</p>
+      </div>
+      <div class="ill" v-if="content_check.length != 0">
+        内容合规性检查结果：
+        <p>{{ content_check[0].similarity_result }}</p>
+      </div>
+      <div class="ill" v-if="content_check.length != 0">
+        纠错后的题目语料：
+        <p>{{ content_check[0].cor_t_question_content[0] }}</p>
+      </div>
+      <div class="ill" v-if="content_check.length != 0">
+        纠错后的题干文本：
+        <p>{{ content_check[0].cor_t_question[0] }}</p>
+      </div>
+      <div class="ill" v-if="content_check.length != 0">
+        纠错后的干扰项：
+        <p>{{ content_check[0].cor_t_options[0] }}</p>
+      </div>
+      <div class="ill" v-if="content_check.length != 0">
+        纠错后的正确答案：
+        <p>{{ content_check[0].cor_t_answer[0] }}</p>
+      </div>
+      <div class="ill">
+        难度合规性检查结果：
+        <p>{{ level_check.error_info }}</p>
+      </div>
+      <div class="ill">
+        用户输入等级：
+        <p>{{ level_check.user_level }}</p>
+      </div>
+      <div class="ill">
+        算法判别的语料等级：
+        <p>{{ level_check.corpus_level }}</p>
+      </div>
+      <div class="ill">
+        MCT词汇数量：
+        <p>{{ level_check.MCT_words_num }}</p>
+      </div>
+      <div class="ill">
+        HSK词汇数量：
+        <p>{{ level_check.HSK_words_num }}</p>
+      </div>
+      <div class="ill" v-if="level_check.length != 0">
+        MCT1级词汇占比：
+        <p>{{ level_check.t_rankDistribution_MCT.ratio_MCTlevel_1 }}</p>
+      </div>
+      <div class="ill">
+        MCT1级词汇集合：
+        <div v-for="i in level_check.MCT_level1_words_set" :key="i.index">
+          <p>{{ i }}</p>
+        </div>
+      </div>
+      <div class="ill" v-if="level_check.length != 0">
+        MCT2级词汇占比：
+        <p>{{ level_check.t_rankDistribution_MCT.ratio_MCTlevel_2 }}</p>
+      </div>
+      <div class="ill">
+        MCT2级词汇集合：
+        <div v-for="i in level_check.MCT_level2_words_set" :key="i.index">
+          <p>{{ i }}</p>
+        </div>
+      </div>
+      <div class="ill" v-if="level_check.length != 0">
+        MCT3级词汇占比：
+        <p>{{ level_check.t_rankDistribution_MCT.ratio_MCTlevel_3 }}</p>
+      </div>
+      <div class="ill">
+        MCT3级词汇集合：
+        <div v-for="i in level_check.MCT_level3_words_set" :key="i.index">
+          <p>{{ i }}</p>
+        </div>
+      </div>
+      <div class="ill" v-if="level_check.length != 0">
+        HSK1级词汇占比：
+        <p>{{ level_check.t_rankDistribution_HSK.ratio_HSKlevel_1 }}</p>
+      </div>
+      <div class="ill">
+        HSK1级词汇集合：
+        <div v-for="i in level_check.HSK_level1_words_set" :key="i.index">
+          <p>{{ i }}</p>
+        </div>
+      </div>
+      <div class="ill" v-if="level_check.length != 0">
+        HSK2级词汇占比：
+        <p>{{ level_check.t_rankDistribution_HSK.ratio_HSKlevel_2 }}</p>
+      </div>
+      <div class="ill">
+        HSK2级词汇集合：
+        <div v-for="i in level_check.HSK_level2_words_set" :key="i.index">
+          <p>{{ i }}</p>
+        </div>
+      </div>
+      <div class="ill" v-if="level_check.length != 0">
+        HSK3级词汇占比：
+        <p>{{ level_check.t_rankDistribution_HSK.ratio_HSKlevel_3 }}</p>
+      </div>
+      <div class="ill">
+        HSK3级词汇集合：
+        <div v-for="i in level_check.HSK_level3_words_set" :key="i.index">
+          <p>{{ i }}</p>
+        </div>
+      </div>
+      <div class="ill" v-if="level_check.length != 0">
+        HSK4级词汇占比：
+        <p>{{ level_check.t_rankDistribution_HSK.ratio_HSKlevel_4 }}</p>
+      </div>
+      <div class="ill">
+        HSK4级词汇集合：
+        <div v-for="i in level_check.HSK_level4_words_set" :key="i.index">
+          <p>{{ i }}</p>
+        </div>
+      </div>
+      <div class="ill" v-if="level_check.length != 0">
+        HSK5级词汇占比：
+        <p>{{ level_check.t_rankDistribution_HSK.ratio_HSKlevel_5 }}</p>
+      </div>
+      <div class="ill">
+        HSK5级词汇集合：
+        <div v-for="i in level_check.HSK_level5_words_set" :key="i.index">
+          <p>{{ i }}</p>
+        </div>
+      </div>
+      <div class="ill" v-if="level_check.length != 0">
+        HSK6级词汇占比：
+        <p>{{ level_check.t_rankDistribution_HSK.ratio_HSKlevel_6 }}</p>
+      </div>
+      <div class="ill">
+        HSK6级词汇集合：
+        <div v-for="i in level_check.HSK_level6_words_set" :key="i.index">
+          <p>{{ i }}</p>
+        </div>
+      </div>
+      <div class="ill" v-if="level_check.length != 0">
+        HSK7-9级词汇占比：
+        <p>{{ level_check.t_rankDistribution_HSK.ratio_HSKlevel_7_9 }}</p>
+      </div>
+      <div class="ill">
+        HSK7-9级词汇集合：
+        <div v-for="i in level_check.HSK_level7_9_words_set" :key="i.index">
+          <p>{{ i }}</p>
+        </div>
+      </div>
+      <div class="ill">
+        域外词汇占比：
+        <p>{{ level_check.out_of_domain_word_ratio }}</p>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script lang="javascript" src="dist/xlsx.full.min.js"></script>
 <script>
+import global from "@/util/global.js";
 import E from "wangeditor";
 import { export_json_to_excel } from "@/util/Export2Excel.js";
-import Cookies from "js-cookie";
+import { Read1, Read4, Illegal } from "@/api/api.js";
+// import Cookies from "js-cookie";
 import Cookie from "js-cookie";
 // import "docxtemplater/build/docxtemplater.js";
 // import "pizzip/dist/pizzip.js";
@@ -515,7 +675,7 @@ export default {
             ques_ex: "",
             type: [
               {
-                grade: "不限等级",
+                grade: "一级",
                 ques_num: 1,
                 ques_type: "",
                 ques_num_yixue: 1,
@@ -636,10 +796,6 @@ export default {
       ],
       grade: [
         {
-          value: "不限等级",
-          label: "不限等级",
-        },
-        {
           value: "一级",
           label: "一级",
         },
@@ -652,6 +808,10 @@ export default {
           label: "三级",
         },
       ],
+      illegalVisible: false,
+      length_check: [],
+      content_check: [],
+      level_check: [],
     };
   },
   watch: {},
@@ -704,12 +864,12 @@ export default {
                 let i = 0;
                 for (i = 0; i < ws.length; i++) {
                   if (
-                    ws[i].catalogue != "" &&
-                    ws[i].catalogue != undefined &&
-                    ws[i].catalogue != null
+                    ws[i].catalog != "" &&
+                    ws[i].catalog != undefined &&
+                    ws[i].catalog != null
                   ) {
                     let t = {
-                      catalog: ws[i].catalogue,
+                      catalog: ws[i].catalog,
                       content: ws[i].question_content,
                     };
                     cata.push(t);
@@ -759,6 +919,8 @@ export default {
                         content.set("file_url", res.data.file);
                         content.set("content", null);
                         content.set("catalog", cata[i].catalog);
+                        content.set("is_delete", false);
+                        content.set("excel", null);
                         content
                           .save()
                           .then((res2) => {
@@ -781,6 +943,8 @@ export default {
                       content.set("file_url", res.data.file);
                       content.set("content", null);
                       content.set("catalog", null);
+                      content.set("is_delete", false);
+                      content.set("excel", null);
                       content
                         .save()
                         .then((res2) => {
@@ -801,6 +965,8 @@ export default {
                     content.set("file_url", res.data.file);
                     content.set("content", null);
                     content.set("catalog", null);
+                    content.set("is_delete", false);
+                    content.set("excel", null);
                     content
                       .save()
                       .then((res2) => {
@@ -843,64 +1009,78 @@ export default {
                 var ws = XLSX.utils.sheet_to_json(workbook.Sheets[wsname]); // 生成json表格内容
                 ws.forEach((element) => {
                   if (
-                    element.catalogue == undefined ||
-                    element.catalogue == ""
+                    element.catalog == undefined ||
+                    element.catalog == "" ||
+                    element.catalog == "无"
                   ) {
-                    element.catalogue = null;
+                    element.catalog = null;
                   }
                   if (
                     element.primary_ques_type == undefined ||
-                    element.primary_ques_type == ""
+                    element.primary_ques_type == "" ||
+                    element.primary_ques_type == "无"
                   ) {
                     element.primary_ques_type = null;
                   }
                   if (
                     element.secondary_ques_type == undefined ||
-                    element.secondary_ques_type == ""
+                    element.secondary_ques_type == "" ||
+                    element.secondary_ques_type == "无"
                   ) {
                     element.secondary_ques_type = null;
                   }
                   if (
                     element.question_content == undefined ||
-                    element.question_content == ""
+                    element.question_content == "" ||
+                    element.question_content == "无"
                   ) {
                     element.question_content = null;
                   }
-                  if (element.question == undefined || element.question == "") {
+                  if (
+                    element.question == undefined ||
+                    element.question == "" ||
+                    element.question == "无"
+                  ) {
                     element.question = null;
                   }
-                  if (element.options == undefined || element.options == "") {
+                  if (
+                    element.options == undefined ||
+                    element.options == "" ||
+                    element.options == "无"
+                  ) {
                     element.options = null;
                   }
                   if (element.answer == undefined || element.answer == "") {
                     element.answer = null;
                   }
-                  if (element.analysis == undefined || element.analysis == "") {
+                  if (
+                    element.analysis == undefined ||
+                    element.analysis == "" ||
+                    element.analysis == "无"
+                  ) {
                     element.analysis = null;
                   }
                   if (
                     element.department == undefined ||
-                    element.department == ""
+                    element.department == "" ||
+                    element.department == "无" ||
+                    element.department == null
                   ) {
                     element.department = null;
                   } else {
                     element.department = element.department.split("，");
                   }
                   if (
-                    element.ques_level == undefined ||
-                    element.ques_level == ""
-                  ) {
-                    element.ques_level = null;
-                  }
-                  if (
                     element.question_class == undefined ||
-                    element.question_class == ""
+                    element.question_class == "" ||
+                    element.question_class == "无"
                   ) {
                     element.question_class = null;
                   }
                   if (
                     element.question_type_5he == undefined ||
-                    element.question_type_5he == ""
+                    element.question_type_5he == "" ||
+                    element.question_type_5he == "无"
                   ) {
                     element.question_type_5he = null;
                   }
@@ -915,24 +1095,43 @@ export default {
                   }
                   if (
                     element.time_created == undefined ||
-                    element.time_created == ""
+                    element.time_created == "" ||
+                    element.time_created == "无"
                   ) {
                     element.time_created = null;
                   }
                   if (
                     element.grade_standard == undefined ||
-                    element.grade_standard == ""
+                    element.grade_standard == "" ||
+                    element.grade_standard == "无" ||
+                    element.grade_standard == null
                   ) {
                     element.grade_standard = null;
+                  } else {
+                    element.grade_standard = element.grade_standard.split("，");
                   }
-                  if (element.topic == undefined || element.topic == "") {
+                  if (
+                    element.topic == undefined ||
+                    element.topic == "" ||
+                    element.topic == "无" ||
+                    element.topic == null
+                  ) {
                     element.topic = null;
+                  } else {
+                    element.topic = element.topic.split("，");
                   }
-                  if (element.task == undefined || element.task == "") {
+                  if (
+                    element.task == undefined ||
+                    element.task == "" ||
+                    element.task == "无" ||
+                    element.task == null
+                  ) {
                     element.task = null;
+                  } else {
+                    element.task = element.task.split("，");
                   }
                   var a = {
-                    catalog: element.catalogue,
+                    catalog: element.catalog,
                     primary_ques_type: element.primary_ques_type,
                     secondary_ques_type: element.secondary_ques_type,
                     question_content_id: element.question_content,
@@ -962,99 +1161,277 @@ export default {
         }
         i++;
         let num = 0;
-        if (i == this.fileNum) {
-          var arr = new Array();
-          this.excelFile.forEach((element) => {
-            var findContent = false;
-            this.contentFile.forEach((item) => {
-              if (element.question_content_id == item.name) {
-                element.question_content_id = item.id;
-                findContent = true;
-                let importQ = new BaaS.TableObject("questions_information");
-                let importq = importQ.create();
-                importq
-                  .set(element)
-                  .save()
-                  .then(
-                    (res) => {
-                      // console.log(res);
-                      num++;
-                      if (num == this.excelFile.length) {
-                        loading.close();
-                        this.$message({
-                          message: "导入成功",
-                          type: "success",
-                        });
-                        this.init();
-                        this.importFile = false;
-                      }
-                    },
-                    (err) => {
-                      loading.close();
-                      this.$message({
-                        message: "导入失败",
-                        type: "warning",
-                      });
-                      this.init();
-                      this.importFile = false;
-                      console.log(err);
+        console.log(i);
+        setTimeout(() => {
+          if (i == this.fileNum) {
+            var arr = new Array();
+            setTimeout(() => {
+              this.excelFile.forEach((element) => {
+                var findContent = false;
+                if (this.contentFile.length != 0) {
+                  this.contentFile.forEach((item) => {
+                    if (element.question_content_id == item.name) {
+                      element.question_content_id = item.id;
+                      findContent = true;
+                      let importQ = new BaaS.TableObject(
+                        "questions_information"
+                      );
+                      let importq = importQ.create();
+                      importq
+                        .set(element)
+                        .save()
+                        .then(
+                          (res) => {
+                            // console.log(res);
+                            num++;
+                            if (num == this.excelFile.length) {
+                              loading.close();
+                              this.$message({
+                                message: "导入成功",
+                                type: "success",
+                              });
+                              this.init();
+                              this.importFile = false;
+                              this.excelFile = [];
+                              this.contentFile = [];
+                            }
+                          },
+                          (err) => {
+                            loading.close();
+                            this.$message({
+                              message: "导入失败",
+                              type: "warning",
+                            });
+                            this.init();
+                            this.importFile = false;
+                            this.excelFile = [];
+                            this.contentFile = [];
+                            console.log(err);
+                          }
+                        );
+                      return;
                     }
-                  );
-                return;
-              }
-            });
-            if (findContent == false) {
-              var a = {
-                content: element.question_content_id,
-                id: null,
-              };
-              arr.push(a);
-            }
-          });
-          if (arr.length != 0) {
-            const map = new Map();
-            const qc = arr.filter(
-              (key) => !map.has(key.content) && map.set(key.content, 1)
-            );
-            var k = 0;
-            qc.forEach((element) => {
-              let Content = new BaaS.TableObject("question_content");
-              let content = new BaaS.Query();
-              content.compare("content", "=", element.content);
-              Content.setQuery(content)
-                .find()
-                .then(
-                  (res) => {
-                    if (res.data.objects.length == 1) {
-                      element.id = res.data.objects[0].id;
-                      k++;
-                      if (k == qc.length) {
-                        this.excelFile.forEach((element) => {
-                          var a = qc.findIndex(
-                            (item) =>
-                              item.content === element.question_content_id
-                          );
-                          if (a != -1) {
-                            element.question_content_id = qc[a].id;
-                            let importQ = new BaaS.TableObject(
-                              "questions_information"
-                            );
-                            let importq = importQ.create();
-                            importq
-                              .set(element)
-                              .save()
-                              .then(
-                                (res) => {
-                                  // console.log(res);
-                                  num++;
-                                  if (num == this.excelFile.length) {
+                  });
+                }
+                if (findContent == false) {
+                  var a = {
+                    content: element.question_content_id,
+                    id: null,
+                  };
+                  arr.push(a);
+                }
+              });
+              if (arr.length != 0) {
+                const map = new Map();
+                const qc = arr.filter(
+                  (key) => !map.has(key.content) && map.set(key.content, 1)
+                );
+                var k = 0;
+                qc.forEach((element) => {
+                  let Content = new BaaS.TableObject("question_content");
+                  let content = new BaaS.Query();
+                  let q = new BaaS.Query();
+                  q.compare("created_by", "=", Cookie.get("user_id") * 1);
+                  content.compare("content", "=", element.content);
+                  let andQuery = BaaS.Query.and(content, q);
+                  Content.setQuery(andQuery)
+                    .limit(1000)
+                    .find()
+                    .then(
+                      (res) => {
+                        if (res.data.objects.length != 0) {
+                          element.id = res.data.objects[0].id;
+                          k++;
+                          if (k == qc.length) {
+                            this.excelFile.forEach((element1) => {
+                              var a = qc.findIndex(
+                                (item) =>
+                                  item.content === element1.question_content_id
+                              );
+                              if (a != -1) {
+                                element1.question_content_id = qc[a].id;
+                                let importQ = new BaaS.TableObject(
+                                  "questions_information"
+                                );
+                                let importq = importQ.create();
+                                importq
+                                  .set(element1)
+                                  .save()
+                                  .then(
+                                    (res) => {
+                                      // console.log(res);
+                                      num++;
+                                      if (num == this.excelFile.length) {
+                                        loading.close();
+                                        this.$message({
+                                          message: "导入成功",
+                                          type: "success",
+                                        });
+                                        this.init();
+                                        this.importFile = false;
+                                        this.excelFile = [];
+                                        this.contentFile = [];
+                                      }
+                                    },
+                                    (err) => {
+                                      loading.close();
+                                      this.$message({
+                                        message: "导入失败",
+                                        type: "warning",
+                                      });
+                                      this.init();
+                                      this.importFile = false;
+                                      this.excelFile = [];
+                                      this.contentFile = [];
+                                      console.log(err);
+                                    }
+                                  );
+                              }
+                            });
+                          }
+                        } else if (res.data.objects.length == 0) {
+                          if (cata.length != 0) {
+                            let find = false;
+                            for (let i = 0; i < cata.length; i++) {
+                              find = true;
+                              if (cata[i].content == element.content) {
+                                let addContent = new BaaS.TableObject(
+                                  "question_content"
+                                );
+                                let add = addContent.create();
+                                add.set("content", element.content);
+                                add.set("catalog", cata[i].catalog);
+                                add.save().then(
+                                  (res) => {
+                                    element.id = res.data.id;
+                                    k++;
+                                    if (k == qc.length) {
+                                      this.excelFile.forEach((element1) => {
+                                        var a = qc.findIndex(
+                                          (item) =>
+                                            item.content ===
+                                            element1.question_content_id
+                                        );
+                                        if (a != -1) {
+                                          element1.question_content_id =
+                                            qc[a].id;
+                                          let importQ = new BaaS.TableObject(
+                                            "questions_information"
+                                          );
+                                          let importq = importQ.create();
+                                          importq
+                                            .set(element1)
+                                            .save()
+                                            .then(
+                                              (res) => {
+                                                // console.log(res);
+                                                num++;
+                                                if (
+                                                  num == this.excelFile.length
+                                                ) {
+                                                  loading.close();
+                                                  this.$message({
+                                                    message: "导入成功",
+                                                    type: "success",
+                                                  });
+                                                  this.init();
+                                                  this.importFile = false;
+                                                  this.excelFile = [];
+                                                  this.contentFile = [];
+                                                }
+                                              },
+                                              (err) => {
+                                                loading.close();
+                                                this.$message({
+                                                  message: "导入失败",
+                                                  type: "warning",
+                                                });
+                                                this.init();
+                                                this.importFile = false;
+                                                this.excelFile = [];
+                                                this.contentFile = [];
+                                                console.log(err);
+                                              }
+                                            );
+                                        }
+                                      });
+                                    }
+                                  },
+                                  (err) => {
                                     loading.close();
                                     this.$message({
-                                      message: "导入成功",
-                                      type: "success",
+                                      message: "导入失败",
+                                      type: "warning",
                                     });
                                     this.init();
                                     this.importFile = false;
+                                    this.excelFile = [];
+                                    this.contentFile = [];
+                                    console.log(err);
+                                  }
+                                );
+                              }
+                            }
+                            if (find == false) {
+                              let addContent = new BaaS.TableObject(
+                                "question_content"
+                              );
+                              let add = addContent.create();
+                              add.set("content", element.content);
+                              add.set("catalog", null);
+                              add.save().then(
+                                (res) => {
+                                  element.id = res.data.id;
+                                  k++;
+                                  if (k == qc.length) {
+                                    this.excelFile.forEach((element1) => {
+                                      var a = qc.findIndex(
+                                        (item) =>
+                                          item.content ===
+                                          element1.question_content_id
+                                      );
+                                      if (a != -1) {
+                                        element1.question_content_id = qc[a].id;
+                                        let importQ = new BaaS.TableObject(
+                                          "questions_information"
+                                        );
+                                        let importq = importQ.create();
+                                        importq
+                                          .set(element1)
+                                          .save()
+                                          .then(
+                                            (res) => {
+                                              // console.log(res);
+                                              num++;
+                                              if (
+                                                num == this.excelFile.length
+                                              ) {
+                                                loading.close();
+                                                this.$message({
+                                                  message: "导入成功",
+                                                  type: "success",
+                                                });
+                                                this.init();
+                                                this.importFile = false;
+                                                this.excelFile = [];
+                                                this.contentFile = [];
+                                              }
+                                            },
+                                            (err) => {
+                                              loading.close();
+                                              this.$message({
+                                                message: "导入失败",
+                                                type: "warning",
+                                              });
+                                              this.init();
+                                              this.importFile = false;
+                                              this.excelFile = [];
+                                              this.contentFile = [];
+                                              console.log(err);
+                                            }
+                                          );
+                                      }
+                                    });
                                   }
                                 },
                                 (err) => {
@@ -1065,43 +1442,38 @@ export default {
                                   });
                                   this.init();
                                   this.importFile = false;
+                                  this.excelFile = [];
+                                  this.contentFile = [];
                                   console.log(err);
                                 }
                               );
-                          }
-                        });
-                      }
-                    } else if (res.data.objects.length == 0) {
-                      if (cata.length != 0) {
-                        let find = false;
-                        for (let i = 0; i < cata.length; i++) {
-                          find = true;
-                          if (cata[i].content == element.content) {
+                            }
+                          } else {
                             let addContent = new BaaS.TableObject(
                               "question_content"
                             );
                             let add = addContent.create();
                             add.set("content", element.content);
-                            add.set("catalog", cata[i].catalog);
+                            add.set("catalog", null);
                             add.save().then(
                               (res) => {
                                 element.id = res.data.id;
                                 k++;
                                 if (k == qc.length) {
-                                  this.excelFile.forEach((element) => {
+                                  this.excelFile.forEach((element1) => {
                                     var a = qc.findIndex(
                                       (item) =>
                                         item.content ===
-                                        element.question_content_id
+                                        element1.question_content_id
                                     );
                                     if (a != -1) {
-                                      element.question_content_id = qc[a].id;
+                                      element1.question_content_id = qc[a].id;
                                       let importQ = new BaaS.TableObject(
                                         "questions_information"
                                       );
                                       let importq = importQ.create();
                                       importq
-                                        .set(element)
+                                        .set(element1)
                                         .save()
                                         .then(
                                           (res) => {
@@ -1115,6 +1487,8 @@ export default {
                                               });
                                               this.init();
                                               this.importFile = false;
+                                              this.excelFile = [];
+                                              this.contentFile = [];
                                             }
                                           },
                                           (err) => {
@@ -1125,6 +1499,8 @@ export default {
                                             });
                                             this.init();
                                             this.importFile = false;
+                                            this.excelFile = [];
+                                            this.contentFile = [];
                                             console.log(err);
                                           }
                                         );
@@ -1133,141 +1509,39 @@ export default {
                                 }
                               },
                               (err) => {
+                                loading.close();
+                                this.$message({
+                                  message: "导入失败",
+                                  type: "warning",
+                                });
+                                this.init();
+                                this.importFile = false;
+                                this.excelFile = [];
+                                this.contentFile = [];
                                 console.log(err);
                               }
                             );
                           }
                         }
-                        if (find == false) {
-                          let addContent = new BaaS.TableObject(
-                            "question_content"
-                          );
-                          let add = addContent.create();
-                          add.set("content", element.content);
-                          add.set("catalog", null);
-                          add.save().then(
-                            (res) => {
-                              element.id = res.data.id;
-                              k++;
-                              if (k == qc.length) {
-                                this.excelFile.forEach((element) => {
-                                  var a = qc.findIndex(
-                                    (item) =>
-                                      item.content ===
-                                      element.question_content_id
-                                  );
-                                  if (a != -1) {
-                                    element.question_content_id = qc[a].id;
-                                    let importQ = new BaaS.TableObject(
-                                      "questions_information"
-                                    );
-                                    let importq = importQ.create();
-                                    importq
-                                      .set(element)
-                                      .save()
-                                      .then(
-                                        (res) => {
-                                          // console.log(res);
-                                          num++;
-                                          if (num == this.excelFile.length) {
-                                            loading.close();
-                                            this.$message({
-                                              message: "导入成功",
-                                              type: "success",
-                                            });
-                                            this.init();
-                                            this.importFile = false;
-                                          }
-                                        },
-                                        (err) => {
-                                          loading.close();
-                                          this.$message({
-                                            message: "导入失败",
-                                            type: "warning",
-                                          });
-                                          this.init();
-                                          this.importFile = false;
-                                          console.log(err);
-                                        }
-                                      );
-                                  }
-                                });
-                              }
-                            },
-                            (err) => {
-                              console.log(err);
-                            }
-                          );
-                        }
-                      } else {
-                        let addContent = new BaaS.TableObject(
-                          "question_content"
-                        );
-                        let add = addContent.create();
-                        add.set("content", element.content);
-                        add.set("catalog", null);
-                        add.save().then(
-                          (res) => {
-                            element.id = res.data.id;
-                            k++;
-                            if (k == qc.length) {
-                              this.excelFile.forEach((element) => {
-                                var a = qc.findIndex(
-                                  (item) =>
-                                    item.content === element.question_content_id
-                                );
-                                if (a != -1) {
-                                  element.question_content_id = qc[a].id;
-                                  let importQ = new BaaS.TableObject(
-                                    "questions_information"
-                                  );
-                                  let importq = importQ.create();
-                                  importq
-                                    .set(element)
-                                    .save()
-                                    .then(
-                                      (res) => {
-                                        // console.log(res);
-                                        num++;
-                                        if (num == this.excelFile.length) {
-                                          loading.close();
-                                          this.$message({
-                                            message: "导入成功",
-                                            type: "success",
-                                          });
-                                          this.init();
-                                          this.importFile = false;
-                                        }
-                                      },
-                                      (err) => {
-                                        loading.close();
-                                        this.$message({
-                                          message: "导入失败",
-                                          type: "warning",
-                                        });
-                                        this.init();
-                                        this.importFile = false;
-                                        console.log(err);
-                                      }
-                                    );
-                                }
-                              });
-                            }
-                          },
-                          (err) => {
-                            console.log(err);
-                          }
-                        );
+                      },
+                      (err) => {
+                        loading.close();
+                        this.$message({
+                          message: "导入失败",
+                          type: "warning",
+                        });
+                        this.init();
+                        this.importFile = false;
+                        this.excelFile = [];
+                        this.contentFile = [];
+                        console.log(err);
                       }
-                    }
-                  },
-                  (err) => {
-                    console.log(err);
-                  }
-                );
-            });
+                    );
+                });
+              }
+            }, 50 * this.fileNum);
           }
-        }
+        }, 2000);
       }
       // 清空文件列表
       this.fileList = [];
@@ -1425,6 +1699,7 @@ export default {
         paper = [];
       let query = new BaaS.Query();
       query.compare("created_by", "=", Cookie.get("user_id") * 1);
+      // query.compare("created_by", "=", sessionStorage.getItem("user_id") * 1);
       let q2 = new BaaS.Query();
       q2.compare("is_delete", "=", false);
       let andQuery = BaaS.Query.and(query, q2);
@@ -1521,7 +1796,7 @@ export default {
           if (ques[i].question_content_id != null) {
             for (let k = 0; k < mat.length; k++) {
               if (ques[i].question_content_id == mat[k].id) {
-                if (mat[k].content != null) {
+                if (mat[k].content != null && mat[k].content != "") {
                   ques[i].question_content_id = mat[k].content;
                 } else {
                   ques[i].question_content_id = "";
@@ -1564,7 +1839,8 @@ export default {
     },
     arraySpanMethod({ row, column, rowIndex, columnIndex }) {
       if (
-        this.tableData[rowIndex].finish == false 
+        this.tableData[rowIndex].finish == false ||
+        this.tableData[rowIndex].rename == true
       ) {
         if (columnIndex === 2) {
           return [1, 2];
@@ -1611,11 +1887,12 @@ export default {
     handleClose() {
       this.preMove = [];
       this.moveVisible = false;
+      this.illegalVisible = false;
     },
     to(val) {
       for (let i = 0; i < this.preMove.length; i++) {
         let Catalog = new BaaS.TableObject("questions_information");
-        let cata = Catalog.getWithoutData(this.preMove[i]);
+        let cata = Catalog.limit(1000).getWithoutData(this.preMove[i]);
         cata.set("catalog", val);
         cata.update().then(
           (res) => {
@@ -1670,9 +1947,12 @@ export default {
         query.compare("catalog", "=", name);
         let q2 = new BaaS.Query();
         q2.compare("is_delete", "=", false);
-        let andQuery = BaaS.Query.and(query, q2);
+        let q3 = new BaaS.Query();
+        q3.compare("created_by", "=", Cookie.get("user_id") * 1);
+        let andQuery = BaaS.Query.and(query, q2, q3);
         let Catalog = new BaaS.TableObject("questions_information");
         Catalog.setQuery(andQuery)
+          .limit(1000)
           .find()
           .then(
             (res) => {
@@ -1765,31 +2045,74 @@ export default {
           message: "文件名不能输入空格",
           type: "error",
         });
+      } else if (row.catalog == this.previousName) {
+        row.rename = false;
+        this.previousName = "";
       } else {
         let query = new BaaS.Query();
         query.compare("catalog", "=", row.catalog);
+        let q2 = new BaaS.Query();
+        q2.compare("is_delete", "=", false);
+        let q3 = new BaaS.Query();
+        q3.compare("created_by", "=", Cookie.get("user_id") * 1);
+        let andQuery = BaaS.Query.and(query, q2, q3);
         let Catalog = new BaaS.TableObject("questions_information");
-        Catalog.setQuery(query)
+        Catalog.setQuery(andQuery)
+          .limit(1000)
           .find()
           .then(
             (res) => {
               // console.log(res);
               if (res.data.objects.length == 0) {
-                let catalog = Catalog.getWithoutData(row.id);
-                catalog.set("catalog", row.catalog);
-                catalog.update().then(
-                  (res) => {
-                    // console.log(res);
-                    row.rename = false;
-                    this.$message({
-                      message: "文件重命名成功",
-                      type: "success",
-                    });
-                  },
-                  (err) => {
-                    console.log(err);
-                  }
-                );
+                let q4 = new BaaS.Query();
+                q4.compare("catalog", "=", this.previousName);
+                let q5 = new BaaS.Query();
+                q5.compare("is_delete", "=", false);
+                let q6 = new BaaS.Query();
+                q6.compare("created_by", "=", Cookie.get("user_id") * 1);
+                let andQuery2 = BaaS.Query.and(q4, q5, q6);
+                let fCatalog = new BaaS.TableObject("questions_information");
+                fCatalog
+                  .setQuery(andQuery2)
+                  .limit(1000)
+                  .find()
+                  .then(
+                    (res) => {
+                      let id = [];
+                      let num = 0;
+                      let all = res.data.objects.length;
+                      if (res.data.objects.length != 0) {
+                        console.log(res);
+                        res.data.objects.forEach((element) => {
+                          id.push(element.id);
+                        });
+                        id.forEach((item) => {
+                          let catalog =
+                            Catalog.limit(1000).getWithoutData(item);
+                          catalog.set("catalog", row.catalog);
+                          catalog.update().then(
+                            (res) => {
+                              console.log(res);
+                              num++;
+                              if (num == all) {
+                                row.rename = false;
+                                this.$message({
+                                  message: "文件重命名成功",
+                                  type: "success",
+                                });
+                              }
+                            },
+                            (err) => {
+                              console.log(err);
+                            }
+                          );
+                        });
+                      }
+                    },
+                    (err) => {
+                      console.log(err);
+                    }
+                  );
               } else {
                 this.$message({
                   message: "该文件名已存在，请重新命名",
@@ -1815,38 +2138,48 @@ export default {
         spinner: "el-icon-loading",
         background: "rgba(0, 0, 0, 0.7)",
       });
+      let num = 0;
       let findCata = new BaaS.TableObject("questions_information");
       let findc = new BaaS.Query();
       let q2 = new BaaS.Query();
       findc.compare("catalog", "=", row.catalog);
       q2.compare("is_delete", "=", false);
-      let andQuery = BaaS.Query.and(findc, q2);
+      let q = new BaaS.Query();
+      q.compare("created_by", "=", Cookie.get("user_id") * 1);
+      let andQuery = BaaS.Query.and(findc, q2, q);
       findCata
         .setQuery(andQuery)
+        .limit(1000)
         .find()
         .then(
-          (res) => {
-            for (let i = 0; i < res.data.objects.length; i++) {
+          (ress) => {
+            console.log(ress);
+            for (let i = 0; i < ress.data.objects.length; i++) {
               let Catalog = new BaaS.TableObject("questions_information");
-              let cata = Catalog.getWithoutData(res.data.objects[i].id);
+              let cata = Catalog.limit(1000).getWithoutData(
+                ress.data.objects[i].id
+              );
               cata.set("is_delete", true);
               cata.update().then(
                 (res) => {
                   console.log(res);
-                  loading.close();
-                  this.$message({
-                    message: "文件夹删除成功",
-                    type: "success",
-                  });
-                  this.tableData.splice(index, 1);
-                  for (let i = 0; i < this.catalog.length; i++) {
-                    if (this.catalog[i].catalog == row.catalog) {
-                      this.catalog.splice(i, 1);
-                      sessionStorage.setItem(
-                        "questionsCatalog",
-                        JSON.stringify(this.catalog)
-                      );
-                      break;
+                  num++;
+                  if (num == ress.data.objects.length) {
+                    this.$message({
+                      message: "文件夹删除成功",
+                      type: "success",
+                    });
+                    this.tableData.splice(index, 1);
+                    loading.close();
+                    for (let i = 0; i < this.catalog.length; i++) {
+                      if (this.catalog[i].catalog == row.catalog) {
+                        this.catalog.splice(i, 1);
+                        sessionStorage.setItem(
+                          "questionsCatalog",
+                          JSON.stringify(this.catalog)
+                        );
+                        break;
+                      }
                     }
                   }
                 },
@@ -1867,14 +2200,19 @@ export default {
         );
     },
     trash() {
-      Cookies.set("trash", "questions");
-      Cookies.set("make_out", "second");
+      // Cookies.set("trash", "questions");
+      // Cookies.set("make_out", "second");
+      sessionStorage.setItem("trash", "questions");
+      sessionStorage.setItem("make_out", "second");
       this.$router.push("/trash_list");
     },
     enterFolder(row) {
-      Cookies.set("make_out", "second");
-      Cookies.set("catalog", row.catalog);
-      Cookies.set("catalogall", JSON.stringify(this.catalog));
+      // Cookies.set("make_out", "second");
+      // Cookies.set("catalog", row.catalog);
+      // Cookies.set("catalogall", JSON.stringify(this.catalog));
+      sessionStorage.setItem("make_out", "second");
+      sessionStorage.setItem("catalog", row.catalog);
+      sessionStorage.setItem("catalogall", JSON.stringify(this.catalog));
       this.$router.push("/questionCatalog");
     },
     delQues(index, val) {
@@ -1885,7 +2223,7 @@ export default {
         background: "rgba(0, 0, 0, 0.7)",
       });
       let Ques = new BaaS.TableObject("questions_information");
-      let ques = Ques.getWithoutData(val.id);
+      let ques = Ques.limit(1000).getWithoutData(val.id);
       ques.set("is_delete", true);
       ques.update().then(
         (res) => {
@@ -2061,12 +2399,13 @@ export default {
       }
     },
     addQuestion() {
-      Cookies.set("make_out", "second");
+      // Cookies.set("make_out", "second");
+      sessionStorage.setItem("make_out", "second");
       this.$router.push("/addQuestion");
     },
     downloadTemplate() {
       let Template = new BaaS.File();
-      Template.get("6266180e7a0c9a036e284d81").then(
+      Template.get("637b78dd973f017405db03ef").then(
         (res) => {
           // console.log(res);
           let viewUrl = res.data.path;
@@ -2105,6 +2444,7 @@ export default {
     },
     indexMethod(index) {
       return index + 1;
+      // return (this.tableData.currentPage-1)
     },
     handleSet() {
       this.dialogFormVisible = true;
@@ -2222,7 +2562,158 @@ export default {
         }
       }
       if (valid == true) {
-        this.autoClose();
+        const loading = this.$loading({
+          lock: true,
+          text: "正在出题中，请稍后",
+          spinner: "el-icon-loading",
+          background: "rgba(0, 0, 0, 0.7)",
+        });
+        let finish = 0;
+        let success = 0;
+        for (let i = 0; i < this.editableTabs.length; i++) {
+          for (let j = 0; j < this.editableTabs[i].content.type.length; j++) {
+            if (
+              this.editableTabs[i].content.type[j].ques_type[1] ==
+              "选择正确的词语填空"
+            ) {
+              let grade = 1;
+              if (this.editableTabs[i].content.type[j].grade == "一级") {
+                grade = 1;
+              } else if (this.editableTabs[i].content.type[j].grade == "二级") {
+                grade = 2;
+              } else if (this.editableTabs[i].content.type[j].grade == "三级") {
+                grade = 3;
+              }
+              Read1(
+                this.editableTabs[i].content.ques_con,
+                grade,
+                this.editableTabs[i].content.type[j].ques_num
+              ).then(
+                (res) => {
+                  console.log(res);
+                  if (typeof res == "string") {
+                    this.$message({
+                      message: res,
+                      type: "warning",
+                    });
+                  } else if (res.medical_data.length != 0) {
+                    for (let j = 0; j < res.medical_data.length; j++) {
+                      global.auto.push(res.medical_data[j]);
+                    }
+                    success++;
+                  } else if (res.medical_data.length == 0) {
+                    this.$message({
+                      message: "无可出题目",
+                      type: "warning",
+                    });
+                  }
+                  finish++;
+                  setTimeout(() => {
+                    if (finish == this.editableTabs[i].content.type.length) {
+                      loading.close();
+                      this.autoClose();
+                      if (success > 0) {
+                        sessionStorage.setItem("autoQues", "true");
+                        sessionStorage.setItem("make_out", "second");
+                        this.$router.push("/mcreatePaper");
+                      }
+                    }
+                  }, 1000);
+
+                  // if (res.synthesis_data.length != 0) {
+                  //   for (let j = 0; j < res.synthesis_data.length; j++) {
+                  //     global.auto.push(res.synthesis_data[j]);
+                  //   }
+                  // }
+
+                  // let questions = []
+                  // let content = []
+                  // for(let i=0;i<this.form.type.length;i++){
+                  //   let s = {
+                  //     temp: this.form.ques_con
+                  //   }
+                  // }
+                  // for(let i=0;i<res.medical_data.length;i++){
+                  //   let t = {
+                  //   question_content: this.form.ques_con,
+
+                  // }
+                  // }
+
+                  // Cookies.set("autoQues","true")
+                  // Cookies.set("make_out", "third");
+                  // sessionStorage.setItem("autoQues", "true");
+                  // sessionStorage.setItem("make_out", "third");
+                  // this.$router.push("/mcreatePaper");
+                },
+                (err) => {
+                  this.$message.error("出题失败");
+                  loading.close();
+                  console.log(err);
+                }
+              );
+            }
+            if (
+              this.editableTabs[i].content.type[j].ques_type[1] ==
+              "阅读短文，选择正确答案"
+            ) {
+              Read4(
+                this.editableTabs[i].content.ques_con,
+                this.editableTabs[i].content.type[j].ques_num_yixue,
+                this.editableTabs[i].content.type[j].ques_num_zonghe,
+                this.editableTabs[i].content.type[j].grade
+              ).then(
+                (res) => {
+                  console.log(res);
+                  if (res.medical_data.length != 0) {
+                    for (let j = 0; j < res.medical_data.length; j++) {
+                      global.auto.push(res.medical_data[j]);
+                    }
+                    success++;
+                  }
+                  if (res.synthesis_data.length != 0) {
+                    for (let j = 0; j < res.synthesis_data.length; j++) {
+                      global.auto.push(res.synthesis_data[j]);
+                    }
+                  }
+                  finish++;
+                  setTimeout(() => {
+                    if (finish == this.editableTabs[i].content.type.length) {
+                      loading.close();
+                      this.autoClose();
+                      if (success > 0) {
+                        sessionStorage.setItem("autoQues", "true");
+                        sessionStorage.setItem("make_out", "second");
+                        this.$router.push("/mcreatePaper");
+                      }
+                    }
+                  }, 1000);
+                  // let questions = []
+                  // let content = []
+                  // for(let i=0;i<this.form.type.length;i++){
+                  //   let s = {
+                  //     temp: this.form.ques_con
+                  //   }
+                  // }
+                  // for(let i=0;i<res.medical_data.length;i++){
+                  //   let t = {
+                  //   question_content: this.form.ques_con,
+
+                  // }
+                  // }
+
+                  // Cookies.set("autoQues","true")
+                  // Cookies.set("make_out", "third");
+                },
+                (err) => {
+                  this.$message.error("出题失败");
+                  loading.close();
+                  console.log(err);
+                }
+              );
+            }
+          }
+        }
       }
     },
     autoClose() {
@@ -2241,7 +2732,7 @@ export default {
             ques_ex: "",
             type: [
               {
-                grade: "不限等级",
+                grade: "一级",
                 ques_num: 1,
                 ques_type: "",
                 ques_num_yixue: 1,
@@ -2263,6 +2754,7 @@ export default {
     },
     addAuto() {
       let t = {
+        grade: "一级",
         ques_type: "",
         ques_num: 1,
         ques_num_yixue: 1,
@@ -2293,7 +2785,7 @@ export default {
           ques_ex: "",
           type: [
             {
-              grade: "不限等级",
+              grade: "一级",
               ques_num: 1,
               ques_type: "",
               ques_num_yixue: 1,
@@ -2339,11 +2831,16 @@ export default {
       this.currentPage = val;
     },
     check_edit(id, question, file) {
-      Cookies.set("make_out", "second");
-      Cookies.set("ques_checkEdit", id);
-      Cookies.set("question_file", file);
-      Cookies.set("question_content", question);
-      Cookies.set("selectQues", false);
+      // Cookies.set("make_out", "second");
+      // Cookies.set("ques_checkEdit", id);
+      // Cookies.set("question_file", file);
+      // Cookies.set("question_content", question);
+      // Cookies.set("selectQues", false);
+      sessionStorage.setItem("make_out", "second");
+      sessionStorage.setItem("ques_checkEdit", id);
+      sessionStorage.setItem("question_file", file);
+      sessionStorage.setItem("question_content", question);
+      sessionStorage.setItem("selectQues", false);
       this.$router.push("/ques_checkEdit");
     },
     exp() {
@@ -2371,6 +2868,7 @@ export default {
           catanum++;
           let query = new BaaS.Query();
           query.compare("created_by", "=", Cookie.get("user_id") * 1);
+          // query.compare("created_by", "=", sessionStorage.getItem("user_id") * 1);
           let que = new BaaS.Query();
           que.compare("catalog", "=", this.der[i].catalog);
           let q3 = new BaaS.Query();
@@ -2428,6 +2926,7 @@ export default {
                       );
                       findContent
                         .setQuery(query)
+                        .limit(1000)
                         .find()
                         .then(
                           (res) => {
@@ -2744,6 +3243,184 @@ export default {
       material.create();
       this.editor.push(material);
     },
+    illegal(val) {
+      this.length_check = [];
+      this.content_check = [];
+      this.level_check = [];
+      if (val.primary_ques_type == "听力") {
+        this.$message.warning("听力题审核正在开发中");
+      } else if (val.primary_ques_type == "阅读") {
+        const loading = this.$loading({
+          lock: true,
+          text: "正在进行合规检查，请稍后",
+          spinner: "el-icon-loading",
+          background: "rgba(0, 0, 0, 0.7)",
+        });
+        console.log(val);
+        let option = JSON.parse(val.options);
+        console.log(option);
+        let options = [];
+        let answer = "";
+        for (let i = 0; i < option.length; i++) {
+          if (option[i].index != val.answer) {
+            options.push(option[i].content);
+          } else {
+            answer = option[i].content;
+          }
+        }
+        let MCTlevel = "";
+        if (val.grade_standard == null) {
+          MCTlevel = null;
+        } else {
+          MCTlevel = val.grade_standard[1];
+        }
+        Illegal(
+          val.primary_ques_type,
+          val.question_content_id,
+          val.question,
+          options,
+          answer,
+          MCTlevel,
+          "length_check"
+        ).then(
+          (res) => {
+            console.log(res);
+            // length_check = res
+            if (res.msg == "请求成功") {
+              this.length_check = res.length_check;
+            } else {
+              this.length_check.push("error");
+            }
+            if (
+              this.content_check.length != 0 &&
+              this.level_check.length != 0
+            ) {
+              loading.close();
+              this.illegalVisible = true;
+            }
+          },
+          (err) => {
+            this.$message.error("文本长度检测失败");
+            console.log(err);
+            loading.close();
+          }
+        );
+        if (val.question_content_id.length <= 128) {
+          Illegal(
+            val.primary_ques_type,
+            val.question_content_id,
+            val.question,
+            options,
+            answer,
+            MCTlevel,
+            "content_check"
+          ).then(
+            (res) => {
+              console.log(res);
+              // content_check = res
+              if (res.msg == "请求成功") {
+                this.content_check.push(res.content_check);
+                console.log(this.content_check);
+              } else {
+                this.content_check.push("error");
+              }
+              if (
+                this.length_check.length != 0 &&
+                this.level_check.length != 0
+              ) {
+                loading.close();
+                this.illegalVisible = true;
+              }
+            },
+            (err) => {
+              this.$message.error("文本内容检测失败");
+              console.log(err);
+              loading.close();
+            }
+          );
+        } else {
+          let quesc = [];
+          let num = Math.ceil(val.question_content_id.length / 128);
+          for (let i = 0; i < num; i++) {
+            let t = val.question_content_id.substring(i * 128, i * 128 + 128);
+            quesc.push(t);
+          }
+          for (let i = 0; i < quesc.length; i++) {
+            Illegal(
+              val.primary_ques_type,
+              quesc[i],
+              val.question,
+              options,
+              answer,
+              MCTlevel,
+              "content_check"
+            ).then(
+              (res) => {
+                console.log(res);
+                // content_check = res
+                if (res.msg == "请求成功") {
+                  this.content_check.push(res.content_check);
+                } else {
+                  this.content_check.push("error");
+                }
+                if (
+                  this.length_check.length != 0 &&
+                  this.level_check.length != 0 &&
+                  this.content_check.length == quesc.length
+                ) {
+                  let str = "";
+                  console.log(this.content_check);
+                  for (let j = 0; j < this.content_check.length; j++) {
+                    str += this.content_check[j].cor_t_question_content[0];
+                  }
+                  this.content_check[0].cor_t_question_content[0] = str;
+                  loading.close();
+                  this.illegalVisible = true;
+                }
+              },
+              (err) => {
+                this.$message.error("文本内容检测失败");
+                console.log(err);
+                loading.close();
+              }
+            );
+          }
+        }
+
+        Illegal(
+          val.primary_ques_type,
+          val.question_content_id,
+          val.question,
+          options,
+          answer,
+          MCTlevel,
+          "level_check"
+        ).then(
+          (res) => {
+            console.log(res);
+            if (res.msg == "请求成功") {
+              this.level_check = res.level_check;
+            } else {
+              this.level_check.push("error");
+            }
+            if (
+              this.content_check.length != 0 &&
+              this.length_check.length != 0
+            ) {
+              loading.close();
+              this.illegalVisible = true;
+            }
+          },
+          (err) => {
+            this.$message.error("题目等级检测失败");
+            console.log(err);
+            loading.close();
+          }
+        );
+      } else if (val.primary_ques_type == "写作") {
+        this.$message.warning("写作题审核正在开发中");
+      }
+    },
   },
   created() {},
   mounted() {
@@ -2795,5 +3472,20 @@ export default {
   margin-bottom: 20px;
   padding-bottom: 40px;
   border-bottom: 1px dotted gray;
+}
+.ill {
+  font-weight: bold;
+  display: flex;
+  flex-direction: row;
+  font-size: 18px;
+  align-items: center;
+}
+.ill p {
+  font-weight: normal;
+  font-size: 16px;
+  margin-left: 10px;
+  display: flex;
+  justify-content: flex-start;
+  flex: 1;
 }
 </style>

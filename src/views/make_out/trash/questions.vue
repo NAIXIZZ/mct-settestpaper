@@ -51,7 +51,7 @@
       </el-table-column>
       <el-table-column
         prop="question_content_id"
-        label="题目"
+        label="题干"
         show-overflow-tooltip
         width="300"
       >
@@ -61,7 +61,9 @@
             controls="controls"
             v-if="
               scope.row.question_content_id &&
-              scope.row.question_content_id.search('.mp3') != -1
+              (scope.row.question_content_id.search('.mp3') != -1||
+              scope.row.question_content_id.search('.wav') != -1||
+              scope.row.question_content_id.search('.ogg') != -1)
             "
             style="width: 250px"
           ></audio>
@@ -70,7 +72,9 @@
             :src="scope.row.question_content_id"
             v-else-if="
               scope.row.question_content_id &&
-              scope.row.question_content_id.search('.png') != -1
+              (scope.row.question_content_id.search('.png') != -1||
+              scope.row.question_content_id.search('.jpg') != -1||
+              scope.row.question_content_id.search('.gif') != -1)
             "
           ></el-image>
           <p v-else>{{ scope.row.question_content_id }}</p>
@@ -83,16 +87,26 @@
       <el-table-column label="操作" width="500">
         <template slot-scope="scope">
           <el-button
-            v-if="scope.row.primary_ques_type != null"
+            v-if="scope.row.primary_ques_type != null&&scope.row.question_content_id!='原题干已删除'"
             type="success"
             plain
             @click="check_edit(scope.row.id, scope.row.question_content_id)"
             >查看</el-button
           >
-          <el-button type="danger" plain @click="delDefine(scope.row, 1)"
+          <el-button
+            v-else
+            type="success"
+            plain
+            disabled
+            >查看</el-button
+          >
+          <el-button type="danger" plain @click="delDefine(scope.row, 1,scope.$index)"
             >删除</el-button
           >
-          <el-button type="primary" plain @click="moveTo(scope.row, 1)"
+          <el-button type="primary" plain @click="moveTo(scope.row, 1)" v-if="scope.row.question_content_id!='原题干已删除'"
+            >还原</el-button
+          >
+          <el-button type="primary" plain disabled v-else
             >还原</el-button
           >
         </template>
@@ -138,7 +152,7 @@
 </template>
 
 <script>
-import Cookies from "js-cookie";
+// import Cookies from "js-cookie";
 import Cookie from "js-cookie";
 var BaaS = require("minapp-sdk");
 let clientID = "395062a19e209a770059";
@@ -213,8 +227,8 @@ export default {
               label: "阅读材料，选择正确答案",
             },
             {
-              value: "阅读短文，选出正确答案",
-              label: "阅读短文，选出正确答案",
+              value: "阅读短文，选择正确答案",
+              label: "阅读短文，选择正确答案",
             },
           ],
         },
@@ -224,6 +238,7 @@ export default {
         },
       ],
       catalog: [],
+      index:0,
     };
   },
   watch: {},
@@ -232,6 +247,7 @@ export default {
     init() {
       let query = new BaaS.Query();
       query.compare("created_by", "=", Cookie.get("user_id") * 1);
+      // query.compare("created_by", "=", sessionStorage.getItem("user_id") * 1);
       let q2 = new BaaS.Query();
       q2.compare("is_delete", "=", true);
       let andQuery = BaaS.Query.and(query, q2);
@@ -249,17 +265,21 @@ export default {
                 query.compare("id", "=", element.question_content_id);
                 let findContent = new BaaS.TableObject("question_content");
                 findContent
-                  .setQuery(query)
+                  .setQuery(query).limit(1000)
                   .find()
                   .then(
                     (res) => {
-                      if (res.data.objects[0].content != null) {
+                      if(res.data.objects.length!=0){
+                        if (res.data.objects[0].content != null) {
                         element.question_content_id =
                           res.data.objects[0].content;
                       } else if (res.data.objects[0].file_url != null) {
                         element.question_content_id =
                           res.data.objects[0].file_url.path;
                         this.srcList.push(element.question_content_id);
+                      }
+                      }else{
+                        element.question_content_id = "原题干已删除"
                       }
                     },
                     (err) => {
@@ -333,21 +353,24 @@ export default {
     use_clear() {
       this.tableData = this.initial;
     },
-    delDefine(row, type) {
+    delDefine(row, type,index) {
       if (type == 1) {
         this.preMove.push(row.id);
       } else if (type == 2) {
         this.preMove = row;
       }
+      this.index = index
       this.dialogVisible = true;
     },
     delContent() {
+      console.log("1")
       const loading = this.$loading({
         lock: true,
         text: "正在删除，请稍后",
         spinner: "el-icon-loading",
         background: "rgba(0, 0, 0, 0.7)",
       });
+      let num=0
       for (let i = 0; i < this.preMove.length; i++) {
         let findCata = new BaaS.TableObject("questions_information");
         findCata.delete(this.preMove[i]).then(
@@ -359,7 +382,10 @@ export default {
                 message: "删除成功",
                 type: "success",
               });
-              this.init();
+              if (num == 0) {
+            this.tableData.splice(this.index, 1);
+            num++;
+          }
               this.dialogVisible = false;
             }
           },
@@ -412,7 +438,7 @@ export default {
       for (let i = 0; i < this.preMove.length; i++) {
         console.log(this.preMove[i]);
         let Catalog = new BaaS.TableObject("questions_information");
-        let cata = Catalog.getWithoutData(this.preMove[i]);
+        let cata = Catalog.limit(1000).getWithoutData(this.preMove[i]);
         cata.set("is_delete", false);
         cata.update().then(
           (res) => {
@@ -506,22 +532,28 @@ export default {
       }
     },
     check_edit(id, question) {
-      Cookies.set("ques_checkEdit", id);
+      // Cookies.set("ques_checkEdit", id);
+      sessionStorage.setItem("ques_checkEdit", id);
       if (
         (question && question.search(".png") != -1) ||
         question.search(".mp3") != -1
       ) {
-        Cookies.set("question_file", question);
+        // Cookies.set("question_file", question);
+        sessionStorage.setItem("question_file", question);
       } else {
-        Cookies.set("question_content", question);
+        // Cookies.set("question_content", question);
+        sessionStorage.setItem("question_content", question);
       }
-      Cookies.set("selectQues", "true");
-      Cookies.set("trash", "questions");
+      // Cookies.set("selectQues", "true");
+      // Cookies.set("trash", "questions");
+      sessionStorage.setItem("selectQues", "true");
+      sessionStorage.setItem("trash", "questions");
       this.$router.push("/ques_checkEdit");
     },
     handleClose() {
       this.preMove = [];
       this.moveVisible = false;
+      this.dialogVisible = false
     },
     handleSizeChange(val) {
       console.log(`每页 ${val} 条`);

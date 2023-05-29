@@ -46,7 +46,9 @@
             :src="scope.row.file_url.path"
             controls="controls"
             v-if="
-              scope.row.file_url && scope.row.file_url.path.search('.mp3') != -1
+              scope.row.file_url && scope.row.file_url.path.search('.mp3') != -1||
+              scope.row.file_url && scope.row.file_url.path.search('.wav') != -1||
+              scope.row.file_url && scope.row.file_url.path.search('.ogg') != -1
             "
           ></audio>
           <el-image
@@ -54,7 +56,9 @@
             :preview-src-list="srcList"
             :src="scope.row.file_url.path"
             v-if="
-              scope.row.file_url && scope.row.file_url.path.search('.png') != -1
+              scope.row.file_url && scope.row.file_url.path.search('.png') != -1||
+              scope.row.file_url && scope.row.file_url.path.search('.gif') != -1||
+              scope.row.file_url && scope.row.file_url.path.search('.jpg') != -1
             "
           ></el-image>
         </template>
@@ -203,6 +207,7 @@ export default {
     init() {
       let query = new BaaS.Query();
       query.compare("created_by", "=", Cookie.get("user_id") * 1);
+      // query.compare("created_by", "=", sessionStorage.getItem("user_id") * 1);
       let q2 = new BaaS.Query();
       q2.compare("is_delete", "=", true);
       let andQuery = BaaS.Query.and(query, q2);
@@ -332,7 +337,7 @@ export default {
       });
       for (let i = 0; i < this.preMove.length; i++) {
         let Catalog = new BaaS.TableObject("question_content");
-        let cata = Catalog.getWithoutData(this.preMove[i]);
+        let cata = Catalog.limit(1000).getWithoutData(this.preMove[i]);
         cata.set("is_delete", false);
         cata.update().then(
           (res) => {
@@ -431,6 +436,7 @@ export default {
     handleClose() {
       this.preMove = [];
       this.moveVisible = false;
+      this.dialogVisible = false
     },
     handleSizeChange(val) {
       console.log(`每页 ${val} 条`);

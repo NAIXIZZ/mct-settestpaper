@@ -118,8 +118,8 @@
 var BaaS = require("minapp-sdk");
 let clientID = "395062a19e209a770059";
 BaaS.init(clientID);
-import Cookies from "js-cookie";
-import Cookie from "js-cookie";
+// import Cookies from "js-cookie";
+// import Cookie from "js-cookie";
 import global from "@/util/global.js";
 export default {
   name: "",
@@ -213,7 +213,8 @@ export default {
       this.tableData = global.selectQuesCatalog;
       if (global.totalSelect.length != 0) {
         global.totalSelect.forEach((element) => {
-          if (element.name == Cookie.get("catalog_id")) {
+          // if (element.name == Cookie.get("catalog_id")) {
+            if (element.name == sessionStorage.getItem("catalog_id")) {
             this.multipleSelection = element.sel;
             this.listen = element.listen;
             this.read = element.read;
@@ -345,12 +346,14 @@ export default {
       this.$router.go(-1);
     },
     back() {
-      for (let i = 0; i < global.totalSelect.length; i++) {
-        if (global.totalSelect[i].name == Cookie.get("catalog_id")) {
-          global.totalSelect.splice(i, 1);
-          break;
-        }
-      }
+      // for (let i = 0; i < global.totalSelect.length; i++) {
+      //   // if (global.totalSelect[i].name == Cookie.get("catalog_id")) {
+      //     if (global.totalSelect[i].name == sessionStorage.getItem("catalog_id")) {
+      //     global.totalSelect.splice(i, 1);
+      //     break;
+      //   }
+      // }
+      console.log(global)
       this.$router.go(-1);
     },
     cancel() {
@@ -371,7 +374,8 @@ export default {
         });
       });
       for (let i = 0; i < global.totalSelect.length; i++) {
-        if (global.totalSelect[i].name == Cookie.get("catalog_id")) {
+        // if (global.totalSelect[i].name == Cookie.get("catalog_id")) {
+          if (global.totalSelect[i].name == sessionStorage.getItem("catalog_id")) {
           global.totalSelect.splice(i, 1);
           break;
         }
@@ -423,14 +427,16 @@ export default {
       }
       if (global.totalSelect.length != 0) {
         for (let i = 0; i < global.totalSelect.length; i++) {
-          if (global.totalSelect[i].name == Cookie.get("catalog_id")) {
+          // if (global.totalSelect[i].name == Cookie.get("catalog_id")) {
+            if (global.totalSelect[i].name == sessionStorage.getItem("catalog_id")) {
             global.totalSelect.splice(i, 1);
             break;
           }
         }
       }
       let temp = {
-        name: Cookie.get("catalog_id"),
+        // name: Cookie.get("catalog_id"),
+        name: sessionStorage.getItem("catalog_id"),
         sel: this.multipleSelection,
         listen: this.listen,
         read: this.read,
@@ -509,16 +515,24 @@ export default {
     check_edit(id, question) {
       // sessionStorage.setItem('tableData',JSON.stringify(this.tableData))
       // sessionStorage.setItem('multipleSelection',JSON.stringify(this.multipleSelection))
-      Cookies.set("ques_checkEdit", id);
+      // Cookies.set("ques_checkEdit", id);
+      sessionStorage.setItem("ques_checkEdit", id);
       if (
-        (question && question.search(".png") != -1) ||
-        question.search(".mp3") != -1
+        question && (question.search(".png") != -1 ||
+          question.search(".jpg") != -1 ||
+          question.search(".gif") != -1 ||
+          question.search(".mp3") != -1 ||
+          question.search(".wav") != -1 ||
+          question.search(".ogg") != -1)
       ) {
-        Cookies.set("question_file", question);
+        //Cookies.set("question_file", question);
+        sessionStorage.setItem("question_file", question);
       } else {
-        Cookies.set("question_content", question);
+        // Cookies.set("question_content", question);
+        sessionStorage.setItem("question_content", question);
       }
-      Cookies.set("selectQues", true);
+      // Cookies.set("selectQues", true);
+      sessionStorage.setItem("selectQues", true);
       this.$router.push("/ques_checkEdit");
     },
   },

@@ -105,7 +105,7 @@ import {
   downloadZip,
   downloadWordZip,
 } from "@/util/Export2Excel.js";
-import Cookies from "js-cookie";
+// import Cookies from "js-cookie";
 import Cookie from "js-cookie";
 var BaaS = require("minapp-sdk");
 let clientID = "395062a19e209a770059";
@@ -152,11 +152,13 @@ export default {
       let q2 = new BaaS.Query();
       let q3 = new BaaS.Query();
       query.compare("created_by", "=", Cookie.get("user_id") * 1);
+      // query.compare("created_by", "=", sessionStorage.getItem("user_id") * 1);
       q2.compare("is_delete", "=", false);
-      q3.compare("question_content_id", "=", Cookie.get("material_id"));
+      // q3.compare("question_content_id", "=", Cookie.get("material_id"));
+      q3.compare("question_content_id", "=", sessionStorage.getItem("material_id"));
       let andQuery = BaaS.Query.and(query, q2, q3);
       let Question = new BaaS.TableObject("questions_information");
-      Question.setQuery(andQuery)
+      Question.setQuery(andQuery).limit(1000)
         .find()
         .then(
           (res) => {
@@ -342,9 +344,9 @@ export default {
     },
     delPaper(val) {
       let Ques = new BaaS.TableObject("test_paper");
-      let ques = Ques.getWithoutData(val.id);
+      let ques = Ques.limit(1000).getWithoutData(val.id);
       ques.set("is_delete", true);
-      ques.update().then(
+      ques.update().limit(1000).then(
         (res) => {
           console.log(res);
           this.$message({
@@ -359,7 +361,8 @@ export default {
       );
     },
     trash() {
-      Cookies.set("trash", "paper");
+      // Cookies.set("trash", "paper");
+      sessionStorage.setItem("trash", "paper");
       this.$router.push("/trash_list");
     },
     preview(val) {
@@ -390,7 +393,7 @@ export default {
               actual_sequence: ques[i].sub_sequence,
               score: ques[i].score * 1,
               question: res.data.question,
-              options: JSON.parse(res.data.options),
+              options: res.data.options,
               answer: res.data.answer,
               anlysis: res.data.anlysis,
               level_value: res.data.ques_level,
@@ -408,19 +411,84 @@ export default {
               author_org: res.data.author_org,
               time_created: res.data.time_created,
             };
-            let op = JSON.parse(res.data.options);
-            if (op != null && op != undefined) {
-              for (let j = 0; j < op.length; j++) {
-                if (op[j].index == "A") {
-                  sub.A = op[j].content;
-                } else if (op[j].index == "B") {
-                  sub.B = op[j].content;
-                } else if (op[j].index == "C") {
-                  sub.C = op[j].content;
-                } else if (op[j].index == "D") {
-                  sub.D = op[j].content;
-                }
+            if (res.data.options != null) {
+              let str = res.data.options.replace(/\s*/g, "");
+              let tempa = -1;
+              let tempb = -1;
+              let tempc = -1;
+              let tempd = -1;
+              if (str.indexOf('","index":"A"') != -1) {
+                tempa = str.indexOf('","index":"A"');
+              } else if (str.indexOf("','index':'A'") != -1) {
+                tempa = str.indexOf("','index':'A'");
               }
+              if (str.indexOf('","index":"B"') != -1) {
+                tempb = str.indexOf('","index":"B"');
+              } else if (str.indexOf("','index':'B'") != -1) {
+                tempb = str.indexOf("','index':'B'");
+              }
+              if (str.indexOf('","index":"C"') != -1) {
+                tempc = str.indexOf('","index":"C"');
+              } else if (str.indexOf("','index':'C'") != -1) {
+                tempc = str.indexOf("','index':'C'");
+              }
+              if (str.indexOf('","index":"D"') != -1) {
+                tempd = str.indexOf('","index":"D"');
+              } else if (str.indexOf("','index':'D'") != -1) {
+                tempd = str.indexOf("','index':'D'");
+              }
+              let a = "";
+              let b = "";
+              let c = "";
+              let d = "";
+              if (tempa != -1) {
+                while (str[tempa - 1] != '"' && str[tempa - 1] != "'") {
+                  a += str[tempa - 1];
+                  tempa--;
+                }
+                sub.A = a.split("").reverse().join("");
+              }
+              if (tempb != -1) {
+                while (str[tempb - 1] != '"' && str[tempb - 1] != "'") {
+                  b += str[tempb - 1];
+                  tempb--;
+                }
+                sub.B = b.split("").reverse().join("");
+              }
+              if (tempc != -1) {
+                while (str[tempc - 1] != '"' && str[tempc - 1] != "'") {
+                  c += str[tempc - 1];
+                  tempc--;
+                }
+                sub.C = c.split("").reverse().join("");
+              }
+              if (tempd != -1) {
+                while (str[tempd - 1] != '"' && str[tempd - 1] != "'") {
+                  d += str[tempd - 1];
+                  tempd--;
+                }
+                sub.D = d.split("").reverse().join("");
+              }
+              let o = [
+                {
+                  content: sub.A,
+                  index: "A",
+                },
+                {
+                  content: sub.B,
+                  index: "B",
+                },
+                {
+                  content: sub.C,
+                  index: "C",
+                },
+                {
+                  content: sub.D,
+                  index: "D",
+                },
+              ];
+              console.log(o);
+              sub.options = o;
             }
             ques[i].sub = sub;
             if (contents.length == ques.length) {
@@ -488,9 +556,12 @@ export default {
                       }
                       sessionStorage.setItem("ques_num", val.questions_num);
                       sessionStorage.setItem("ques_score", val.points);
-                      Cookies.set("paperEdit", true);
-                      Cookies.set("paperInfo", val.id);
-                      Cookies.set("make_out", "third");
+                      // Cookies.set("paperEdit", true);
+                      // Cookies.set("paperInfo", val.id);
+                      // Cookies.set("make_out", "third");
+                      sessionStorage.setItem("paperEdit", true);
+                      sessionStorage.setItem("paperInfo", val.id);
+                      sessionStorage.setItem("make_out", "third");
                       this.$router.push("/mcreatePaper");
                     }
                   },

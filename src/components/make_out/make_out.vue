@@ -21,8 +21,8 @@ import Heads from "@/components/heads";
 import material_list from "@/views/make_out/material/material_list";
 import ques_list from "@/views/make_out/question/ques_list";
 import paper_list from "@/views/make_out/paper/paper_list";
-import Cookie from "js-cookie";
-import Cookies from "js-cookie";
+// import Cookie from "js-cookie";
+// import Cookies from "js-cookie";
 
 export default {
   name: "",
@@ -42,13 +42,16 @@ export default {
   computed: {},
   methods: {
     init() {
-      let current = Cookie.get("make_out");
+      // let current = Cookie.get("make_out");
+      let current = sessionStorage.getItem("make_out");
       if (current == "second") {
         this.active_out = "second";
-        Cookies.set("make_out", "");
+        // Cookies.set("make_out", "");
+        sessionStorage.setItem("make_out", "");
       } else if (current == "third") {
         this.active_out = "third";
-        Cookies.set("make_out", "");
+        // Cookies.set("make_out", "");
+        sessionStorage.setItem("make_out", "");
       }
     },
   },

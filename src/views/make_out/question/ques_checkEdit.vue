@@ -163,23 +163,39 @@
           >
             <el-button>上传音频</el-button>
           </el-upload>
-          <audio :src="audio" controls="controls" v-if="audio != ''&&question.primary_ques_type=='听力'"></audio>
-          <el-upload
+          <audio
+            :src="audio"
+            controls="controls"
+            v-if="audio != '' && question.primary_ques_type == '听力'"
+          ></audio>
+          <div
             v-if="question.secondary_ques_type == '阅读材料，选择正确答案'"
-            ref="upload"
-            action=""
-            class="upload-demo"
-            :multiple="false"
-            accept=".xls,.xlsx"
-            :auto-upload="false"
-            :on-change="excelChange"
-            :on-exceed="handleExceed"
-            :on-remove="excelRemove"
-            :limit="1"
-            :file-list="excelfileList"
+            style="display: flex; flex-direction: row; align-items: center"
           >
-            <el-button>上传表格</el-button>
-          </el-upload>
+            <el-upload
+              ref="upload"
+              action=""
+              class="upload-demo"
+              :multiple="false"
+              accept=".xls,.xlsx"
+              :auto-upload="false"
+              :on-change="excelChange"
+              :on-exceed="handleExceed"
+              :on-remove="excelRemove"
+              :limit="1"
+              :file-list="excelfileList"
+            >
+              <el-button>上传表格</el-button>
+            </el-upload>
+            <el-tooltip
+              class="item"
+              effect="light"
+              content="点击查看上传格式"
+              placement="right"
+            >
+              <i class="el-icon-info" @click="excelMode = true"></i>
+            </el-tooltip>
+          </div>
         </div>
         <p class="warn">选项：答案选中项为正确答案标示。</p>
         <div style="border-bottom: 1px dashed #c0c4cc">
@@ -241,14 +257,41 @@
         </div> -->
         <div class="knowledge">
           MCT等级：
-          <el-cascader
+          <!-- <el-cascader
             v-model="grade_value"
             :options="grade_standard"
             :props="props"
             collapse-tags
             clearable
             placeholder="请选择等级标准"
-          ></el-cascader>
+          ></el-cascader> -->
+          <el-select
+            v-model="grade_value1"
+            placeholder="请选择"
+            @change="levelChange"
+            clearable
+          >
+            <el-option
+              v-for="item in grade_standard1"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            >
+            </el-option>
+          </el-select>
+          <el-select
+            v-model="grade_value2"
+            placeholder="请选择"
+            v-if="grade_value1 != ''"
+          >
+            <el-option
+              v-for="item in grade_standard2"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            >
+            </el-option>
+          </el-select>
           <el-tooltip
             class="item"
             effect="light"
@@ -262,14 +305,80 @@
         </div>
         <div class="knowledge">
           话题大纲：
-          <el-cascader
+          <!-- <el-cascader
             v-model="topic_value"
             :options="topic_outline"
             :props="props"
             collapse-tags
             clearable
             placeholder="请选择话题大纲"
-          ></el-cascader>
+          ></el-cascader> -->
+          <el-select
+            v-model="topic_value1"
+            placeholder="请选择"
+            @change="topicChange"
+            clearable
+          >
+            <el-option
+              v-for="item in topic_outline1"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            >
+            </el-option>
+          </el-select>
+          <el-select
+            v-model="topic_value2"
+            placeholder="请选择"
+            v-if="topic_value1 == '医生-医生'"
+          >
+            <el-option
+              v-for="item in topic_outline2_1"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            >
+            </el-option>
+          </el-select>
+          <el-select
+            v-model="topic_value2"
+            placeholder="请选择"
+            v-if="topic_value1 == '医生-患者'"
+          >
+            <el-option
+              v-for="item in topic_outline2_2"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            >
+            </el-option>
+          </el-select>
+          <el-select
+            v-model="topic_value2"
+            placeholder="请选择"
+            v-if="topic_value1 == '医生-护士'"
+          >
+            <el-option
+              v-for="item in topic_outline2_3"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            >
+            </el-option>
+          </el-select>
+          <el-select
+            v-model="topic_value2"
+            placeholder="请选择"
+            v-if="topic_value1 == '患者-护士'"
+          >
+            <el-option
+              v-for="item in topic_outline2_4"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            >
+            </el-option>
+          </el-select>
           <el-tooltip
             class="item"
             effect="light"
@@ -356,12 +465,10 @@
         </div>
         <div class="knowledge">
           题目创作日期：
-          <el-date-picker
+          <el-input
             v-model="time_created"
-            type="date"
             placeholder="选择题目创作日期"
-          >
-          </el-date-picker>
+          ></el-input>
         </div>
       </div>
       <div class="edit_button">
@@ -377,14 +484,23 @@
           <el-button type="primary" @click="saveQues">确 定</el-button>
         </span>
       </el-dialog>
+      <el-dialog title="表格上传格式" :visible.sync="excelMode">
+        <p>表格模板</p>
+        <el-image src="excelMode.jpg" :preview-src-list="srcList"> </el-image>
+        <p>结果提示字典</p>
+        <el-image src="hint.jpg" :preview-src-list="srcList"> </el-image>
+        <span slot="footer" class="dialog-footer">
+          <el-button type="primary" @click="excelMode = false">确 定</el-button>
+        </span>
+      </el-dialog>
     </div>
   </div>
 </template>
 
 <script src="https://dl.ifanr.cn/hydrogen/sdk/sdk-web-latest.js"></script>
 <script>
-import Cookie from "js-cookie";
-import Cookies from "js-cookie";
+// import Cookie from "js-cookie";
+// import Cookies from "js-cookie";
 import E from "wangeditor";
 var BaaS = require("minapp-sdk");
 let clientID = "395062a19e209a770059";
@@ -396,6 +512,8 @@ export default {
   props: {},
   data() {
     return {
+      srcList: ["excelMode.jpg", "hint.jpg"],
+      excelMode: false,
       audior: "",
       audio: "",
       fileList: [],
@@ -404,7 +522,7 @@ export default {
       editor: [],
       // editorContent: "",
       initial: [],
-      question: {},
+      question: [],
       edit: false,
       check: true,
       sub_radio1: "",
@@ -510,180 +628,302 @@ export default {
       ],
       fivehe_value: "",
       props: { multiple: true, expandTrigger: "hover" },
-      grade_value: [],
-      grade_standard: [
+      // grade_value: [],
+      // grade_standard: [
+      //   {
+      //     value: "医学汉语能力总体等级",
+      //     label: "医学汉语能力总体等级",
+      //     children: [
+      //       {
+      //         value: "一级",
+      //         label: "一级",
+      //       },
+      //       {
+      //         value: "二级",
+      //         label: "二级",
+      //       },
+      //       {
+      //         value: "三级",
+      //         label: "三级",
+      //       },
+      //     ],
+      //   },
+      //   {
+      //     value: "医学汉语口头理解能力（听）",
+      //     label: "医学汉语口头理解能力（听）",
+      //     children: [
+      //       {
+      //         value: "一级",
+      //         label: "一级",
+      //       },
+      //       {
+      //         value: "二级",
+      //         label: "二级",
+      //       },
+      //       {
+      //         value: "三级",
+      //         label: "三级",
+      //       },
+      //     ],
+      //   },
+      //   {
+      //     value: "医学汉语口头理解能力（说）",
+      //     label: "医学汉语口头理解能力（说）",
+      //     children: [
+      //       {
+      //         value: "一级",
+      //         label: "一级",
+      //       },
+      //       {
+      //         value: "二级",
+      //         label: "二级",
+      //       },
+      //       {
+      //         value: "三级",
+      //         label: "三级",
+      //       },
+      //     ],
+      //   },
+      //   {
+      //     value: "医学汉语口头理解能力（读）",
+      //     label: "医学汉语口头理解能力（读）",
+      //     children: [
+      //       {
+      //         value: "一级",
+      //         label: "一级",
+      //       },
+      //       {
+      //         value: "二级",
+      //         label: "二级",
+      //       },
+      //       {
+      //         value: "三级",
+      //         label: "三级",
+      //       },
+      //     ],
+      //   },
+      //   {
+      //     value: "医学汉语口头理解能力（写）",
+      //     label: "医学汉语口头理解能力（写）",
+      //     children: [
+      //       {
+      //         value: "一级",
+      //         label: "一级",
+      //       },
+      //       {
+      //         value: "二级",
+      //         label: "二级",
+      //       },
+      //       {
+      //         value: "三级",
+      //         label: "三级",
+      //       },
+      //     ],
+      //   },
+      // ],
+      // topic_value: [],
+      // topic_outline: [
+      //   {
+      //     value: "医生-医生",
+      //     label: "医生-医生",
+      //     children: [
+      //       {
+      //         value: "询问",
+      //         label: "询问",
+      //       },
+      //       {
+      //         value: "交流",
+      //         label: "交流",
+      //       },
+      //       {
+      //         value: "指令",
+      //         label: "指令",
+      //       },
+      //     ],
+      //   },
+      //   {
+      //     value: "医生-患者",
+      //     label: "医生-患者",
+      //     children: [
+      //       {
+      //         value: "问诊",
+      //         label: "问诊",
+      //       },
+      //       {
+      //         value: "诊断",
+      //         label: "诊断",
+      //       },
+      //       {
+      //         value: "治疗",
+      //         label: "治疗",
+      //       },
+      //       {
+      //         value: "主诉",
+      //         label: "主诉",
+      //       },
+      //       {
+      //         value: "交流",
+      //         label: "交流",
+      //       },
+      //       {
+      //         value: "指令",
+      //         label: "指令",
+      //       },
+      //     ],
+      //   },
+      //   {
+      //     value: "医生-护士",
+      //     label: "医生-护士",
+      //     children: [
+      //       {
+      //         value: "交流",
+      //         label: "交流",
+      //       },
+      //       {
+      //         value: "指令",
+      //         label: "指令",
+      //       },
+      //     ],
+      //   },
+      //   {
+      //     value: "患者-护士",
+      //     label: "患者-护士",
+      //     children: [
+      //       {
+      //         value: "交流",
+      //         label: "交流",
+      //       },
+      //       {
+      //         value: "指令",
+      //         label: "指令",
+      //       },
+      //       {
+      //         value: "咨询",
+      //         label: "咨询",
+      //       },
+      //     ],
+      //   },
+      // ],
+      grade_value1: "",
+      grade_value2: "",
+      grade_standard1: [
         {
           value: "医学汉语能力总体等级",
           label: "医学汉语能力总体等级",
-          children: [
-            {
-              value: "一级",
-              label: "一级",
-            },
-            {
-              value: "二级",
-              label: "二级",
-            },
-            {
-              value: "三级",
-              label: "三级",
-            },
-          ],
         },
         {
           value: "医学汉语口头理解能力（听）",
           label: "医学汉语口头理解能力（听）",
-          children: [
-            {
-              value: "一级",
-              label: "一级",
-            },
-            {
-              value: "二级",
-              label: "二级",
-            },
-            {
-              value: "三级",
-              label: "三级",
-            },
-          ],
         },
         {
           value: "医学汉语口头理解能力（说）",
           label: "医学汉语口头理解能力（说）",
-          children: [
-            {
-              value: "一级",
-              label: "一级",
-            },
-            {
-              value: "二级",
-              label: "二级",
-            },
-            {
-              value: "三级",
-              label: "三级",
-            },
-          ],
         },
         {
           value: "医学汉语口头理解能力（读）",
           label: "医学汉语口头理解能力（读）",
-          children: [
-            {
-              value: "一级",
-              label: "一级",
-            },
-            {
-              value: "二级",
-              label: "二级",
-            },
-            {
-              value: "三级",
-              label: "三级",
-            },
-          ],
         },
         {
           value: "医学汉语口头理解能力（写）",
           label: "医学汉语口头理解能力（写）",
-          children: [
-            {
-              value: "一级",
-              label: "一级",
-            },
-            {
-              value: "二级",
-              label: "二级",
-            },
-            {
-              value: "三级",
-              label: "三级",
-            },
-          ],
         },
       ],
-      topic_value: [],
-      topic_outline: [
+      grade_standard2: [
+        {
+          value: "一级",
+          label: "一级",
+        },
+        {
+          value: "二级",
+          label: "二级",
+        },
+        {
+          value: "三级",
+          label: "三级",
+        },
+      ],
+      topic_value1: "",
+      topic_value2: "",
+      topic_outline1: [
         {
           value: "医生-医生",
           label: "医生-医生",
-          children: [
-            {
-              value: "询问",
-              label: "询问",
-            },
-            {
-              value: "交流",
-              label: "交流",
-            },
-            {
-              value: "指令",
-              label: "指令",
-            },
-          ],
         },
         {
           value: "医生-患者",
           label: "医生-患者",
-          children: [
-            {
-              value: "问诊",
-              label: "问诊",
-            },
-            {
-              value: "诊断",
-              label: "诊断",
-            },
-            {
-              value: "治疗",
-              label: "治疗",
-            },
-            {
-              value: "主诉",
-              label: "主诉",
-            },
-            {
-              value: "交流",
-              label: "交流",
-            },
-            {
-              value: "指令",
-              label: "指令",
-            },
-          ],
         },
         {
           value: "医生-护士",
           label: "医生-护士",
-          children: [
-            {
-              value: "交流",
-              label: "交流",
-            },
-            {
-              value: "指令",
-              label: "指令",
-            },
-          ],
         },
         {
           value: "患者-护士",
           label: "患者-护士",
-          children: [
-            {
-              value: "交流",
-              label: "交流",
-            },
-            {
-              value: "指令",
-              label: "指令",
-            },
-            {
-              value: "咨询",
-              label: "咨询",
-            },
-          ],
+        },
+      ],
+      topic_outline2_1: [
+        {
+          value: "询问",
+          label: "询问",
+        },
+        {
+          value: "交流",
+          label: "交流",
+        },
+        {
+          value: "指令",
+          label: "指令",
+        },
+      ],
+      topic_outline2_2: [
+        {
+          value: "问诊",
+          label: "问诊",
+        },
+        {
+          value: "诊断",
+          label: "诊断",
+        },
+        {
+          value: "治疗",
+          label: "治疗",
+        },
+        {
+          value: "主诉",
+          label: "主诉",
+        },
+        {
+          value: "交流",
+          label: "交流",
+        },
+        {
+          value: "指令",
+          label: "指令",
+        },
+      ],
+      topic_outline2_3: [
+        {
+          value: "交流",
+          label: "交流",
+        },
+        {
+          value: "指令",
+          label: "指令",
+        },
+      ],
+      topic_outline2_4: [
+        {
+          value: "交流",
+          label: "交流",
+        },
+        {
+          value: "指令",
+          label: "指令",
+        },
+        {
+          value: "咨询",
+          label: "咨询",
         },
       ],
       task_outline: [
@@ -734,6 +974,12 @@ export default {
   watch: {},
   computed: {},
   methods: {
+    levelChange() {
+      this.grade_value2 = "";
+    },
+    topicChange() {
+      this.topic_value2 = "";
+    },
     beforeAvatarUpload(file) {
       let isFile =
         file.name.split(".")[file.name.split(".").length - 1] == "mp3" ||
@@ -814,23 +1060,103 @@ export default {
       let clientID = "395062a19e209a770059";
       BaaS.init(clientID);
       var query = new BaaS.Query();
-      query.compare("id", "=", Cookie.get("ques_checkEdit"));
+      // query.compare("id", "=", Cookie.get("ques_checkEdit"));
+      query.compare("id", "=", sessionStorage.getItem("ques_checkEdit"));
       let Question = new BaaS.TableObject("questions_information");
-      Question.setQuery(query)
+      Question.setQuery(query).limit(1000)
         .find()
         .then(
           (res) => {
             this.question = res.data.objects[0];
-            this.question.options = JSON.parse(this.question.options);
+            if (this.question.options != null) {
+              let str = this.question.options.replace(/\s*/g, "");
+              let tempa = -1;
+              let tempb = -1;
+              let tempc = -1;
+              let tempd = -1;
+              if (str.indexOf('","index":"A"') != -1) {
+                tempa = str.indexOf('","index":"A"');
+              } else if (str.indexOf("','index':'A'") != -1) {
+                tempa = str.indexOf("','index':'A'");
+              }
+              if (str.indexOf('","index":"B"') != -1) {
+                tempb = str.indexOf('","index":"B"');
+              } else if (str.indexOf("','index':'B'") != -1) {
+                tempb = str.indexOf("','index':'B'");
+              }
+              if (str.indexOf('","index":"C"') != -1) {
+                tempc = str.indexOf('","index":"C"');
+              } else if (str.indexOf("','index':'C'") != -1) {
+                tempc = str.indexOf("','index':'C'");
+              }
+              if (str.indexOf('","index":"D"') != -1) {
+                tempd = str.indexOf('","index":"D"');
+              } else if (str.indexOf("','index':'D'") != -1) {
+                tempd = str.indexOf("','index':'D'");
+              }
+              let a = "";
+              let b = "";
+              let c = "";
+              let d = "";
+              if (tempa != -1) {
+                while (str[tempa - 1] != '"' && str[tempa - 1] != "'") {
+                  a += str[tempa - 1];
+                  tempa--;
+                }
+                a = a.split("").reverse().join("");
+              }
+              if (tempb != -1) {
+                while (str[tempb - 1] != '"' && str[tempb - 1] != "'") {
+                  b += str[tempb - 1];
+                  tempb--;
+                }
+                b = b.split("").reverse().join("");
+              }
+              if (tempc != -1) {
+                while (str[tempc - 1] != '"' && str[tempc - 1] != "'") {
+                  c += str[tempc - 1];
+                  tempc--;
+                }
+                c = c.split("").reverse().join("");
+              }
+              if (tempd != -1) {
+                while (str[tempd - 1] != '"' && str[tempd - 1] != "'") {
+                  d += str[tempd - 1];
+                  tempd--;
+                }
+                d = d.split("").reverse().join("");
+              }
+              let o = [
+                {
+                  content: a,
+                  index: "A",
+                },
+                {
+                  content: b,
+                  index: "B",
+                },
+                {
+                  content: c,
+                  index: "C",
+                },
+                {
+                  content: d,
+                  index: "D",
+                },
+              ];
+              this.question.options = o;
+            }
             this.initial = res.data.objects[0];
             // if (this.question.ques_level != null) {
             //   this.level_value = this.question.ques_level;
             // }
             if (this.question.grade_standard != null) {
-              this.grade_value = this.question.grade_standard;
+              this.grade_value1 = this.question.grade_standard[0];
+              this.grade_value2 = this.question.grade_standard[1];
             }
             if (this.question.topic_outline != null) {
-              this.topic_value = this.question.topic_outline;
+              this.topic_value1 = this.question.topic_outline[0];
+              this.topic_value2 = this.question.topic_outline[1];
             }
             if (this.question.task_outline != null) {
               this.task_value = this.question.task_outline;
@@ -864,10 +1190,14 @@ export default {
       this.initail_audio = this.audio;
     },
     back() {
-      Cookies.set("ques_checkEdit", "");
-      Cookies.set("question_content", "");
-      Cookies.set("question_file", "");
-      Cookies.set("selectQues", "false");
+      // Cookies.set("ques_checkEdit", "");
+      // Cookies.set("question_content", "");
+      // Cookies.set("question_file", "");
+      // Cookies.set("selectQues", "false");
+      sessionStorage.setItem("ques_checkEdit", "");
+      sessionStorage.setItem("question_content", "");
+      sessionStorage.setItem("question_file", "");
+      sessionStorage.setItem("selectQues", "false");
       this.$router.go(-1);
     },
     quesEdit() {
@@ -899,10 +1229,10 @@ export default {
     },
     async checkQues() {
       if (this.question.primary_ques_type != "听力") {
-        this.handleRemove()
+        this.handleRemove();
       }
       if (this.question.secondary_ques_type != "阅读材料，选择正确答案") {
-        this.excelRemove()
+        this.excelRemove();
       }
       var valid = true;
       // if (this.level_value == "") {
@@ -910,10 +1240,18 @@ export default {
       // } else {
       //   this.question.ques_level = this.level_value;
       // }
-      if (this.grade_value == "") {
+      if (this.grade_value1 == "") {
         this.question.grade_standard = null;
       } else {
-        this.question.grade_standard = this.grade_value;
+        if (this.grade_value2 == "") {
+          this.$message({
+            message: "请选择MCT等级",
+            type: "warning",
+          });
+          valid = false;
+        } else {
+          this.question.grade_standard = [this.grade_value1, this.grade_value2];
+        }
       }
       if (this.department_value == "") {
         this.question.department = null;
@@ -928,7 +1266,15 @@ export default {
       if (this.topic_value == "") {
         this.question.topic_outline = null;
       } else {
-        this.question.topic_outline = this.topic_value;
+        if (this.topic_value2 == "") {
+          this.$message({
+            message: "请选择话题大纲",
+            type: "warning",
+          });
+          valid = false;
+        } else {
+          this.question.topic_outline = [this.topic_value1, this.topic_value2];
+        }
       }
       if (this.qclass_value == "") {
         this.question.question_class = null;
@@ -1186,7 +1532,7 @@ export default {
             addFile.upload(file).then(
               (res) => {
                 let saveContent = new BaaS.TableObject("question_content");
-                let content = saveContent.getWithoutData(
+                let content = saveContent.limit(1000).getWithoutData(
                   this.question.question_content_id
                 );
                 content.set({
@@ -1198,7 +1544,11 @@ export default {
                 content.update().then(
                   (res) => {
                     this.question.question_content_id = res.data.id;
-                    Cookies.set("question_file", res.data.file_url.path);
+                    // Cookies.set("question_file", res.data.file_url.path);
+                    sessionStorage.setItem(
+                      "question_file",
+                      res.data.file_url.path
+                    );
                   },
                   (err) => {
                     console.log(err);
@@ -1220,7 +1570,7 @@ export default {
             addFile.upload(file).then(
               (res) => {
                 let saveContent = new BaaS.TableObject("question_content");
-                let content = saveContent.getWithoutData(
+                let content = saveContent.limit(1000).getWithoutData(
                   this.question.question_content_id
                 );
                 content.set({
@@ -1233,7 +1583,11 @@ export default {
                 content.update().then(
                   (res) => {
                     this.question.question_content_id = res.data.id;
-                    Cookies.set("question_file", res.data.file_url.path);
+                    // Cookies.set("question_file", res.data.file_url.path);
+                    sessionStorage.setItem(
+                      "question_file",
+                      res.data.file_url.path
+                    );
                   },
                   (err) => {
                     console.log(err);
@@ -1251,7 +1605,7 @@ export default {
           addFile.upload(file).then(
             (res) => {
               let saveContent = new BaaS.TableObject("question_content");
-              let content = saveContent.getWithoutData(
+              let content = saveContent.limit(1000).getWithoutData(
                 this.question.question_content_id
               );
               content.set({
@@ -1263,7 +1617,11 @@ export default {
               content.update().then(
                 (res) => {
                   this.question.question_content_id = res.data.id;
-                  Cookies.set("question_file", res.data.file_url.path);
+                  // Cookies.set("question_file", res.data.file_url.path);
+                  sessionStorage.setItem(
+                    "question_file",
+                    res.data.file_url.path
+                  );
                 },
                 (err) => {
                   console.log(err);
@@ -1276,14 +1634,15 @@ export default {
           );
         } else {
           let saveContent = new BaaS.TableObject("question_content");
-          let content = saveContent.getWithoutData(
+          let content = saveContent.limit(1000).getWithoutData(
             this.question.question_content_id
           );
           content.set("content", this.content);
           content.update().then(
             (res) => {
               this.question.question_content_id = res.data.id;
-              Cookies.set("question_content", this.content);
+              // Cookies.set("question_content", this.content);
+              sessionStorage.setItem("question_content", this.content);
             },
             (err) => {
               console.log(err);
@@ -1294,11 +1653,14 @@ export default {
       if (this.question.options != null) {
         this.question.options = JSON.stringify(this.question.options);
       }
-      if (Cookie.get("catalog") != "") {
-        this.question.catalog = Cookie.get("catalog");
+      // if (Cookie.get("catalog") != "") {
+      //   this.question.catalog = Cookie.get("catalog");
+      if (sessionStorage.getItem("catalog") != "") {
+        this.question.catalog = sessionStorage.getItem("catalog");
       }
+      console.log(this.question.grade_value);
       let saveQues = new BaaS.TableObject("questions_information");
-      let question = saveQues.getWithoutData(this.question.id);
+      let question = saveQues.limit(1000).getWithoutData(this.question.id);
       question.set(this.question);
       question.update().then(
         (res) => {
@@ -1386,18 +1748,24 @@ export default {
   },
   created() {},
   mounted() {
-    this.selectQues = Cookie.get("selectQues");
-    this.content = Cookie.get("question_content");
-    this.file_url = Cookie.get("question_file");
-    if (
-      this.file_url.search(".mp3") != -1 ||
-      this.file_url.search(".wav") != -1 ||
-      this.file_url.search("ogg") != -1
-    ) {
-      this.audio = this.file_url;
-      this.file_url = "";
-      this.fileList.push({ name: this.audio, url: this.audio });
+    // this.selectQues = Cookie.get("selectQues");
+    // this.content = Cookie.get("question_content");
+    // this.file_url = Cookie.get("question_file");
+    this.selectQues = sessionStorage.getItem("selectQues");
+    this.content = sessionStorage.getItem("question_content");
+    this.file_url = sessionStorage.getItem("question_file");
+    if (this.file_url != "") {
+      if (
+        this.file_url.search(".mp3") != -1 ||
+        this.file_url.search(".wav") != -1 ||
+        this.file_url.search("ogg") != -1
+      ) {
+        this.audio = this.file_url;
+        this.file_url = "";
+        this.fileList.push({ name: this.audio, url: this.audio });
+      }
     }
+
     this.init();
   },
 };

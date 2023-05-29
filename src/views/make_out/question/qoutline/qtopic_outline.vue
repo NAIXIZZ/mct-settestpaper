@@ -13,7 +13,7 @@
           <div @click="pushto('doc_doc')">
             <el-card :body-style="{ padding: '0px' }">
               <img
-                src="https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fpic.51yuansu.com%2Fpic3%2Fcover%2F01%2F04%2F86%2F5900eb6ec9c05_610.jpg&refer=http%3A%2F%2Fpic.51yuansu.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=jpeg?sec=1647744585&t=10c30d93281603755b46d04b6a763544"
+                src="doc_doc.jpg"
                 class="image"
               />
               <div style="padding: 14px">
@@ -27,7 +27,7 @@
           <div @click="pushto('doc_nur')">
             <el-card :body-style="{ padding: '0px' }">
               <img
-                src="https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fpic.51yuansu.com%2Fpic3%2Fcover%2F01%2F04%2F87%2F5900eb92a5608_610.jpg&refer=http%3A%2F%2Fpic.51yuansu.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=jpeg?sec=1647744908&t=03d3c8fb4a51dc0849d62be414b0fb92"
+                src="doc_nur.jpg"
                 class="image"
               />
               <div style="padding: 14px">
@@ -50,7 +50,7 @@
           <div @click="pushto('doc_pat')">
             <el-card :body-style="{ padding: '0px' }">
               <img
-                src="https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fimg.sccnn.com%2Fbimg%2F338%2F54426.jpg&refer=http%3A%2F%2Fimg.sccnn.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=jpeg?sec=1647744682&t=2a829ae8d8420b5dcdbe5dd5f6b1d3b8"
+                src="doc_pat.jpg"
                 class="image"
               />
               <div style="padding: 14px">
@@ -64,7 +64,7 @@
           <div @click="pushto('pat_nur')">
             <el-card :body-style="{ padding: '0px' }">
               <img
-                src="https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fqqpublic.qpic.cn%2Fqq_public%2F0%2F0-3099474540-14D423C8D06AC2DF6E2746DBBDA02946%2F0%3Ffmt%3Djpg%26size%3D45%26h%3D671%26w%3D900%26ppv%3D1.jpg&refer=http%3A%2F%2Fqqpublic.qpic.cn&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=jpeg?sec=1647744744&t=46109442d48b3cd26f6a4f691503b51f"
+                src="pat_nur.jpg"
                 class="image"
               />
               <div style="padding: 14px">
@@ -82,7 +82,7 @@
 </template>
 
 <script>
-import Cookies from "js-cookie";
+// import Cookies from "js-cookie";
 
 export default {
   name: "",
@@ -94,13 +94,13 @@ export default {
   methods: {
     pushto(val) {
       if (val == "doc_doc") {
-        Cookies.set('first_title','医生-医生')
+        sessionStorage.setItem('first_title','医生-医生')
       } else if (val == "doc_nur") {
-        Cookies.set('first_title','医生-护士')
+        sessionStorage.setItem('first_title','医生-护士')
       } else if (val == "doc_pat") {
-        Cookies.set('first_title','医生-患者')
+        sessionStorage.setItem('first_title','医生-患者')
       } else {
-        Cookies.set('first_title','患者-护士')
+        sessionStorage.setItem('first_title','患者-护士')
       }
       this.$router.push("/qoutline_select");
     },

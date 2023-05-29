@@ -13,7 +13,7 @@
 </template>
 
 <script>
-import Cookie from "js-cookie";
+// import Cookie from "js-cookie";
 export default {
   name: "",
   components: {},
@@ -24,7 +24,8 @@ export default {
   watch: {},
   computed: {
     showDetail() {
-      return Cookie.get("material_id");
+      // return Cookie.get("material_id");
+      return sessionStorage.getItem("material_id");
     },
   },
   methods: {

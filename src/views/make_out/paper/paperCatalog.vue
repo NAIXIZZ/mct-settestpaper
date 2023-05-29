@@ -77,7 +77,7 @@
                 <el-button type="warning" plain @click="copy(scope.row)"
                   >复制</el-button
                 >
-                <el-button type="danger" plain @click="delPaper(scope.row)"
+                <el-button type="danger" plain @click="delPaper(scope.$index,scope.row)"
                   >删除</el-button
                 >
                 <el-button type="primary" plain @click="moveTo(scope.row.id, 1)"
@@ -344,7 +344,7 @@ import {
 } from "@/util/Export2Excel.js";
 const JSZip = require("jszip");
 var XLSX = require("xlsx");
-import Cookies from "js-cookie";
+// import Cookies from "js-cookie";
 import Cookie from "js-cookie";
 var BaaS = require("minapp-sdk");
 let clientID = "395062a19e209a770059";
@@ -421,8 +421,10 @@ export default {
   computed: {},
   methods: {
     init() {
-      this.catalog = Cookie.get("catalog");
-      this.catalogall = JSON.parse(Cookie.get("catalogall"));
+      // this.catalog = Cookie.get("catalog");
+      // this.catalogall = JSON.parse(Cookie.get("catalogall"));
+      this.catalog = sessionStorage.getItem("catalog");
+      this.catalogall = JSON.parse(sessionStorage.getItem("catalogall"));
       for (let i = 0; i < this.catalogall.length; i++) {
         if (this.catalogall[i].catalog == this.catalog) {
           this.catalogall.splice(i, 1);
@@ -431,6 +433,7 @@ export default {
       }
       let query = new BaaS.Query();
       query.compare("created_by", "=", Cookie.get("user_id") * 1);
+      // query.compare("created_by", "=", sessionStorage.getItem("user_id") * 1);
       let que = new BaaS.Query();
       que.compare("catalog", "=", this.catalog);
       let q3 = new BaaS.Query();
@@ -567,6 +570,7 @@ export default {
     },
     createPaper() {
       if (this.radio == 1) {
+        sessionStorage.setItem("questions", "");
         this.$router.push("/mcreatePaper");
       } else if (this.radio == 2) {
         if (this.ruleForm.paper_title == "" || this.ruleForm.paper_type == "") {
@@ -585,7 +589,7 @@ export default {
           let q1 = new BaaS.Query();
           let q2 = new BaaS.Query();
           q2.compare("is_delete", "=", false);
-          q1.compare("created_by", "=", 409976063038241);
+          q1.compare("created_by", "=", 484881850859865);
           let andQuery = BaaS.Query.and(q1, q2);
           findQ
             .setQuery(andQuery)
@@ -855,9 +859,9 @@ export default {
                     actual_sequence: ques[i].sequence,
                     score: ques[i].score,
                     question: ques[i].question,
-                    options: JSON.parse(ques[i].options),
+                    options: ques[i].options,
                     answer: ques[i].answer,
-                    anlysis: ques[i].anlysis,
+                    analysis: ques[i].analysis,
                     level_value: ques[i].ques_level,
                     grade_value: ques[i].grade_standard,
                     topic_value: ques[i].topic_outline,
@@ -873,19 +877,87 @@ export default {
                     author_org: ques[i].author_org,
                     time_created: ques[i].time_created,
                   };
-                  let op = JSON.parse(ques[i].options);
-                  if (op != null && op != undefined) {
-                    for (let j = 0; j < op.length; j++) {
-                      if (op[j].index == "A") {
-                        sub.A = op[j].content;
-                      } else if (op[j].index == "B") {
-                        sub.B = op[j].content;
-                      } else if (op[j].index == "C") {
-                        sub.C = op[j].content;
-                      } else if (op[j].index == "D") {
-                        sub.D = op[j].content;
-                      }
+                  if (
+                    ques[i].options != null &&
+                    ques[i].options != undefined &&
+                    ques[i].options != ""
+                  ) {
+                    let str = ques[i].options.replace(/\s*/g, "");
+                    let tempa = -1;
+                    let tempb = -1;
+                    let tempc = -1;
+                    let tempd = -1;
+                    if (str.indexOf('","index":"A"') != -1) {
+                      tempa = str.indexOf('","index":"A"');
+                    } else if (str.indexOf("','index':'A'") != -1) {
+                      tempa = str.indexOf("','index':'A'");
                     }
+                    if (str.indexOf('","index":"B"') != -1) {
+                      tempb = str.indexOf('","index":"B"');
+                    } else if (str.indexOf("','index':'B'") != -1) {
+                      tempb = str.indexOf("','index':'B'");
+                    }
+                    if (str.indexOf('","index":"C"') != -1) {
+                      tempc = str.indexOf('","index":"C"');
+                    } else if (str.indexOf("','index':'C'") != -1) {
+                      tempc = str.indexOf("','index':'C'");
+                    }
+                    if (str.indexOf('","index":"D"') != -1) {
+                      tempd = str.indexOf('","index":"D"');
+                    } else if (str.indexOf("','index':'D'") != -1) {
+                      tempd = str.indexOf("','index':'D'");
+                    }
+                    let a = "";
+                    let b = "";
+                    let c = "";
+                    let d = "";
+                    if (tempa != -1) {
+                      while (str[tempa - 1] != '"' && str[tempa - 1] != "'") {
+                        a += str[tempa - 1];
+                        tempa--;
+                      }
+                      sub.A = a.split("").reverse().join("");
+                    }
+                    if (tempb != -1) {
+                      while (str[tempb - 1] != '"' && str[tempb - 1] != "'") {
+                        b += str[tempb - 1];
+                        tempb--;
+                      }
+                      sub.B = b.split("").reverse().join("");
+                    }
+                    if (tempc != -1) {
+                      while (str[tempc - 1] != '"' && str[tempc - 1] != "'") {
+                        c += str[tempc - 1];
+                        tempc--;
+                      }
+                      sub.C = c.split("").reverse().join("");
+                    }
+                    if (tempd != -1) {
+                      while (str[tempd - 1] != '"' && str[tempd - 1] != "'") {
+                        d += str[tempd - 1];
+                        tempd--;
+                      }
+                      sub.D = d.split("").reverse().join("");
+                    }
+                    let o = [
+                      {
+                        content: sub.A,
+                        index: "A",
+                      },
+                      {
+                        content: sub.B,
+                        index: "B",
+                      },
+                      {
+                        content: sub.C,
+                        index: "C",
+                      },
+                      {
+                        content: sub.D,
+                        index: "D",
+                      },
+                    ];
+                    sub.options = o;
                   }
                   ques[i].sub = sub;
                   if (contents.length == ques.length) {
@@ -917,10 +989,30 @@ export default {
                               saveT: true,
                               question_content: "",
                               sub_question: [],
+                              audio: "",
+                              excel: "",
+                              file_url: "",
+                              fileList: [],
+                              excelfileList: [],
                             };
                             if (con.data.file_url != null) {
-                              question.question_content =
-                                con.data.file_url.path;
+                              if (
+                                con.data.file_url.path.search(".mp3") != -1 ||
+                                con.data.file_url.path.search(".wav") != -1 ||
+                                con.data.file_url.path.search(".ogg") != -1
+                              ) {
+                                question.audio = con.data.file_url.path;
+                                question.fileList.push({
+                                  name: con.data.file_url.path,
+                                  url: con.data.file_url.path,
+                                });
+                              } else if (
+                                con.data.file_url.path.search(".png") != -1 ||
+                                con.data.file_url.path.search(".jpg") != -1 ||
+                                con.data.file_url.path.search(".gif") != -1
+                              ) {
+                                question.file_url = con.data.file_url.path;
+                              }
                             } else {
                               question.question_content = con.data.content;
                             }
@@ -1308,151 +1400,6 @@ export default {
     handleCurrentChange(val) {
       this.currentPage = val;
     },
-    preview(val) {
-      let ques = JSON.parse(val.questions_detail);
-      ques.sort(function (a, b) {
-        return a.sub_sequence - b.sub_sequence;
-      });
-      let questions = [];
-      let contents = [];
-      for (let i = 0; i < ques.length; i++) {
-        let questio = new BaaS.TableObject("questions_information");
-        questio.get(ques[i].id).then(
-          (res) => {
-            let temp =
-              res.data.question_content_id +
-              res.data.primary_ques_type +
-              res.data.secondary_ques_type;
-            let s = {
-              temp: temp,
-              content_id: res.data.question_content_id,
-              primary_ques_type: res.data.primary_ques_type,
-              secondary_ques_type: res.data.secondary_ques_type,
-            };
-            contents.push(s);
-            ques[i].temp = temp;
-            let sub = {
-              sub_sequence: 0,
-              actual_sequence: ques[i].sub_sequence,
-              score: ques[i].score * 1,
-              question: res.data.question,
-              options: JSON.parse(res.data.options),
-              answer: res.data.answer,
-              anlysis: res.data.anlysis,
-              level_value: res.data.ques_level,
-              grade_value: res.data.grade_standard,
-              topic_value: res.data.topic_outline,
-              task_value: res.data.task_outline,
-              department_value: res.data.department,
-              qclass_value: res.data.question_class,
-              fivehe_value: res.data.question_type_5he,
-              A: "",
-              B: "",
-              C: "",
-              D: "",
-              author: res.data.author,
-              author_org: res.data.author_org,
-              time_created: res.data.time_created,
-            };
-            let op = JSON.parse(res.data.options);
-            if (op != null && op != undefined) {
-              for (let j = 0; j < op.length; j++) {
-                if (op[j].index == "A") {
-                  sub.A = op[j].content;
-                } else if (op[j].index == "B") {
-                  sub.B = op[j].content;
-                } else if (op[j].index == "C") {
-                  sub.C = op[j].content;
-                } else if (op[j].index == "D") {
-                  sub.D = op[j].content;
-                }
-              }
-            }
-            ques[i].sub = sub;
-            if (contents.length == ques.length) {
-              const map = new Map();
-              const qc = contents.filter(
-                (key) => !map.has(key.temp) && map.set(key.temp, 1)
-              );
-              for (let j = 0; j < qc.length; j++) {
-                let sub = [];
-                let sub_seq = 1;
-                let score = 0;
-                for (let k = 0; k < ques.length; k++) {
-                  if (qc[j].temp == ques[k].temp) {
-                    ques[k].sub.sub_sequence = sub_seq;
-                    sub.push(ques[k].sub);
-                    sub_seq++;
-                    score += ques[k].score;
-                  }
-                }
-                let content = new BaaS.TableObject("question_content");
-                content.get(qc[j].content_id).then(
-                  (con) => {
-                    let question = {
-                      primary_ques_type: qc[j].primary_ques_type,
-                      secondary_ques_type: qc[j].secondary_ques_type,
-                      total_score: score,
-                      saveQ: true,
-                      saveT: true,
-                    };
-                    if (con.data.file_url != null) {
-                      question.question_content = con.data.file_url.path;
-                    } else {
-                      question.question_content = con.data.content;
-                    }
-                    question.sub_question = sub;
-                    questions.push(question);
-                    if (questions.length == qc.length) {
-                      questions.sort(function (a, b) {
-                        return (
-                          a.sub_question[0].actual_sequence -
-                          b.sub_question[0].actual_sequence
-                        );
-                      });
-                      let sequen = 1;
-                      for (let h = 0; h < questions.length; h++) {
-                        questions[h].sequence = sequen;
-                        questions[h].name = questions[h].sequence.toString();
-                        sequen++;
-                      }
-                      sessionStorage.setItem(
-                        "questions",
-                        JSON.stringify(questions)
-                      );
-                      sessionStorage.setItem("ques_type", val.ques_type);
-                      sessionStorage.setItem("currentQues", questions.length);
-                      sessionStorage.setItem(
-                        "currentSubQues",
-                        questions[questions.length - 1].sub_question.length
-                      );
-                      sessionStorage.setItem("title", val.paper_title);
-                      if (val.paper_type == "模考") {
-                        sessionStorage.setItem("exam", true);
-                      } else {
-                        sessionStorage.setItem("exam", false);
-                      }
-                      sessionStorage.setItem("ques_num", val.questions_num);
-                      sessionStorage.setItem("ques_score", val.points);
-                      Cookies.set("paperEdit", true);
-                      Cookies.set("paperInfo", val.id);
-                      Cookies.set("make_out", "third");
-                      this.$router.push("/mcreatePaper");
-                    }
-                  },
-                  (err) => {
-                    console.log(err);
-                  }
-                );
-              }
-            }
-          },
-          (err) => {
-            console.log(err);
-          }
-        );
-      }
-    },
     copy(val) {
       let addQ = new BaaS.TableObject("test_paper");
       let add = addQ.create();
@@ -1483,9 +1430,16 @@ export default {
           }
         );
     },
-    delPaper(val) {
+    delPaper(index,val) {
+      const loading = this.$loading({
+        lock: true,
+        text: "正在删除，请稍后",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)",
+      });
+      let num = 0;
       let Ques = new BaaS.TableObject("test_paper");
-      let ques = Ques.getWithoutData(val.id);
+      let ques = Ques.limit(1000).getWithoutData(val.id);
       ques.set("is_delete", true);
       ques.update().then(
         (res) => {
@@ -1494,20 +1448,46 @@ export default {
             message: "删除成功",
             type: "success",
           });
-          this.init();
+          if (num == 0) {
+            this.tableData.splice(index, 1);
+            num++;
+          }
+          loading.close()
         },
         (err) => {
+          loading.close();
+          this.$message({
+            message: "删除失败",
+            type: "warning",
+          });
+          this.init();
           console.log(err);
         }
       );
     },
     trash() {
-      Cookies.set("trash", "paper");
+      // Cookies.set("trash", "paper");
+      sessionStorage.setItem("trash", "paper");
       this.$router.push("/trash_list");
     },
     back() {
-      Cookies.set("catalog", "");
-      Cookies.set("catalogall", "");
+      // Cookies.set("catalog", "");
+      // Cookies.set("catalogall", "");
+      sessionStorage.setItem("catalog", "");
+      sessionStorage.setItem("catalogall", "");
+      sessionStorage.setItem("paperEdit", "");
+      sessionStorage.setItem("paperInfo", "");
+      sessionStorage.setItem("selectQues", "");
+      sessionStorage.setItem("autoQues", "");
+      sessionStorage.setItem("ques_type", "");
+      sessionStorage.setItem("paper_id", "");
+      sessionStorage.setItem("ques_num", "");
+      sessionStorage.setItem("autoQues", "");
+      sessionStorage.setItem("title", "");
+      sessionStorage.setItem("paper_title", "");
+      sessionStorage.setItem("questions_detail", "");
+      sessionStorage.setItem("ques_score", "");
+      sessionStorage.setItem("questions", "");
       this.$router.go(-1);
     },
     multipleMove() {
@@ -1539,7 +1519,7 @@ export default {
     to(val) {
       for (let i = 0; i < this.preMove.length; i++) {
         let Catalog = new BaaS.TableObject("test_paper");
-        let cata = Catalog.getWithoutData(this.preMove[i]);
+        let cata = Catalog.limit(1000).getWithoutData(this.preMove[i]);
         if (val == "out") {
           cata.set("catalog", null);
           cata.update().then(
@@ -1600,6 +1580,7 @@ export default {
           catanum++;
           let query = new BaaS.Query();
           query.compare("created_by", "=", Cookie.get("user_id") * 1);
+          // query.compare("created_by", "=", sessionStorage.getItem("user_id") * 1);
           let que = new BaaS.Query();
           que.compare("catalog", "=", this.der[i].catalog);
           let q3 = new BaaS.Query();
@@ -2192,7 +2173,7 @@ export default {
     },
     downloadTemplate() {
       let Template = new BaaS.File();
-      Template.get("63106c9e7ac49940abea8529").then(
+      Template.get("637b78aabdbbd97641dafe76").then(
         (res) => {
           // console.log(res);
           let viewUrl = res.data.path;
@@ -2219,6 +2200,7 @@ export default {
         spinner: "el-icon-loading",
         background: "rgba(0, 0, 0, 0.7)",
       });
+      let finish = false;
       const zip = new JSZip();
       const zipData = await zip.loadAsync(this.fileList[0].raw);
       var i = 0;
@@ -2291,7 +2273,7 @@ export default {
                 var ws = XLSX.utils.sheet_to_json(workbook.Sheets[wsname]); // 生成json表格内容
                 ws.forEach((element) => {
                   if (element.catalog == undefined || element.catalog == "") {
-                    element.catalog = null;
+                    element.catalog = sessionStorage.getItem("catalog");
                   }
                   if (
                     element.paper_title == undefined ||
@@ -2322,57 +2304,70 @@ export default {
                   }
                   if (
                     element.primary_ques_type == undefined ||
-                    element.primary_ques_type == ""
+                    element.primary_ques_type == "" ||
+                    element.primary_ques_type == "无"
                   ) {
                     element.primary_ques_type = null;
                   }
                   if (
                     element.secondary_ques_type == undefined ||
-                    element.secondary_ques_type == ""
+                    element.secondary_ques_type == "" ||
+                    element.secondary_ques_type == "无"
                   ) {
                     element.secondary_ques_type = null;
                   }
                   if (
                     element.question_content == undefined ||
-                    element.question_content == ""
+                    element.question_content == "" ||
+                    element.question_content == "无"
                   ) {
                     element.question_content = null;
                   }
-                  if (element.question == undefined || element.question == "") {
+                  if (
+                    element.question == undefined ||
+                    element.question == "" ||
+                    element.question == "无"
+                  ) {
                     element.question = null;
                   }
-                  if (element.options == undefined || element.options == "") {
+                  if (
+                    element.options == undefined ||
+                    element.options == "" ||
+                    element.options == "无"
+                  ) {
                     element.options = null;
                   }
                   if (element.answer == undefined || element.answer == "") {
                     element.answer = null;
                   }
-                  if (element.analysis == undefined || element.analysis == "") {
+                  if (
+                    element.analysis == undefined ||
+                    element.analysis == "" ||
+                    element.analysis == "无"
+                  ) {
                     element.analysis = null;
                   }
                   if (
                     element.department == undefined ||
-                    element.department == ""
+                    element.department == "" ||
+                    element.department == "无" ||
+                    element.department == null
                   ) {
                     element.department = null;
                   } else {
                     element.department = element.department.split("，");
                   }
                   if (
-                    element.ques_level == undefined ||
-                    element.ques_level == ""
-                  ) {
-                    element.ques_level = null;
-                  }
-                  if (
                     element.question_class == undefined ||
-                    element.question_class == ""
+                    element.question_class == "" ||
+                    element.question_class == "无"
                   ) {
                     element.question_class = null;
                   }
                   if (
                     element.question_type_5he == undefined ||
-                    element.question_type_5he == ""
+                    element.question_type_5he == "" ||
+                    element.question_type_5he == "无"
                   ) {
                     element.question_type_5he = null;
                   }
@@ -2387,21 +2382,40 @@ export default {
                   }
                   if (
                     element.time_created == undefined ||
-                    element.time_created == ""
+                    element.time_created == "" ||
+                    element.time_created == "无"
                   ) {
                     element.time_created = null;
                   }
                   if (
                     element.grade_standard == undefined ||
-                    element.grade_standard == ""
+                    element.grade_standard == "" ||
+                    element.grade_standard == "无" ||
+                    element.grade_standard == null
                   ) {
                     element.grade_standard = null;
+                  } else {
+                    element.grade_standard = element.grade_standard.split("，");
                   }
-                  if (element.topic == undefined || element.topic == "") {
+                  if (
+                    element.topic == undefined ||
+                    element.topic == "" ||
+                    element.topic == "无" ||
+                    element.topic == null
+                  ) {
                     element.topic = null;
+                  } else {
+                    element.topic = element.topic.split("，");
                   }
-                  if (element.task == undefined || element.task == "") {
+                  if (
+                    element.task == undefined ||
+                    element.task == "" ||
+                    element.task == "无" ||
+                    element.task == null
+                  ) {
                     element.task = null;
+                  } else {
+                    element.task = element.task.split("，");
                   }
                   var a = {
                     catalog: element.catalog,
@@ -2428,6 +2442,7 @@ export default {
                     grade_standard: element.grade_standard,
                     topic_outline: element.topic,
                     task_outline: element.task,
+                    save:0
                   };
                   if (element.paper_title == null) {
                     this.excelFile.push(a);
@@ -2551,551 +2566,605 @@ export default {
             start: -1,
           },
         ];
-        if (i == this.fileNum) {
-          var arr = new Array();
-          this.excelFile.forEach((element) => {
-            var findContent = false;
-            this.contentFile.forEach((item) => {
-              if (element.question_content_id == item.name) {
-                element.question_content_id = item.id;
-                findContent = true;
-                let importQ = new BaaS.TableObject("questions_information");
-                let importq = importQ.create();
-                importq
-                  .set(element)
-                  .save()
-                  .then(
-                    (res) => {
-                      let q = {
-                        id: res.data.id,
-                        sub_sequence: element.sequence,
-                        score: element.score,
-                      };
-                      questions_detail.push(q);
-                      if (questions_detail.length == this.excelFile.length) {
-                        let num = 0;
-                        questions_detail.sort(function (a, b) {
-                          return a.sub_sequence - b.sub_sequence;
-                        });
-                        for (let a = 0; a < this.excelFile.length; a++) {
-                          for (let b = 0; b < ques_type.length; b++) {
-                            if (
-                              this.excelFile[a].primary_ques_type ==
-                              ques_type[b].primary
-                            ) {
-                              for (
-                                let c = 0;
-                                c < ques_type[b].secondary.length;
-                                c++
-                              ) {
+        setTimeout(() => {
+          if (i == this.fileNum) {
+            var arr = new Array();
+            this.excelFile.forEach((element) => {
+              let findContent = false;
+              if (this.contentFile.length != 0) {
+                this.contentFile.forEach((item) => {
+                  if (element.question_content_id == item.name) {
+                    element.question_content_id = item.id;
+                    findContent = true;
+                    let importQ = new BaaS.TableObject("questions_information");
+                    let importq = importQ.create();
+                    importq
+                      .set(element)
+                      .save()
+                      .then(
+                        (res) => {
+                          element.save=1
+                          let q = {
+                            id: res.data.id,
+                            sub_sequence: element.sequence,
+                            score: element.score,
+                          };
+                          questions_detail.push(q);
+                          if (
+                            questions_detail.length == this.excelFile.length &&
+                            finish == false
+                          ) {
+                            let num = 0;
+                            questions_detail.sort(function (a, b) {
+                              return a.sub_sequence - b.sub_sequence;
+                            });
+                            for (let a = 0; a < this.excelFile.length; a++) {
+                              for (let b = 0; b < ques_type.length; b++) {
                                 if (
-                                  this.excelFile[a].secondary_ques_type ==
-                                  ques_type[b].secondary[c].type
+                                  this.excelFile[a].primary_ques_type ==
+                                  ques_type[b].primary
                                 ) {
-                                  ques_type[b].secondary[c].num++;
-                                  ques_type[b].secondary[c].score +=
-                                    this.excelFile[a].score;
-                                  ques_type[b].total_num++;
-                                  ques_type[b].total_score +=
-                                    this.excelFile[a].score;
-                                  if (ques_type[b].secondary[c].start == -1) {
-                                    ques_type[b].secondary[c].start =
-                                      this.excelFile[a].sequence - 1 - num;
-                                    ques_type[b].secondary[c].end =
-                                      this.excelFile[a].sequence - 1 - num;
-                                    ques_type[b].start =
-                                      this.excelFile[a].sequence - 1 - num;
-                                  } else if (
-                                    this.excelFile[a].question_content_id !=
-                                    this.excelFile[a - 1].question_content_id
+                                  for (
+                                    let c = 0;
+                                    c < ques_type[b].secondary.length;
+                                    c++
                                   ) {
-                                    ques_type[b].secondary[c].end++;
-                                  } else {
-                                    num++;
+                                    if (
+                                      this.excelFile[a].secondary_ques_type ==
+                                      ques_type[b].secondary[c].type
+                                    ) {
+                                      ques_type[b].secondary[c].num++;
+                                      ques_type[b].secondary[c].score +=
+                                        this.excelFile[a].score;
+                                      ques_type[b].total_num++;
+                                      ques_type[b].total_score +=
+                                        this.excelFile[a].score;
+                                      if (
+                                        ques_type[b].secondary[c].start == -1
+                                      ) {
+                                        ques_type[b].secondary[c].start =
+                                          this.excelFile[a].sequence - 1 - num;
+                                        ques_type[b].secondary[c].end =
+                                          this.excelFile[a].sequence - 1 - num;
+                                        ques_type[b].start =
+                                          this.excelFile[a].sequence - 1 - num;
+                                      } else if (
+                                        this.excelFile[a].question_content_id !=
+                                        this.excelFile[a - 1]
+                                          .question_content_id
+                                      ) {
+                                        ques_type[b].secondary[c].end++;
+                                      } else {
+                                        num++;
+                                      }
+                                    }
                                   }
                                 }
                               }
                             }
-                          }
-                        }
-                        for (let a = 0; a < ques_type.length; a++) {
-                          ques_type[a].secondary.sort(function (c, d) {
-                            return c.start - d.start;
-                          });
-                        }
-                        ques_type.sort(function (c, d) {
-                          return c.start - d.start;
-                        });
-                        for (let a = 0; a < ques_type.length; a++) {
-                          if (ques_type[a].start != -1) {
-                            ques_type.splice(0, a);
-                            break;
-                          }
-                        }
-                        for (let a = 0; a < ques_type.length; a++) {
-                          for (
-                            let b = 0;
-                            b < ques_type[a].secondary.length;
-                            b++
-                          ) {
-                            if (ques_type[a].secondary[b].start != -1) {
-                              ques_type[a].secondary.splice(0, b);
-                              break;
-                            }
-                          }
-                        }
-                        let saveP = new BaaS.TableObject("test_paper");
-                        let savep = saveP.create();
-                        let s = {
-                          paper_title: temp.paper_title,
-                          paper_type: temp.paper_type,
-                          questions_num: temp.questions_num,
-                          points: temp.points,
-                          is_delete: false,
-                          catalog: temp.catalog,
-                          questions_detail: JSON.stringify(questions_detail),
-                          ques_type: JSON.stringify(ques_type),
-                        };
-                        savep
-                          .set(s)
-                          .save()
-                          .then(
-                            (res) => {
-                              console.log(res);
-                              this.$message({
-                                message: "导入成功",
-                                type: "success",
+                            for (let a = 0; a < ques_type.length; a++) {
+                              ques_type[a].secondary.sort(function (c, d) {
+                                return c.start - d.start;
                               });
-                              loading.close();
-                              this.importFile = false;
-                              this.init();
-                            },
-                            (err) => {
-                              console.log(err);
                             }
-                          );
-                      }
-                    },
-                    (err) => {
-                      console.log(err);
-                    }
-                  );
-                return;
-              }
-            });
-            if (findContent == false) {
-              var a = {
-                content: element.question_content_id,
-                id: null,
-              };
-              arr.push(a);
-            }
-          });
-          if (arr.length != 0) {
-            const map = new Map();
-            const qc = arr.filter(
-              (key) => !map.has(key.content) && map.set(key.content, 1)
-            );
-            var k = 0;
-            qc.forEach((element) => {
-              // console.log(element)
-              let Content = new BaaS.TableObject("question_content");
-              let content = new BaaS.Query();
-              content.compare("content", "=", element.content);
-              Content.setQuery(content)
-                .find()
-                .then(
-                  (res) => {
-                    if (res.data.objects.length == 1) {
-                      element.id = res.data.objects[0].id;
-                      k++;
-                      if (k == qc.length) {
-                        this.excelFile.forEach((element) => {
-                          var a = qc.findIndex(
-                            (item) =>
-                              item.content === element.question_content_id
-                          );
-                          if (a != -1) {
-                            element.question_content_id = qc[a].id;
-                            let importQ = new BaaS.TableObject(
-                              "questions_information"
-                            );
-                            let importq = importQ.create();
-                            importq
-                              .set(element)
+                            ques_type.sort(function (c, d) {
+                              return c.start - d.start;
+                            });
+                            for (let a = 0; a < ques_type.length; a++) {
+                              if (ques_type[a].start != -1) {
+                                ques_type.splice(0, a);
+                                break;
+                              }
+                            }
+                            for (let a = 0; a < ques_type.length; a++) {
+                              for (
+                                let b = 0;
+                                b < ques_type[a].secondary.length;
+                                b++
+                              ) {
+                                if (ques_type[a].secondary[b].start != -1) {
+                                  ques_type[a].secondary.splice(0, b);
+                                  break;
+                                }
+                              }
+                            }
+                            let saveP = new BaaS.TableObject("test_paper");
+                            let savep = saveP.create();
+                            let s = {
+                              paper_title: temp.paper_title,
+                              paper_type: temp.paper_type,
+                              questions_num: temp.questions_num,
+                              points: temp.points,
+                              is_delete: false,
+                              catalog: temp.catalog,
+                              questions_detail:
+                                JSON.stringify(questions_detail),
+                              ques_type: JSON.stringify(ques_type),
+                            };
+                            savep
+                              .set(s)
                               .save()
                               .then(
                                 (res) => {
-                                  let q = {
-                                    id: res.data.id,
-                                    sub_sequence: element.sequence,
-                                    score: element.score,
-                                  };
-                                  questions_detail.push(q);
-                                  if (
-                                    questions_detail.length ==
-                                    this.excelFile.length
-                                  ) {
-                                    let num = 0;
-                                    questions_detail.sort(function (a, b) {
-                                      return a.sub_sequence - b.sub_sequence;
-                                    });
-
-                                    for (
-                                      let a = 0;
-                                      a < this.excelFile.length;
-                                      a++
-                                    ) {
-                                      for (
-                                        let b = 0;
-                                        b < ques_type.length;
-                                        b++
-                                      ) {
-                                        if (
-                                          this.excelFile[a].primary_ques_type ==
-                                          ques_type[b].primary
-                                        ) {
-                                          for (
-                                            let c = 0;
-                                            c < ques_type[b].secondary.length;
-                                            c++
-                                          ) {
-                                            if (
-                                              this.excelFile[a]
-                                                .secondary_ques_type ==
-                                              ques_type[b].secondary[c].type
-                                            ) {
-                                              ques_type[b].secondary[c].num++;
-                                              ques_type[b].secondary[c].score +=
-                                                this.excelFile[a].score;
-                                              ques_type[b].total_num++;
-                                              ques_type[b].total_score +=
-                                                this.excelFile[a].score;
-                                              if (
-                                                ques_type[b].secondary[c]
-                                                  .start == -1
-                                              ) {
-                                                ques_type[b].secondary[
-                                                  c
-                                                ].start =
-                                                  this.excelFile[a].sequence -
-                                                  1 -
-                                                  num;
-                                                ques_type[b].secondary[c].end =
-                                                  this.excelFile[a].sequence -
-                                                  1 -
-                                                  num;
-                                                ques_type[b].start =
-                                                  this.excelFile[a].sequence -
-                                                  1 -
-                                                  num;
-                                              } else if (
-                                                this.excelFile[a]
-                                                  .question_content_id !=
-                                                this.excelFile[a - 1]
-                                                  .question_content_id
-                                              ) {
-                                                ques_type[b].secondary[c].end++;
-                                              } else {
-                                                num++;
-                                              }
-                                            }
-                                          }
-                                        }
-                                      }
-                                    }
-                                    for (let a = 0; a < ques_type.length; a++) {
-                                      ques_type[a].secondary.sort(function (
-                                        c,
-                                        d
-                                      ) {
-                                        return c.start - d.start;
-                                      });
-                                    }
-                                    ques_type.sort(function (c, d) {
-                                      return c.start - d.start;
-                                    });
-                                    for (let a = 0; a < ques_type.length; a++) {
-                                      if (ques_type[a].start != -1) {
-                                        ques_type.splice(0, a);
-                                        break;
-                                      }
-                                    }
-                                    for (let a = 0; a < ques_type.length; a++) {
-                                      for (
-                                        let b = 0;
-                                        b < ques_type[a].secondary.length;
-                                        b++
-                                      ) {
-                                        if (
-                                          ques_type[a].secondary[b].start != -1
-                                        ) {
-                                          ques_type[a].secondary.splice(0, b);
-                                          break;
-                                        }
-                                      }
-                                    }
-                                    let saveP = new BaaS.TableObject(
-                                      "test_paper"
-                                    );
-                                    let savep = saveP.create();
-                                    let s = {
-                                      paper_title: temp.paper_title,
-                                      paper_type: temp.paper_type,
-                                      questions_num: temp.questions_num,
-                                      points: temp.points,
-                                      is_delete: false,
-                                      catalog: temp.catalog,
-                                      questions_detail:
-                                        JSON.stringify(questions_detail),
-                                      ques_type: JSON.stringify(ques_type),
-                                    };
-                                    savep
-                                      .set(s)
-                                      .save()
-                                      .then(
-                                        (res) => {
-                                          console.log(res);
-                                          this.$message({
-                                            message: "导入成功",
-                                            type: "success",
-                                          });
-                                          loading.close();
-                                          this.importFile = false;
-                                          this.init();
-                                        },
-                                        (err) => {
-                                          console.log(err);
-                                        }
-                                      );
-                                  }
+                                  console.log(res);
+                                  console.log("1");
+                                  this.$message({
+                                    message: "导入成功",
+                                    type: "success",
+                                  });
+                                  finish = true;
+                                  loading.close();
+                                  this.importFile = false;
+                                  this.init();
                                 },
                                 (err) => {
                                   console.log(err);
                                 }
                               );
                           }
-                        });
-                      }
-                    } else if (res.data.objects.length == 0) {
-                      let addContent = new BaaS.TableObject("question_content");
-                      let add = addContent.create();
-                      add.set("content", element.content);
-                      add.save().then(
-                        (res) => {
-                          element.id = res.data.id;
-                          k++;
-                          if (k == qc.length) {
-                            this.excelFile.forEach((element) => {
-                              var a = qc.findIndex(
-                                (item) =>
-                                  item.content === element.question_content_id
-                              );
-                              if (a != -1) {
-                                element.question_content_id = qc[a].id;
-                                let importQ = new BaaS.TableObject(
-                                  "questions_information"
-                                );
-                                let importq = importQ.create();
-                                importq
-                                  .set(element)
-                                  .save()
-                                  .then(
-                                    (res) => {
-                                      let q = {
-                                        id: res.data.id,
-                                        sub_sequence: element.sequence,
-                                        score: element.score,
-                                      };
-                                      questions_detail.push(q);
-                                      if (
-                                        questions_detail.length ==
-                                        this.excelFile.length
-                                      ) {
-                                        let num = 0;
-                                        questions_detail.sort(function (a, b) {
-                                          return (
-                                            a.sub_sequence - b.sub_sequence
-                                          );
-                                        });
-
-                                        for (
-                                          let a = 0;
-                                          a < this.excelFile.length;
-                                          a++
-                                        ) {
-                                          for (
-                                            let b = 0;
-                                            b < ques_type.length;
-                                            b++
-                                          ) {
-                                            if (
-                                              this.excelFile[a]
-                                                .primary_ques_type ==
-                                              ques_type[b].primary
-                                            ) {
-                                              for (
-                                                let c = 0;
-                                                c <
-                                                ques_type[b].secondary.length;
-                                                c++
-                                              ) {
-                                                if (
-                                                  this.excelFile[a]
-                                                    .secondary_ques_type ==
-                                                  ques_type[b].secondary[c].type
-                                                ) {
-                                                  ques_type[b].secondary[c]
-                                                    .num++;
-                                                  ques_type[b].secondary[
-                                                    c
-                                                  ].score +=
-                                                    this.excelFile[a].score;
-                                                  ques_type[b].total_num++;
-                                                  ques_type[b].total_score +=
-                                                    this.excelFile[a].score;
-                                                  if (
-                                                    ques_type[b].secondary[c]
-                                                      .start == -1
-                                                  ) {
-                                                    ques_type[b].secondary[
-                                                      c
-                                                    ].start =
-                                                      this.excelFile[a]
-                                                        .sequence -
-                                                      1 -
-                                                      num;
-                                                    ques_type[b].secondary[
-                                                      c
-                                                    ].end =
-                                                      this.excelFile[a]
-                                                        .sequence -
-                                                      1 -
-                                                      num;
-                                                    ques_type[b].start =
-                                                      this.excelFile[a]
-                                                        .sequence -
-                                                      1 -
-                                                      num;
-                                                  } else if (
-                                                    this.excelFile[a]
-                                                      .question_content_id !=
-                                                    this.excelFile[a - 1]
-                                                      .question_content_id
-                                                  ) {
-                                                    ques_type[b].secondary[c]
-                                                      .end++;
-                                                  } else {
-                                                    num++;
-                                                  }
-                                                }
-                                              }
-                                            }
-                                          }
-                                        }
-                                        for (
-                                          let a = 0;
-                                          a < ques_type.length;
-                                          a++
-                                        ) {
-                                          ques_type[a].secondary.sort(function (
-                                            c,
-                                            d
-                                          ) {
-                                            return c.start - d.start;
-                                          });
-                                        }
-                                        ques_type.sort(function (c, d) {
-                                          return c.start - d.start;
-                                        });
-                                        for (
-                                          let a = 0;
-                                          a < ques_type.length;
-                                          a++
-                                        ) {
-                                          if (ques_type[a].start != -1) {
-                                            ques_type.splice(0, a);
-                                            break;
-                                          }
-                                        }
-                                        for (
-                                          let a = 0;
-                                          a < ques_type.length;
-                                          a++
-                                        ) {
-                                          for (
-                                            let b = 0;
-                                            b < ques_type[a].secondary.length;
-                                            b++
-                                          ) {
-                                            if (
-                                              ques_type[a].secondary[b].start !=
-                                              -1
-                                            ) {
-                                              ques_type[a].secondary.splice(
-                                                0,
-                                                b
-                                              );
-                                              break;
-                                            }
-                                          }
-                                        }
-                                        let saveP = new BaaS.TableObject(
-                                          "test_paper"
-                                        );
-                                        let savep = saveP.create();
-                                        let s = {
-                                          paper_title: temp.paper_title,
-                                          paper_type: temp.paper_type,
-                                          questions_num: temp.questions_num,
-                                          points: temp.points,
-                                          is_delete: false,
-                                          catalog: temp.catalog,
-                                          questions_detail:
-                                            JSON.stringify(questions_detail),
-                                          ques_type: JSON.stringify(ques_type),
-                                        };
-                                        savep
-                                          .set(s)
-                                          .save()
-                                          .then(
-                                            (res) => {
-                                              console.log(res);
-                                              this.$message({
-                                                message: "导入成功",
-                                                type: "success",
-                                              });
-                                              loading.close();
-                                              this.importFile = false;
-                                              this.init();
-                                            },
-                                            (err) => {
-                                              console.log(err);
-                                            }
-                                          );
-                                      }
-                                    },
-                                    (err) => {
-                                      console.log(err);
-                                    }
-                                  );
-                              }
-                            });
-                          }
                         },
                         (err) => {
                           console.log(err);
                         }
                       );
-                    }
-                  },
-                  (err) => {
-                    console.log(err);
+                    return;
                   }
-                );
+                });
+              }
+              console.log(findContent);
+              if (findContent == false) {
+                var a = {
+                  content: element.question_content_id,
+                  id: null,
+                };
+                arr.push(a);
+              }
             });
+            if (arr.length != 0) {
+              const map = new Map();
+              const qc = arr.filter(
+                (key) => !map.has(key.content) && map.set(key.content, 1)
+              );
+              var k = 0;
+              console.log(qc);
+              qc.forEach((element) => {
+                // console.log(element)
+                let Content = new BaaS.TableObject("question_content");
+                let content = new BaaS.Query();
+                content.compare("content", "=", element.content);
+                let q = new BaaS.Query();
+                q.compare("created_by", "=", Cookie.get("user_id") * 1);
+                let andQuery = BaaS.Query.and(content, q);
+                Content.setQuery(andQuery)
+                  .limit(1000)
+                  .find()
+                  .then(
+                    (res) => {
+                      if (res.data.objects.length != 0) {
+                        element.id = res.data.objects[0].id;
+                        k++;
+                        if (k == qc.length) {
+                          this.excelFile.forEach((element1) => {
+                            var a = qc.findIndex(
+                              (item) =>
+                                item.content === element1.question_content_id
+                            );
+                            if (a != -1&&element1.save!=1) {
+                              element1.question_content_id = qc[a].id;
+                              let importQ = new BaaS.TableObject(
+                                "questions_information"
+                              );
+                              let importq = importQ.create();
+                              importq
+                                .set(element1)
+                                .save()
+                                .then(
+                                  (res) => {
+                                    element1.save=1
+                                    let q = {
+                                      id: res.data.id,
+                                      sub_sequence: element1.sequence,
+                                      score: element1.score,
+                                    };
+                                    questions_detail.push(q);
+                                    if (
+                                      questions_detail.length ==
+                                        this.excelFile.length &&
+                                      finish == false
+                                    ) {
+                                      let num = 0;
+                                      questions_detail.sort(function (a, b) {
+                                        return a.sub_sequence - b.sub_sequence;
+                                      });
+
+                                      for (
+                                        let a = 0;
+                                        a < this.excelFile.length;
+                                        a++
+                                      ) {
+                                        for (
+                                          let b = 0;
+                                          b < ques_type.length;
+                                          b++
+                                        ) {
+                                          if (
+                                            this.excelFile[a]
+                                              .primary_ques_type ==
+                                            ques_type[b].primary
+                                          ) {
+                                            for (
+                                              let c = 0;
+                                              c < ques_type[b].secondary.length;
+                                              c++
+                                            ) {
+                                              if (
+                                                this.excelFile[a]
+                                                  .secondary_ques_type ==
+                                                ques_type[b].secondary[c].type
+                                              ) {
+                                                ques_type[b].secondary[c].num++;
+                                                ques_type[b].secondary[
+                                                  c
+                                                ].score +=
+                                                  this.excelFile[a].score;
+                                                ques_type[b].total_num++;
+                                                ques_type[b].total_score +=
+                                                  this.excelFile[a].score;
+                                                if (
+                                                  ques_type[b].secondary[c]
+                                                    .start == -1
+                                                ) {
+                                                  ques_type[b].secondary[
+                                                    c
+                                                  ].start =
+                                                    this.excelFile[a].sequence -
+                                                    1 -
+                                                    num;
+                                                  ques_type[b].secondary[
+                                                    c
+                                                  ].end =
+                                                    this.excelFile[a].sequence -
+                                                    1 -
+                                                    num;
+                                                  ques_type[b].start =
+                                                    this.excelFile[a].sequence -
+                                                    1 -
+                                                    num;
+                                                } else if (
+                                                  this.excelFile[a]
+                                                    .question_content_id !=
+                                                  this.excelFile[a - 1]
+                                                    .question_content_id
+                                                ) {
+                                                  ques_type[b].secondary[c]
+                                                    .end++;
+                                                } else {
+                                                  num++;
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                      for (
+                                        let a = 0;
+                                        a < ques_type.length;
+                                        a++
+                                      ) {
+                                        ques_type[a].secondary.sort(function (
+                                          c,
+                                          d
+                                        ) {
+                                          return c.start - d.start;
+                                        });
+                                      }
+                                      ques_type.sort(function (c, d) {
+                                        return c.start - d.start;
+                                      });
+                                      for (
+                                        let a = 0;
+                                        a < ques_type.length;
+                                        a++
+                                      ) {
+                                        if (ques_type[a].start != -1) {
+                                          ques_type.splice(0, a);
+                                          break;
+                                        }
+                                      }
+                                      for (
+                                        let a = 0;
+                                        a < ques_type.length;
+                                        a++
+                                      ) {
+                                        for (
+                                          let b = 0;
+                                          b < ques_type[a].secondary.length;
+                                          b++
+                                        ) {
+                                          if (
+                                            ques_type[a].secondary[b].start !=
+                                            -1
+                                          ) {
+                                            ques_type[a].secondary.splice(0, b);
+                                            break;
+                                          }
+                                        }
+                                      }
+                                      let saveP = new BaaS.TableObject(
+                                        "test_paper"
+                                      );
+                                      let savep = saveP.create();
+                                      let s = {
+                                        paper_title: temp.paper_title,
+                                        paper_type: temp.paper_type,
+                                        questions_num: temp.questions_num,
+                                        points: temp.points,
+                                        is_delete: false,
+                                        catalog: temp.catalog,
+                                        questions_detail:
+                                          JSON.stringify(questions_detail),
+                                        ques_type: JSON.stringify(ques_type),
+                                      };
+                                      savep
+                                        .set(s)
+                                        .save()
+                                        .then(
+                                          (res) => {
+                                            console.log(res);
+                                            console.log("2");
+                                            this.$message({
+                                              message: "导入成功",
+                                              type: "success",
+                                            });
+                                            finish = true;
+                                            loading.close();
+                                            this.importFile = false;
+                                            this.init();
+                                          },
+                                          (err) => {
+                                            console.log(err);
+                                          }
+                                        );
+                                    }
+                                  },
+                                  (err) => {
+                                    console.log(err);
+                                  }
+                                );
+                            }
+                          });
+                        }
+                      } else if (res.data.objects.length == 0) {
+                        let addContent = new BaaS.TableObject(
+                          "question_content"
+                        );
+                        let add = addContent.create();
+                        add.set("content", element.content);
+                        add.save().then(
+                          (res) => {
+                            element.id = res.data.id;
+                            k++;
+                            if (k == qc.length) {
+                              this.excelFile.forEach((element1) => {
+                                var a = qc.findIndex(
+                                  (item) =>
+                                    item.content ===
+                                    element1.question_content_id
+                                );
+                                if (a != -1&&element1.save!=1) {
+                                  element1.question_content_id = qc[a].id;
+                                  let importQ = new BaaS.TableObject(
+                                    "questions_information"
+                                  );
+                                  let importq = importQ.create();
+                                  importq
+                                    .set(element1)
+                                    .save()
+                                    .then(
+                                      (res) => {
+                                        element1.save=1
+                                        let q = {
+                                          id: res.data.id,
+                                          sub_sequence: element1.sequence,
+                                          score: element1.score,
+                                        };
+                                        questions_detail.push(q);
+                                        if (
+                                          questions_detail.length ==
+                                            this.excelFile.length &&
+                                          finish == false
+                                        ) {
+                                          let num = 0;
+                                          questions_detail.sort(function (
+                                            a,
+                                            b
+                                          ) {
+                                            return (
+                                              a.sub_sequence - b.sub_sequence
+                                            );
+                                          });
+
+                                          for (
+                                            let a = 0;
+                                            a < this.excelFile.length;
+                                            a++
+                                          ) {
+                                            for (
+                                              let b = 0;
+                                              b < ques_type.length;
+                                              b++
+                                            ) {
+                                              if (
+                                                this.excelFile[a]
+                                                  .primary_ques_type ==
+                                                ques_type[b].primary
+                                              ) {
+                                                for (
+                                                  let c = 0;
+                                                  c <
+                                                  ques_type[b].secondary.length;
+                                                  c++
+                                                ) {
+                                                  if (
+                                                    this.excelFile[a]
+                                                      .secondary_ques_type ==
+                                                    ques_type[b].secondary[c]
+                                                      .type
+                                                  ) {
+                                                    ques_type[b].secondary[c]
+                                                      .num++;
+                                                    ques_type[b].secondary[
+                                                      c
+                                                    ].score +=
+                                                      this.excelFile[a].score;
+                                                    ques_type[b].total_num++;
+                                                    ques_type[b].total_score +=
+                                                      this.excelFile[a].score;
+                                                    if (
+                                                      ques_type[b].secondary[c]
+                                                        .start == -1
+                                                    ) {
+                                                      ques_type[b].secondary[
+                                                        c
+                                                      ].start =
+                                                        this.excelFile[a]
+                                                          .sequence -
+                                                        1 -
+                                                        num;
+                                                      ques_type[b].secondary[
+                                                        c
+                                                      ].end =
+                                                        this.excelFile[a]
+                                                          .sequence -
+                                                        1 -
+                                                        num;
+                                                      ques_type[b].start =
+                                                        this.excelFile[a]
+                                                          .sequence -
+                                                        1 -
+                                                        num;
+                                                    } else if (
+                                                      this.excelFile[a]
+                                                        .question_content_id !=
+                                                      this.excelFile[a - 1]
+                                                        .question_content_id
+                                                    ) {
+                                                      ques_type[b].secondary[c]
+                                                        .end++;
+                                                    } else {
+                                                      num++;
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                          for (
+                                            let a = 0;
+                                            a < ques_type.length;
+                                            a++
+                                          ) {
+                                            ques_type[a].secondary.sort(
+                                              function (c, d) {
+                                                return c.start - d.start;
+                                              }
+                                            );
+                                          }
+                                          ques_type.sort(function (c, d) {
+                                            return c.start - d.start;
+                                          });
+                                          for (
+                                            let a = 0;
+                                            a < ques_type.length;
+                                            a++
+                                          ) {
+                                            if (ques_type[a].start != -1) {
+                                              ques_type.splice(0, a);
+                                              break;
+                                            }
+                                          }
+                                          for (
+                                            let a = 0;
+                                            a < ques_type.length;
+                                            a++
+                                          ) {
+                                            for (
+                                              let b = 0;
+                                              b < ques_type[a].secondary.length;
+                                              b++
+                                            ) {
+                                              if (
+                                                ques_type[a].secondary[b]
+                                                  .start != -1
+                                              ) {
+                                                ques_type[a].secondary.splice(
+                                                  0,
+                                                  b
+                                                );
+                                                break;
+                                              }
+                                            }
+                                          }
+                                          let saveP = new BaaS.TableObject(
+                                            "test_paper"
+                                          );
+                                          let savep = saveP.create();
+                                          let s = {
+                                            paper_title: temp.paper_title,
+                                            paper_type: temp.paper_type,
+                                            questions_num: temp.questions_num,
+                                            points: temp.points,
+                                            is_delete: false,
+                                            catalog: temp.catalog,
+                                            questions_detail:
+                                              JSON.stringify(questions_detail),
+                                            ques_type:
+                                              JSON.stringify(ques_type),
+                                          };
+                                          savep
+                                            .set(s)
+                                            .save()
+                                            .then(
+                                              (res) => {
+                                                console.log(res);
+                                                console.log("3");
+                                                this.$message({
+                                                  message: "导入成功",
+                                                  type: "success",
+                                                });
+                                                finish = true;
+                                                loading.close();
+                                                this.importFile = false;
+                                                this.init();
+                                              },
+                                              (err) => {
+                                                console.log(err);
+                                              }
+                                            );
+                                        }
+                                      },
+                                      (err) => {
+                                        console.log(err);
+                                      }
+                                    );
+                                }
+                              });
+                            }
+                          },
+                          (err) => {
+                            console.log(err);
+                          }
+                        );
+                      }
+                    },
+                    (err) => {
+                      console.log(err);
+                    }
+                  );
+              });
+            }
           }
-        }
+        }, 2000);
       }
       // 清空文件列表
       this.fileList = [];
@@ -3145,6 +3214,276 @@ export default {
         } 个文件`
       );
     },
+    preview(val) {
+      const loading = this.$loading({
+        lock: true,
+        text: "请稍后",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)",
+      });
+      // Cookies.set("paper_id", val.id);
+      // Cookies.set("paper_title", val.paper_title);
+      // Cookies.set("questions_detail", val.questions_detail);
+      sessionStorage.setItem("paper_id", val.id);
+      sessionStorage.setItem("paper_title", val.paper_title);
+      sessionStorage.setItem("questions_detail", val.questions_detail);
+      if (
+        val.questions != null &&
+        val.questions != "" &&
+        val.questions != undefined
+      ) {
+        let q = JSON.parse(val.questions);
+        sessionStorage.setItem("questions", val.questions);
+        sessionStorage.setItem("currentQues", q.length);
+        sessionStorage.setItem(
+          "currentSubQues",
+          q[q.length - 1].sub_question.length
+        );
+        sessionStorage.setItem("ques_type", val.ques_type);
+        sessionStorage.setItem("title", val.paper_title);
+        if (val.paper_type == "模考") {
+          sessionStorage.setItem("exam", true);
+        } else {
+          sessionStorage.setItem("exam", false);
+        }
+        sessionStorage.setItem("ques_num", val.questions_num);
+        sessionStorage.setItem("ques_score", val.points);
+        sessionStorage.setItem("paperEdit", "true");
+        // Cookies.set("paperInfo", val.id);
+        sessionStorage.setItem("paperInfo", val.id);
+        loading.close();
+        this.$router.push("/mcreatePaper");
+      } else {
+        let ques = JSON.parse(val.questions_detail);
+        ques.sort(function (a, b) {
+          return a.sub_sequence - b.sub_sequence;
+        });
+        let questions = [];
+        let contents = [];
+        for (let i = 0; i < ques.length; i++) {
+          let questio = new BaaS.TableObject("questions_information");
+          questio.get(ques[i].id).then(
+            (res) => {
+              let temp =
+                res.data.question_content_id +
+                res.data.primary_ques_type +
+                res.data.secondary_ques_type;
+              let s = {
+                temp: temp,
+                content_id: res.data.question_content_id,
+                primary_ques_type: res.data.primary_ques_type,
+                secondary_ques_type: res.data.secondary_ques_type,
+              };
+              contents.push(s);
+              ques[i].temp = temp;
+              let sub = {
+                sub_sequence: 0,
+                actual_sequence: ques[i].sub_sequence,
+                score: ques[i].score * 1,
+                question: res.data.question,
+                options: res.data.options,
+                answer: res.data.answer,
+                analysis: res.data.analysis,
+                level_value: res.data.ques_level,
+                grade_value: res.data.grade_standard,
+                topic_value: res.data.topic_outline,
+                task_value: res.data.task_outline,
+                department_value: res.data.department,
+                qclass_value: res.data.question_class,
+                fivehe_value: res.data.question_type_5he,
+                A: "",
+                B: "",
+                C: "",
+                D: "",
+                author: res.data.author,
+                author_org: res.data.author_org,
+                time_created: res.data.time_created,
+              };
+              if (res.data.options != null) {
+                let str = res.data.options.replace(/\s*/g, "");
+                let tempa = -1;
+                let tempb = -1;
+                let tempc = -1;
+                let tempd = -1;
+                if (str.indexOf('","index":"A"') != -1) {
+                  tempa = str.indexOf('","index":"A"');
+                } else if (str.indexOf("','index':'A'") != -1) {
+                  tempa = str.indexOf("','index':'A'");
+                }
+                if (str.indexOf('","index":"B"') != -1) {
+                  tempb = str.indexOf('","index":"B"');
+                } else if (str.indexOf("','index':'B'") != -1) {
+                  tempb = str.indexOf("','index':'B'");
+                }
+                if (str.indexOf('","index":"C"') != -1) {
+                  tempc = str.indexOf('","index":"C"');
+                } else if (str.indexOf("','index':'C'") != -1) {
+                  tempc = str.indexOf("','index':'C'");
+                }
+                if (str.indexOf('","index":"D"') != -1) {
+                  tempd = str.indexOf('","index":"D"');
+                } else if (str.indexOf("','index':'D'") != -1) {
+                  tempd = str.indexOf("','index':'D'");
+                }
+                let a = "";
+                let b = "";
+                let c = "";
+                let d = "";
+                if (tempa != -1) {
+                  while (str[tempa - 1] != '"' && str[tempa - 1] != "'") {
+                    a += str[tempa - 1];
+                    tempa--;
+                  }
+                  sub.A = a.split("").reverse().join("");
+                }
+                if (tempb != -1) {
+                  while (str[tempb - 1] != '"' && str[tempb - 1] != "'") {
+                    b += str[tempb - 1];
+                    tempb--;
+                  }
+                  sub.B = b.split("").reverse().join("");
+                }
+                if (tempc != -1) {
+                  while (str[tempc - 1] != '"' && str[tempc - 1] != "'") {
+                    c += str[tempc - 1];
+                    tempc--;
+                  }
+                  sub.C = c.split("").reverse().join("");
+                }
+                if (tempd != -1) {
+                  while (str[tempd - 1] != '"' && str[tempd - 1] != "'") {
+                    d += str[tempd - 1];
+                    tempd--;
+                  }
+                  sub.D = d.split("").reverse().join("");
+                }
+                let o = [
+                  {
+                    content: sub.A,
+                    index: "A",
+                  },
+                  {
+                    content: sub.B,
+                    index: "B",
+                  },
+                  {
+                    content: sub.C,
+                    index: "C",
+                  },
+                  {
+                    content: sub.D,
+                    index: "D",
+                  },
+                ];
+                sub.options = o;
+              }
+              ques[i].sub = sub;
+              if (contents.length == ques.length) {
+                const map = new Map();
+                const qc = contents.filter(
+                  (key) => !map.has(key.temp) && map.set(key.temp, 1)
+                );
+                for (let j = 0; j < qc.length; j++) {
+                  let sub = [];
+                  let sub_seq = 1;
+                  let score = 0;
+                  for (let k = 0; k < ques.length; k++) {
+                    if (qc[j].temp == ques[k].temp) {
+                      ques[k].sub.sub_sequence = sub_seq;
+                      sub.push(ques[k].sub);
+                      sub_seq++;
+                      score += ques[k].score;
+                    }
+                  }
+                  let content = new BaaS.TableObject("question_content");
+                  content.get(qc[j].content_id).then(
+                    (con) => {
+                      let question = {
+                        primary_ques_type: qc[j].primary_ques_type,
+                        secondary_ques_type: qc[j].secondary_ques_type,
+                        total_score: score,
+                        saveQ: true,
+                        saveT: true,
+                        audio: "",
+                        file_url: "",
+                        fileList: [],
+                        excel: "",
+                        excelfileList: [],
+                      };
+                      if (con.data.file_url != null) {
+                        if (
+                          con.data.file_url.path.search(".png") != -1 ||
+                          con.data.file_url.path.search(".jpg") != -1 ||
+                          con.data.file_url.path.search(".gif") != -1
+                        ) {
+                          question.file_url = con.data.file_url.path;
+                        } else if (
+                          con.data.file_url.path.search(".mp3") != -1 ||
+                          con.data.file_url.path.search(".wav") != -1 ||
+                          con.data.file_url.path.search(".ogg") != -1
+                        ) {
+                          question.audio = con.data.file_url.path;
+                          question.fileList.push({
+                            name: con.data.file_url.name,
+                            url: con.data.file_url.path,
+                          });
+                        }
+                      }
+                      question.question_content = con.data.content;
+                      question.sub_question = sub;
+                      questions.push(question);
+                      if (questions.length == qc.length) {
+                        questions.sort(function (a, b) {
+                          return (
+                            a.sub_question[0].actual_sequence -
+                            b.sub_question[0].actual_sequence
+                          );
+                        });
+                        let sequen = 1;
+                        for (let h = 0; h < questions.length; h++) {
+                          questions[h].sequence = sequen;
+                          questions[h].name = questions[h].sequence.toString();
+                          sequen++;
+                        }
+                        sessionStorage.setItem(
+                          "questions",
+                          JSON.stringify(questions)
+                        );
+                        sessionStorage.setItem("currentQues", questions.length);
+                        sessionStorage.setItem(
+                          "currentSubQues",
+                          questions[questions.length - 1].sub_question.length
+                        );
+                        sessionStorage.setItem("ques_type", val.ques_type);
+                        sessionStorage.setItem("title", val.paper_title);
+                        if (val.paper_type == "模考") {
+                          sessionStorage.setItem("exam", true);
+                        } else {
+                          sessionStorage.setItem("exam", false);
+                        }
+                        sessionStorage.setItem("ques_num", val.questions_num);
+                        sessionStorage.setItem("ques_score", val.points);
+                        sessionStorage.setItem("paperEdit", "true");
+                        // Cookies.set("paperInfo", val.id);
+                        sessionStorage.setItem("paperInfo", val.id);
+                        loading.close();
+                        this.$router.push("/mcreatePaper");
+                      }
+                    },
+                    (err) => {
+                      console.log(err);
+                    }
+                  );
+                }
+              }
+            },
+            (err) => {
+              console.log(err);
+            }
+          );
+        }
+      }
+    },
     check(val) {
       const loading = this.$loading({
         lock: true,
@@ -3152,169 +3491,271 @@ export default {
         spinner: "el-icon-loading",
         background: "rgba(0, 0, 0, 0.7)",
       });
-      Cookies.set("paper_id", val.id);
-      Cookies.set("paper_title", val.paper_title);
-      Cookies.set("questions_detail", val.questions_detail);
-      let ques = JSON.parse(val.questions_detail);
-      ques.sort(function (a, b) {
-        return a.sub_sequence - b.sub_sequence;
-      });
-      let questions = [];
-      let contents = [];
-      for (let i = 0; i < ques.length; i++) {
-        let questio = new BaaS.TableObject("questions_information");
-        questio.get(ques[i].id).then(
-          (res) => {
-            let temp =
-              res.data.question_content_id +
-              res.data.primary_ques_type +
-              res.data.secondary_ques_type;
-            let s = {
-              temp: temp,
-              content_id: res.data.question_content_id,
-              primary_ques_type: res.data.primary_ques_type,
-              secondary_ques_type: res.data.secondary_ques_type,
-            };
-            contents.push(s);
-            ques[i].temp = temp;
-            let sub = {
-              sub_sequence: 0,
-              actual_sequence: ques[i].sub_sequence,
-              score: ques[i].score * 1,
-              question: res.data.question,
-              options: JSON.parse(res.data.options),
-              answer: res.data.answer,
-              anlysis: res.data.anlysis,
-              level_value: res.data.ques_level,
-              grade_value: res.data.grade_standard,
-              topic_value: res.data.topic_outline,
-              task_value: res.data.task_outline,
-              department_value: res.data.department,
-              qclass_value: res.data.question_class,
-              fivehe_value: res.data.question_type_5he,
-              A: "",
-              B: "",
-              C: "",
-              D: "",
-              author: res.data.author,
-              author_org: res.data.author_org,
-              time_created: res.data.time_created,
-            };
-            let op = JSON.parse(res.data.options);
-            if (op != null && op != undefined) {
-              for (let j = 0; j < op.length; j++) {
-                if (op[j].index == "A") {
-                  sub.A = op[j].content;
-                } else if (op[j].index == "B") {
-                  sub.B = op[j].content;
-                } else if (op[j].index == "C") {
-                  sub.C = op[j].content;
-                } else if (op[j].index == "D") {
-                  sub.D = op[j].content;
-                }
-              }
-            }
-            ques[i].sub = sub;
-            if (contents.length == ques.length) {
-              const map = new Map();
-              const qc = contents.filter(
-                (key) => !map.has(key.temp) && map.set(key.temp, 1)
-              );
-              for (let j = 0; j < qc.length; j++) {
-                let sub = [];
-                let sub_seq = 1;
-                let score = 0;
-                for (let k = 0; k < ques.length; k++) {
-                  if (qc[j].temp == ques[k].temp) {
-                    ques[k].sub.sub_sequence = sub_seq;
-                    sub.push(ques[k].sub);
-                    sub_seq++;
-                    score += ques[k].score;
-                  }
-                }
-                let content = new BaaS.TableObject("question_content");
-                content.get(qc[j].content_id).then(
-                  (con) => {
-                    let question = {
-                      primary_ques_type: qc[j].primary_ques_type,
-                      secondary_ques_type: qc[j].secondary_ques_type,
-                      total_score: score,
-                      saveQ: true,
-                      saveT: true,
-                      audio: "",
-                      file_url: "",
-                      fileList: [],
-                    };
-                    if (con.data.file_url != null) {
-                      if (
-                        con.data.file_url.path.search(".png") != -1 ||
-                        con.data.file_url.path.search(".jpg") != -1 ||
-                        con.data.file_url.path.search(".gif") != -1
-                      ) {
-                        question.file_url = con.data.file_url.path;
-                      } else if (
-                        con.data.file_url.path.search(".mp3") != -1 ||
-                        con.data.file_url.path.search(".wav") != -1 ||
-                        con.data.file_url.path.search(".ogg") != -1
-                      ) {
-                        question.audio = con.data.file_url.path;
-                        question.fileList.push({
-                          name: con.data.file_url.name,
-                          url: con.data.file_url.path,
-                        });
-                      }
-                    }
-                    question.question_content = con.data.content;
-                    question.sub_question = sub;
-                    questions.push(question);
-                    if (questions.length == qc.length) {
-                      questions.sort(function (a, b) {
-                        return (
-                          a.sub_question[0].actual_sequence -
-                          b.sub_question[0].actual_sequence
-                        );
-                      });
-                      let sequen = 1;
-                      for (let h = 0; h < questions.length; h++) {
-                        questions[h].sequence = sequen;
-                        questions[h].name = questions[h].sequence.toString();
-                        sequen++;
-                      }
-                      sessionStorage.setItem(
-                        "questions",
-                        JSON.stringify(questions)
-                      );
-                      sessionStorage.setItem("ques_type", val.ques_type);
-                      sessionStorage.setItem("currentQues", questions.length);
-                      sessionStorage.setItem(
-                        "currentSubQues",
-                        questions[questions.length - 1].sub_question.length
-                      );
-                      sessionStorage.setItem("title", val.paper_title);
-                      if (val.paper_type == "模考") {
-                        sessionStorage.setItem("exam", true);
-                      } else {
-                        sessionStorage.setItem("exam", false);
-                      }
-                      sessionStorage.setItem("ques_num", val.questions_num);
-                      sessionStorage.setItem("ques_score", val.points);
-                      sessionStorage.setItem("paperCheck", "true");
-                      Cookies.set("paperInfo", val.id);
-                      loading.close();
-                      this.$router.push("/preview");
-                    }
-                  },
-                  (err) => {
-                    console.log(err);
-                  }
-                );
-              }
-            }
-          },
-          (err) => {
-            console.log(err);
-          }
+      // Cookies.set("paper_id", val.id);
+      // Cookies.set("paper_title", val.paper_title);
+      // Cookies.set("questions_detail", val.questions_detail);
+      sessionStorage.setItem("paper_id", val.id);
+      sessionStorage.setItem("paper_title", val.paper_title);
+      sessionStorage.setItem("questions_detail", val.questions_detail);
+      // let ques = JSON.parse(val.questions_detail);
+      // ques.sort(function (a, b) {
+      //   return a.sub_sequence - b.sub_sequence;
+      // });
+      if (
+        val.questions != null &&
+        val.questions != "" &&
+        val.questions != undefined
+      ) {
+        let q = JSON.parse(val.questions);
+        sessionStorage.setItem("questions", val.questions);
+        sessionStorage.setItem("currentQues", q.length);
+        sessionStorage.setItem(
+          "currentSubQues",
+          q[q.length - 1].sub_question.length
         );
+        sessionStorage.setItem("ques_type", val.ques_type);
+        sessionStorage.setItem("title", val.paper_title);
+        if (val.paper_type == "模考") {
+          sessionStorage.setItem("exam", true);
+        } else {
+          sessionStorage.setItem("exam", false);
+        }
+        sessionStorage.setItem("ques_num", val.questions_num);
+        sessionStorage.setItem("ques_score", val.points);
+        sessionStorage.setItem("paperCheck", "true");
+        // Cookies.set("paperInfo", val.id);
+        sessionStorage.setItem("paperInfo", val.id);
+        loading.close();
+        this.$router.push("/preview");
+      } else {
+        let ques = JSON.parse(val.questions_detail);
+        ques.sort(function (a, b) {
+          return a.sub_sequence - b.sub_sequence;
+        });
+        let questions = [];
+        let contents = [];
+        for (let i = 0; i < ques.length; i++) {
+          let questio = new BaaS.TableObject("questions_information");
+          questio.get(ques[i].id).then(
+            (res) => {
+              let temp =
+                res.data.question_content_id +
+                res.data.primary_ques_type +
+                res.data.secondary_ques_type;
+              let s = {
+                temp: temp,
+                content_id: res.data.question_content_id,
+                primary_ques_type: res.data.primary_ques_type,
+                secondary_ques_type: res.data.secondary_ques_type,
+              };
+              contents.push(s);
+              ques[i].temp = temp;
+              let sub = {
+                sub_sequence: 0,
+                actual_sequence: ques[i].sub_sequence,
+                score: ques[i].score * 1,
+                question: res.data.question,
+                options: res.data.options,
+                answer: res.data.answer,
+                analysis: res.data.analysis,
+                level_value: res.data.ques_level,
+                grade_value: res.data.grade_standard,
+                topic_value: res.data.topic_outline,
+                task_value: res.data.task_outline,
+                department_value: res.data.department,
+                qclass_value: res.data.question_class,
+                fivehe_value: res.data.question_type_5he,
+                A: "",
+                B: "",
+                C: "",
+                D: "",
+                author: res.data.author,
+                author_org: res.data.author_org,
+                time_created: res.data.time_created,
+              };
+              if (res.data.options != null) {
+                let str = res.data.options.replace(/\s*/g, "");
+                let tempa = -1;
+                let tempb = -1;
+                let tempc = -1;
+                let tempd = -1;
+                if (str.indexOf('","index":"A"') != -1) {
+                  tempa = str.indexOf('","index":"A"');
+                } else if (str.indexOf("','index':'A'") != -1) {
+                  tempa = str.indexOf("','index':'A'");
+                }
+                if (str.indexOf('","index":"B"') != -1) {
+                  tempb = str.indexOf('","index":"B"');
+                } else if (str.indexOf("','index':'B'") != -1) {
+                  tempb = str.indexOf("','index':'B'");
+                }
+                if (str.indexOf('","index":"C"') != -1) {
+                  tempc = str.indexOf('","index":"C"');
+                } else if (str.indexOf("','index':'C'") != -1) {
+                  tempc = str.indexOf("','index':'C'");
+                }
+                if (str.indexOf('","index":"D"') != -1) {
+                  tempd = str.indexOf('","index":"D"');
+                } else if (str.indexOf("','index':'D'") != -1) {
+                  tempd = str.indexOf("','index':'D'");
+                }
+                let a = "";
+                let b = "";
+                let c = "";
+                let d = "";
+                if (tempa != -1) {
+                  while (str[tempa - 1] != '"' && str[tempa - 1] != "'") {
+                    a += str[tempa - 1];
+                    tempa--;
+                  }
+                  sub.A = a.split("").reverse().join("");
+                }
+                if (tempb != -1) {
+                  while (str[tempb - 1] != '"' && str[tempb - 1] != "'") {
+                    b += str[tempb - 1];
+                    tempb--;
+                  }
+                  sub.B = b.split("").reverse().join("");
+                }
+                if (tempc != -1) {
+                  while (str[tempc - 1] != '"' && str[tempc - 1] != "'") {
+                    c += str[tempc - 1];
+                    tempc--;
+                  }
+                  sub.C = c.split("").reverse().join("");
+                }
+                if (tempd != -1) {
+                  while (str[tempd - 1] != '"' && str[tempd - 1] != "'") {
+                    d += str[tempd - 1];
+                    tempd--;
+                  }
+                  sub.D = d.split("").reverse().join("");
+                }
+                let o = [
+                  {
+                    content: sub.A,
+                    index: "A",
+                  },
+                  {
+                    content: sub.B,
+                    index: "B",
+                  },
+                  {
+                    content: sub.C,
+                    index: "C",
+                  },
+                  {
+                    content: sub.D,
+                    index: "D",
+                  },
+                ];
+                sub.options = o;
+              }
+              ques[i].sub = sub;
+              if (contents.length == ques.length) {
+                const map = new Map();
+                const qc = contents.filter(
+                  (key) => !map.has(key.temp) && map.set(key.temp, 1)
+                );
+                for (let j = 0; j < qc.length; j++) {
+                  let sub = [];
+                  let sub_seq = 1;
+                  let score = 0;
+                  for (let k = 0; k < ques.length; k++) {
+                    if (qc[j].temp == ques[k].temp) {
+                      ques[k].sub.sub_sequence = sub_seq;
+                      sub.push(ques[k].sub);
+                      sub_seq++;
+                      score += ques[k].score;
+                    }
+                  }
+                  let content = new BaaS.TableObject("question_content");
+                  content.get(qc[j].content_id).then(
+                    (con) => {
+                      let question = {
+                        primary_ques_type: qc[j].primary_ques_type,
+                        secondary_ques_type: qc[j].secondary_ques_type,
+                        total_score: score,
+                        saveQ: true,
+                        saveT: true,
+                        audio: "",
+                        file_url: "",
+                        fileList: [],
+                        excel: "",
+                        excelfileList: [],
+                      };
+                      if (con.data.file_url != null) {
+                        if (
+                          con.data.file_url.path.search(".png") != -1 ||
+                          con.data.file_url.path.search(".jpg") != -1 ||
+                          con.data.file_url.path.search(".gif") != -1
+                        ) {
+                          question.file_url = con.data.file_url.path;
+                        } else if (
+                          con.data.file_url.path.search(".mp3") != -1 ||
+                          con.data.file_url.path.search(".wav") != -1 ||
+                          con.data.file_url.path.search(".ogg") != -1
+                        ) {
+                          question.audio = con.data.file_url.path;
+                          question.fileList.push({
+                            name: con.data.file_url.name,
+                            url: con.data.file_url.path,
+                          });
+                        }
+                      }
+                      question.question_content = con.data.content;
+                      question.sub_question = sub;
+                      questions.push(question);
+                      if (questions.length == qc.length) {
+                        questions.sort(function (a, b) {
+                          return (
+                            a.sub_question[0].actual_sequence -
+                            b.sub_question[0].actual_sequence
+                          );
+                        });
+                        let sequen = 1;
+                        for (let h = 0; h < questions.length; h++) {
+                          questions[h].sequence = sequen;
+                          questions[h].name = questions[h].sequence.toString();
+                          sequen++;
+                        }
+                        sessionStorage.setItem(
+                          "questions",
+                          JSON.stringify(questions)
+                        );
+                        sessionStorage.setItem("currentQues", questions.length);
+                        sessionStorage.setItem(
+                          "currentSubQues",
+                          questions[questions.length - 1].sub_question.length
+                        );
+                        sessionStorage.setItem("ques_type", val.ques_type);
+                        sessionStorage.setItem("title", val.paper_title);
+                        if (val.paper_type == "模考") {
+                          sessionStorage.setItem("exam", true);
+                        } else {
+                          sessionStorage.setItem("exam", false);
+                        }
+                        sessionStorage.setItem("ques_num", val.questions_num);
+                        sessionStorage.setItem("ques_score", val.points);
+                        sessionStorage.setItem("paperCheck", "true");
+                        // Cookies.set("paperInfo", val.id);
+                        sessionStorage.setItem("paperInfo", val.id);
+                        loading.close();
+                        this.$router.push("/preview");
+                      }
+                    },
+                    (err) => {
+                      console.log(err);
+                    }
+                  );
+                }
+              }
+            },
+            (err) => {
+              console.log(err);
+            }
+          );
+        }
       }
     },
   },

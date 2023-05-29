@@ -57,7 +57,7 @@
 <script>
 import Heads from "@/components/heads";
 import Cookie from "js-cookie";
-import Cookies from "js-cookie";
+// import Cookies from "js-cookie";
 import checkQues from "@/views/make_out/material/checkQues.vue";
 import checkPaper from "@/views/make_out/material/checkPaper.vue";
 export default {
@@ -81,18 +81,27 @@ export default {
   methods: {
     back() {
       this.$router.go(-1);
-      Cookies.set("question_content", "");
-      Cookies.set("question_file", "");
-      Cookies.set("material_id", "");
+      // Cookies.set("question_content", "");
+      // Cookies.set("question_file", "");
+      // Cookies.set("material_id", "");
+      sessionStorage.setItem("question_content", "");
+      sessionStorage.setItem("question_file", "");
+      sessionStorage.setItem("material_id", "");
     },
     init() {
       var BaaS = require("minapp-sdk");
       let clientID = "395062a19e209a770059";
       BaaS.init(clientID);
-      var query = new BaaS.Query();
-      query.compare("id", "=", Cookie.get("material_id"));
+      let query = new BaaS.Query();
+      query.compare("id", "=", sessionStorage.getItem("material_id"));
+      let q2 = new BaaS.Query()
+      q2.compare("created_by","=",Cookie.get("user_id")*1)
+      let q3 = new BaaS.Query()
+      q3.compare("is_delete","=",false)
+      let andQuery = BaaS.Query.and(query,q2,q3)
+      // query.compare("id", "=", Cookie.get("material_id"));
       let Material = new BaaS.TableObject("question_content");
-      Material.setQuery(query)
+      Material.setQuery(andQuery).limit(1000)
         .find()
         .then(
           (res) => {
@@ -100,10 +109,12 @@ export default {
               this.file = res.data.objects[0].file_url.path;
               console.log(this.file);
               this.srcList.push(this.file);
-              Cookies.set("question_file", this.file);
+              // Cookies.set("question_file", this.file);
+              sessionStorage.setItem("question_file", this.file);
             } else {
               this.content = res.data.objects[0].content;
-              Cookies.set("question_content", this.content);
+              // Cookies.set("question_content", this.content);
+              sessionStorage.setItem("question_content", this.content);
             }
           },
           (err) => {

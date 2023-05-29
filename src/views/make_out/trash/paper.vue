@@ -118,7 +118,7 @@
 </template>
 
 <script>
-import Cookies from "js-cookie";
+// import Cookies from "js-cookie";
 import Cookie from "js-cookie";
 var BaaS = require("minapp-sdk");
 let clientID = "395062a19e209a770059";
@@ -174,6 +174,7 @@ export default {
     init() {
       let query = new BaaS.Query();
       query.compare("created_by", "=", Cookie.get("user_id") * 1);
+      // query.compare("created_by", "=", sessionStorage.getItem("user_id") * 1);
       let q2 = new BaaS.Query();
       q2.compare("is_delete", "=", true);
       let andQuery = BaaS.Query.and(query, q2);
@@ -360,7 +361,7 @@ export default {
       for (let i = 0; i < this.preMove.length; i++) {
         console.log(this.preMove[i]);
         let Catalog = new BaaS.TableObject("test_paper");
-        let cata = Catalog.getWithoutData(this.preMove[i]);
+        let cata = Catalog.limit(1000).getWithoutData(this.preMove[i]);
         cata.set("is_delete", false);
         cata.update().then(
           (res) => {
@@ -456,6 +457,7 @@ export default {
     handleClose() {
       this.preMove = [];
       this.moveVisible = false;
+      this.dialogVisible = false
     },
     handleSizeChange(val) {
       console.log(`每页 ${val} 条`);
@@ -598,9 +600,12 @@ export default {
                       }
                       sessionStorage.setItem("ques_num", val.questions_num);
                       sessionStorage.setItem("ques_score", val.points);
-                      Cookies.set("paperEdit", true);
-                      Cookies.set("paperInfo", val.id);
-                      Cookies.set("trash", "paper");
+                      // Cookies.set("paperEdit", true);
+                      // Cookies.set("paperInfo", val.id);
+                      // Cookies.set("trash", "paper");
+                      sessionStorage.setItem("paperEdit", true);
+                      sessionStorage.setItem("paperInfo", val.id);
+                      sessionStorage.setItem("trash", "paper");
                       this.$router.push("/preview");
                     }
                   },

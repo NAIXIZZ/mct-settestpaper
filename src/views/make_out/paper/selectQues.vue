@@ -31,7 +31,7 @@
       </div>
       <div class="ques_list">
         <el-table
-        v-loading="loading"
+          v-loading="loading"
           ref="multipleTable"
           :data="tableData"
           :row-key="getRowKey"
@@ -67,7 +67,9 @@
                 controls="controls"
                 v-if="
                   scope.row.question_content_id &&
-                  scope.row.question_content_id.search('.mp3') != -1
+                  (scope.row.question_content_id.search('.mp3') != -1||
+                  scope.row.question_content_id.search('.wav') != -1||
+                  scope.row.question_content_id.search('.ogg') != -1)
                 "
                 style="width: 250px"
               ></audio>
@@ -137,7 +139,7 @@ var BaaS = require("minapp-sdk");
 let clientID = "395062a19e209a770059";
 BaaS.init(clientID);
 import global from "@/util/global.js";
-import Cookies from "js-cookie";
+// import Cookies from "js-cookie";
 import Cookie from "js-cookie";
 export default {
   name: "",
@@ -226,15 +228,14 @@ export default {
   methods: {
     init() {
       if (global.tableData.length == 0) {
-        // let num=1000
-        // let off=0
-        // while(num==1000){
-        // console.log("11")
+        let ques = [],
+          mat = [];
         let query = new BaaS.Query();
         query.compare("created_by", "=", Cookie.get("user_id") * 1);
-        let q2 = new BaaS.Query()
-        q2.compare("is_delete","=",false)
-        let andQuery = BaaS.Query.and(query,q2)
+        // query.compare("created_by", "=", sessionStorage.getItem("user_id") * 1);
+        let q2 = new BaaS.Query();
+        q2.compare("is_delete", "=", false);
+        let andQuery = BaaS.Query.and(query, q2);
         let Question = new BaaS.TableObject("questions_information");
         Question.orderBy("-created_at")
           .limit(1000)
@@ -243,10 +244,9 @@ export default {
           .find()
           .then(
             (res) => {
-              // num=res.data.objects.length
-              // off+=1000
-              // console.log(num)
-              res.data.objects.forEach((element) => {
+              ques = res.data.objects;
+              ques.forEach((element) => {
+                element.have = false;
                 let date = new Date(element.created_at * 1000);
                 let Y = date.getFullYear() + "-";
                 let M =
@@ -270,50 +270,9 @@ export default {
                     ? "0" + date.getSeconds()
                     : date.getSeconds();
                 element.created_at = Y + M + D + h + m + s;
-                if (element.question_content_id != null) {
-                  var query2 = new BaaS.Query();
-                  query2.compare("id", "=", element.question_content_id);
-                  let findContent = new BaaS.TableObject("question_content");
-                  findContent
-                    .setQuery(query2)
-                    .find()
-                    .then(
-                      (res) => {
-                        if (res.data.objects[0].content != null) {
-                          element.question_content_id =
-                            res.data.objects[0].content;
-                        } else if (res.data.objects[0].file_url != null) {
-                          element.question_content_id =
-                            res.data.objects[0].file_url.path;
-                          this.srcList.push(element.question_content_id);
-                        }
-                      },
-                      (err) => {
-                        console.log(err);
-                      }
-                    );
-                }
-                this.tinitial = res.data.objects;
-                global.tinitial = this.tinitial;
-                // if (element.source_id != null) {
-                //   var query1 = new BaaS.Query();
-                //   query1.in("id", element.source_id);
-                //   let findSource = new BaaS.TableObject("source");
-                //   findSource
-                //     .setQuery(query1)
-                //     .find()
-                //     .then(
-                //       (res) => {
-                //         // console.log(res);
-                //         element.source_id = res.data.objects[0].source;
-                //       },
-                //       (err) => {
-                //         console.log(err);
-                //       }
-                //     );
-                // }
                 if (element.catalog != null) {
                   var a = {
+                    have: false,
                     finish: true,
                     rename: false,
                     catalog: element.catalog,
@@ -321,29 +280,74 @@ export default {
                   this.catalog.push(a);
                 }
               });
-              if (this.catalog.length != 0) {
-                const map = new Map();
-                this.catalog = this.catalog.filter(
-                  (key) => !map.has(key.catalog) && map.set(key.catalog, 1)
-                );
-              }
-              this.catalog.forEach((element) => {
-                res.data.objects = res.data.objects.filter(
-                  (t) => t.catalog != element.catalog
-                );
-                res.data.objects.unshift(element);
-              });
-              this.loading = false
-              this.tableData = res.data.objects;
-              this.initial = this.tableData;
-              global.tableData = this.tableData;
+              this.tinitial = res.data.objects;
+              global.tinitial = this.tinitial;
             },
             (err) => {
               console.log(err);
             }
           );
-        // }
+        let Content = new BaaS.TableObject("question_content");
+        Content.limit(1000)
+          .offset(0)
+          .setQuery(andQuery)
+          .find()
+          .then(
+            (res) => {
+              mat = res.data.objects;
+            },
+            (err) => {
+              console.log(err);
+            }
+          );
+        setTimeout(() => {
+          for (let i = 0; i < ques.length; i++) {
+            if (ques[i].question_content_id != null) {
+              for (let k = 0; k < mat.length; k++) {
+                if (ques[i].question_content_id == mat[k].id) {
+                  if (mat[k].content != null && mat[k].content != "") {
+                    ques[i].question_content_id = mat[k].content;
+                  } else {
+                    ques[i].question_content_id = mat[k].file_url.path;
+                  }
+                  if (mat[k].file_url != null) {
+                    ques[i].file = mat[k].file_url.path;
+                    this.srcList.push(ques[i].file);
+                  }
+                  break;
+                }
+              }
+            }
+          }
+          if (this.catalog.length != 0) {
+            const map = new Map();
+            this.catalog = this.catalog.filter(
+              (key) => !map.has(key.catalog) && map.set(key.catalog, 1)
+            );
+            for (let i = 0; i < this.catalog.length; i++) {
+              for (let j = 0; j < ques.length; j++) {
+                if (
+                  this.catalog[i].catalog == ques[j].catalog &&
+                  ques[j].have
+                ) {
+                  this.catalog[i].have = true;
+                  break;
+                }
+              }
+            }
+          }
+          this.catalog.forEach((element) => {
+            ques = ques.filter((t) => t.catalog != element.catalog);
+            ques.unshift(element);
+          });
+          this.loading = false;
+          this.tableData = ques;
+          this.initial = this.tableData;
+          global.tableData = this.tableData;
+        }, 3000);
       } else {
+        console.log(global)
+        this.loading = false;
         this.tinitial = global.tinitial;
         this.tableData = global.tableData;
         // this.multipleSelection = global.multipleSelection;
@@ -359,7 +363,7 @@ export default {
                     ) {
                       let num = 0;
                       this.tinitial.forEach((s) => {
-                        if (s.catalog == global.totalSelect[i].sel[j].catalog) {
+                        if (s.catalog == global.totalSelect[i].sel[j].catalog&&s.primary_ques_type!=null) {
                           num++;
                         }
                       });
@@ -391,10 +395,10 @@ export default {
               break;
             }
           }
-          for(let i=0;i<global.totalSelect.length;i++){
-            if(global.totalSelect[i].name=="out"){
-              this.multipleSelection=global.totalSelect[i].sel
-              break
+          for (let i = 0; i < global.totalSelect.length; i++) {
+            if (global.totalSelect[i].name == "out") {
+              this.multipleSelection = global.totalSelect[i].sel;
+              break;
             }
           }
           global.totalSelect.forEach((element) => {
@@ -456,10 +460,17 @@ export default {
           this.selected = "0道题";
         }
 
-        console.log(this.multipleSelection)
+        console.log(this.multipleSelection);
         this.multipleSelection.forEach((element) => {
           this.tableData.forEach((item, index) => {
-            if (element.id == item.id) {
+            if (element.id == item.id&&element.catalog==null) {
+              this.$nextTick(() => {
+                this.$refs.multipleTable.toggleRowSelection(
+                  this.tableData[index],
+                  true
+                );
+              });
+            }else if(element.catalog!=null&&element.catalog==item.catalog){
               this.$nextTick(() => {
                 this.$refs.multipleTable.toggleRowSelection(
                   this.tableData[index],
@@ -472,16 +483,18 @@ export default {
       }
     },
     back() {
-      global.totalSelect=[]
-      global.tableData=[]
-      global.tinitial=[]
-      global.selectQuesCatalog=[]
-      Cookies.set("selectQues","false")
-      Cookies.set("catalog_id","")
+      global.totalSelect = [];
+      global.tableData = [];
+      global.tinitial = [];
+      global.selectQuesCatalog = [];
+      // Cookies.set("selectQues","false")
+      // Cookies.set("catalog_id","")
+      sessionStorage.setItem("selectQues", "false");
+      sessionStorage.setItem("catalog_id", "");
       this.$router.go(-1);
     },
-    cancel(){
-this.listen = 0;
+    cancel() {
+      this.listen = 0;
       this.read = 0;
       this.write = 0;
       this.selected = "0道题";
@@ -497,15 +510,16 @@ this.listen = 0;
           }
         });
       });
-      global.totalSelect=[]
+      global.totalSelect = [];
       this.multipleSelection = [];
     },
     getRowKey(row) {
       return row.id;
     },
-    SelectionChange(val){
-      console.log(val)
-      this.multipleSelection=val
+    SelectionChange(val) {
+      console.log(val);
+      this.multipleSelection = val;
+
       let l = 0,
         r = 0,
         w = 0;
@@ -524,7 +538,129 @@ this.listen = 0;
               ww = 0;
             for (let j = 0; j < this.tinitial.length; j++) {
               if (
-                this.tinitial[j].catalog == this.multipleSelection[i].catalog
+                this.tinitial[j].catalog == this.multipleSelection[i].catalog&&this.tinitial[j].primary_ques_type!=null
+              ) {
+                temp.push(this.tinitial[j]);
+                if (this.tinitial[j].primary_ques_type == "听力") {
+                  ll += 1;
+                } else if (this.tinitial[j].primary_ques_type == "阅读") {
+                  rr += 1;
+                } else if (this.tinitial[j].primary_ques_type == "写作") {
+                  ww += 1;
+                }
+              }
+            }
+            for (let k = 0; k < global.totalSelect.length; k++) {
+              if (
+                global.totalSelect[k].name == this.multipleSelection[i].catalog
+              ) {
+                global.totalSelect.splice(k, 1);
+                break;
+              }
+            }
+            let a = {
+              name: this.multipleSelection[i].catalog,
+              sel: temp,
+              listen: ll,
+              read: rr,
+              write: ww,
+            };
+            global.totalSelect.push(a);
+          }
+        }
+      } else {
+        global.totalSelect = [];
+      }
+      if (global.totalSelect.length != 0) {
+        for (let i = 0; i < global.totalSelect.length; i++) {
+          if (global.totalSelect[i].name == "out") {
+            global.totalSelect.splice(i, 1);
+            break;
+          }
+        }
+      }
+      if(this.multipleSelection.length!=0){
+        let temp = {
+          name: "out",
+          sel: this.multipleSelection,
+          listen: l,
+          read: r,
+          write: w,
+        };
+        global.totalSelect.push(temp);
+      }
+      // this.listen = l + this.clisten;
+      // this.read = r + this.cread;
+      // this.write = w + this.cwrite;
+      this.listen = 0;
+      this.read = 0;
+      this.write = 0;
+      if (global.totalSelect.length != 0) {
+        global.totalSelect.forEach((element) => {
+          this.listen += element.listen;
+          this.read += element.read;
+          this.write += element.write;
+        });
+      }
+      if (this.listen != 0 && this.read == 0 && this.write == 0) {
+        this.selected = this.listen + "道听力题";
+      } else if (this.listen == 0 && this.read != 0 && this.write == 0) {
+        this.selected = this.read + "道阅读题";
+      } else if (this.listen == 0 && this.read == 0 && this.write != 0) {
+        this.selected = this.write + "道写作题";
+      } else if (this.listen != 0 && this.read != 0 && this.write == 0) {
+        this.selected = this.listen + "道听力题，" + this.read + "道阅读题";
+      } else if (this.listen != 0 && this.read == 0 && this.write != 0) {
+        this.selected = this.listen + "道听力题，" + this.write + "道写作题";
+      } else if (this.listen == 0 && this.read != 0 && this.write != 0) {
+        this.selected = this.read + "道阅读题" + this.write + "道写作题";
+      } else if (this.listen != 0 && this.read != 0 && this.write != 0) {
+        this.selected =
+          this.listen +
+          "道听力题，" +
+          this.read +
+          "道阅读题，" +
+          this.write +
+          "道写作题";
+      } else if (this.listen == 0 && this.read == 0 && this.write == 0) {
+        this.selected = "0道题";
+      }
+    },
+    handleSelectionChange(val, row) {
+      console.log(val, row);
+      // console.log(this.tinitial)
+      this.multipleSelection = val;
+      // global.multipleSelection = this.multipleSelection;
+
+      // console.log(this.multipleSelection)
+      // console.log(row)
+      let l = 0,
+        r = 0,
+        w = 0;
+      if (this.multipleSelection.length != 0) {
+        if (this.multipleSelection.indexOf(row) == -1 && row.catalog != null) {
+          for (let i = 0; i < global.totalSelect.length; i++) {
+            if (global.totalSelect[i].name == row.catalog) {
+              global.totalSelect.splice(i, 1);
+              break;
+            }
+          }
+        }
+        for (let i = 0; i < this.multipleSelection.length; i++) {
+          if (this.multipleSelection[i].primary_ques_type == "听力") {
+            l += 1;
+          } else if (this.multipleSelection[i].primary_ques_type == "阅读") {
+            r += 1;
+          } else if (this.multipleSelection[i].primary_ques_type == "写作") {
+            w += 1;
+          } else if (this.multipleSelection[i].catalog != null) {
+            let temp = new Array();
+            let ll = 0,
+              rr = 0,
+              ww = 0;
+            for (let j = 0; j < this.tinitial.length; j++) {
+              if (
+                this.tinitial[j].catalog == this.multipleSelection[i].catalog&&this.tinitial[j].primary_ques_type!=null
               ) {
                 temp.push(this.tinitial[j]);
                 if (this.tinitial[j].primary_ques_type == "听力") {
@@ -565,7 +701,8 @@ this.listen = 0;
           }
         }
       }
-      let temp = {
+      if(this.multipleSelection.length!=0){
+        let temp = {
         name: "out",
         sel: this.multipleSelection,
         listen: l,
@@ -573,125 +710,7 @@ this.listen = 0;
         write: w,
       };
       global.totalSelect.push(temp);
-      // this.listen = l + this.clisten;
-      // this.read = r + this.cread;
-      // this.write = w + this.cwrite;
-      this.listen = 0;
-      this.read = 0;
-      this.write = 0;
-      if (global.totalSelect.length != 0) {
-        global.totalSelect.forEach((element) => {
-          this.listen += element.listen;
-          this.read += element.read;
-          this.write += element.write;
-        });
       }
-      if (this.listen != 0 && this.read == 0 && this.write == 0) {
-        this.selected = this.listen + "道听力题";
-      } else if (this.listen == 0 && this.read != 0 && this.write == 0) {
-        this.selected = this.read + "道阅读题";
-      } else if (this.listen == 0 && this.read == 0 && this.write != 0) {
-        this.selected = this.write + "道写作题";
-      } else if (this.listen != 0 && this.read != 0 && this.write == 0) {
-        this.selected = this.listen + "道听力题，" + this.read + "道阅读题";
-      } else if (this.listen != 0 && this.read == 0 && this.write != 0) {
-        this.selected = this.listen + "道听力题，" + this.write + "道写作题";
-      } else if (this.listen == 0 && this.read != 0 && this.write != 0) {
-        this.selected = this.read + "道阅读题" + this.write + "道写作题";
-      } else if (this.listen != 0 && this.read != 0 && this.write != 0) {
-        this.selected =
-          this.listen +
-          "道听力题，" +
-          this.read +
-          "道阅读题，" +
-          this.write +
-          "道写作题";
-      } else if (this.listen == 0 && this.read == 0 && this.write == 0) {
-        this.selected = "0道题";
-      }
-
-    },
-    handleSelectionChange(val, row) {
-      console.log(val, row);
-      // console.log(this.tinitial)
-      this.multipleSelection = val;
-      // global.multipleSelection = this.multipleSelection;
-
-      // console.log(this.multipleSelection)
-      // console.log(row)
-      let l = 0,
-        r = 0,
-        w = 0;
-      if (this.multipleSelection.length != 0) {
-        if (this.multipleSelection.indexOf(row) == -1 && row.catalog != null) {
-          for (let i = 0; i < global.totalSelect.length; i++) {
-            if (global.totalSelect[i].name == row.catalog) {
-              global.totalSelect.splice(i, 1);
-              break;
-            }
-          }
-        }
-        for (let i = 0; i < this.multipleSelection.length; i++) {
-          if (this.multipleSelection[i].primary_ques_type == "听力") {
-            l += 1;
-          } else if (this.multipleSelection[i].primary_ques_type == "阅读") {
-            r += 1;
-          } else if (this.multipleSelection[i].primary_ques_type == "写作") {
-            w += 1;
-          } else if (this.multipleSelection[i].catalog != null) {
-            let temp = new Array();
-            let ll = 0,
-              rr = 0,
-              ww = 0;
-            for (let j = 0; j < this.tinitial.length; j++) {
-              if (
-                this.tinitial[j].catalog == this.multipleSelection[i].catalog
-              ) {
-                temp.push(this.tinitial[j]);
-                if (this.tinitial[j].primary_ques_type == "听力") {
-                  ll += 1;
-                } else if (this.tinitial[j].primary_ques_type == "阅读") {
-                  rr += 1;
-                } else if (this.tinitial[j].primary_ques_type == "写作") {
-                  ww += 1;
-                }
-              }
-            }
-            for (let k = 0; k < global.totalSelect.length; k++) {
-              if (
-                global.totalSelect[k].name == this.multipleSelection[i].catalog
-              ) {
-                global.totalSelect.splice(k, 1);
-                break;
-              }
-            }
-            let a = {
-              name: this.multipleSelection[i].catalog,
-              sel: temp,
-              listen: ll,
-              read: rr,
-              write: ww,
-            };
-            global.totalSelect.push(a);
-          }
-        }
-      }
-      if (global.totalSelect.length != 0) {
-        for (let i = 0; i < global.totalSelect.length; i++) {
-          if (global.totalSelect[i].name == "out") {
-            global.totalSelect.splice(i, 1);
-            break;
-          }
-        }
-      }
-      let temp = {
-        name: "out",
-        sel: this.multipleSelection,
-        listen: l,
-        read: r,
-        write: w,
-      };
-      global.totalSelect.push(temp);
       // this.listen = l + this.clisten;
       // this.read = r + this.cread;
       // this.write = w + this.cwrite;
@@ -813,19 +832,29 @@ this.listen = 0;
       // sessionStorage.setItem('tableData',JSON.stringify(this.tableData))
       // sessionStorage.setItem('multipleSelection',JSON.stringify(this.multipleSelection))
       // global.multipleSelection = this.multipleSelection
-      Cookies.set("ques_checkEdit", id);
+      // Cookies.set("ques_checkEdit", id);
+      sessionStorage.setItem("ques_checkEdit", id);
       if (
-        (question && question.search(".png") != -1) ||
-        question.search(".mp3") != -1
+        question &&
+        (question.search(".png") != -1 ||
+          question.search(".jpg") != -1 ||
+          question.search(".gif") != -1 ||
+          question.search(".mp3") != -1 ||
+          question.search(".wav") != -1 ||
+          question.search(".ogg") != -1)
       ) {
-        Cookies.set("question_file", question);
+        // Cookies.set("question_file", question);
+        sessionStorage.setItem("question_file", question);
       } else {
-        Cookies.set("question_content", question);
+        // Cookies.set("question_content", question);
+        sessionStorage.setItem("question_content", question);
       }
-      Cookies.set("selectQues", "true");
+      // Cookies.set("selectQues", "true");
+      sessionStorage.setItem("selectQues", "true");
       this.$router.push("/ques_checkEdit");
     },
     enterFolder(row) {
+      console.log(global)
       // Cookies.set("selected", this.selected);
       // global.multipleSelection = this.multipleSelection
       let temp = new Array();
@@ -835,20 +864,30 @@ this.listen = 0;
           temp.push(this.tinitial[i]);
         }
       }
+      for(let i=0;i<temp.length;i++){
+        if(temp[i].primary_ques_type==null||temp[i].question_content_id==null||
+        temp[i].primary_ques_type==""||temp[i].question_content_id==""){
+          temp.splice(i,1)
+          break
+        }
+      }
       // console.log(temp)
       // this.global.selectQuesCatalog = temp
       global.selectQuesCatalog = temp;
       // console.log(global.selectQuesCatalog)
       // sessionStorage.setItem("selcat",JSON.stringify(this.tinitial))
-      Cookies.set("catalog_id", row.catalog);
+      // Cookies.set("catalog_id", row.catalog);
+      sessionStorage.setItem("catalog_id", row.catalog);
       this.$router.push("/selectEnterCatalog");
     },
     finish() {
-      global.tableData=[]
-      global.tinitial=[]
-      global.selectQuesCatalog=[]
-      Cookies.set("selectQues","false")
-      Cookies.set("catalog_id","")
+      global.tableData = [];
+      global.tinitial = [];
+      global.selectQuesCatalog = [];
+      // Cookies.set("selectQues","false")
+      // Cookies.set("catalog_id","")
+      sessionStorage.setItem("selectQues", "false");
+      sessionStorage.setItem("catalog_id", "");
       this.$router.go(-1);
     },
   },

@@ -105,6 +105,7 @@ export default {
         .getCurrentUser()
         .then((user) => {
           Cookies.set("user_id", user.id);
+          sessionStorage.setItem("user_id", user.id);
           console.log(user);
           if (user._email_verified) {
             this.$router.push("/home");
@@ -146,6 +147,7 @@ export default {
                   type: "success",
                 });
                 Cookies.set("user_id", user.id);
+                sessionStorage.setItem("user_id", user.id);
                 this.$router.push("/home");
               } else {
                 BaaS.auth
@@ -192,6 +194,10 @@ export default {
           BaaS.auth
             .register(this.ruleForm)
             .then((user) => {
+              this.$message({
+                message: "已向您的邮箱发送验证，请前往邮箱进行验证",
+                type: "success",
+              });
               BaaS.auth
                 .getCurrentUser()
                 .then((user) => {
@@ -205,6 +211,7 @@ export default {
                       type: "success",
                     });
                     Cookies.set("user_id", user.id);
+                    sessionStorage.setItem("user_id", user.id);
                     this.$router.push("/home");
                   }
                 })

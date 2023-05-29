@@ -21,8 +21,8 @@
 
 <script>
 import Heads from '@/components/heads'
-import Cookies from "js-cookie";
-import Cookie from "js-cookie";
+// import Cookies from "js-cookie";
+// import Cookie from "js-cookie";
 import grade_standard from "@/views/outline/grade_standard.vue";
 import topic_outline from "./topic_outline.vue";
 import task_outline from "@/views/outline/task_outline.vue";
@@ -46,10 +46,12 @@ export default {
   computed: {},
   methods: {
     init() {
-      let current = Cookie.get("currentTab");
+      // let current = Cookie.get("currentTab");
+      let current = sessionStorage.getItem("currentTab");
       if (current == "second") {
         this.active_outline = "second";
-        Cookies.set("currentTab", "");
+        // Cookies.set("currentTab", "");
+        sessionStorage.setItem("currentTab", "");
       }
     },
   },

@@ -3,7 +3,7 @@ import axios from 'axios'
 export function request(config) {
     //1.创建实例
     const instance = axios.create({
-        baseURL: 'http://81.69.21.224:9011',
+        // baseURL: '',
         timeout: 99999999
     })
 

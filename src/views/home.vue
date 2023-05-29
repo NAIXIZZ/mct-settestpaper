@@ -122,12 +122,15 @@ export default {
       BaaS.init(clientID);
       let query_id = new BaaS.Query();
       query_id.compare("created_by", "=", 484881850859865);
+      let query_delete = new BaaS.Query();
+      query_delete.compare("is_delete", "=", false);
+      let andQuery = BaaS.Query.and(query_id, query_delete)
       let test_paper = new BaaS.TableObject("test_paper")
-      test_paper.limit(1000).setQuery(query_id).orderBy('-release_date').find().then(res => {
+      test_paper.limit(1000).setQuery(andQuery.exists('paper_title')).orderBy('-created_at').find().then(res => {
         var paper_list = []
         paper_list = res.data.objects
         for (let j = 1; j < 10; j++) {
-          test_paper.limit(1000).offset(j * 1000).setQuery(query_id).orderBy('-release_date').find().then(res => {
+          test_paper.limit(1000).offset(j * 1000).setQuery(andQuery.exists('paper_title')).orderBy('-created_at').find().then(res => {
             Object.assign(paper_list, res.data.objects)
           }, err => {
             console.log(err)
@@ -166,8 +169,10 @@ export default {
         let orQuery = BaaS.Query.or(queryTitle, queryType)
         let queryId = new BaaS.Query()
         queryId.compare("created_by", "=", 484881850859865)
-        let andQuery = BaaS.Query.and(orQuery, queryId)
-        test_paper.limit(1000).setQuery(andQuery).orderBy('-release_date').find().then(res => {
+        let query_delete = new BaaS.Query();
+        query_delete.compare("is_delete", "=", false);
+        let andQuery = BaaS.Query.and(orQuery, queryId, query_delete)
+        test_paper.limit(1000).setQuery(andQuery.exists('paper_title')).orderBy('-created_at').find().then(res => {
           // console.log(res.data.objects)
           var paper_list = []
           paper_list = res.data.objects

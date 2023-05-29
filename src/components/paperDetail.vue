@@ -138,7 +138,7 @@
                     :src="item.content"
                     controls="controls"
                   ></audio>
-                  <p class="ques-content">{{ item.sub_sequence }}.（{{ item.score }}分）</p>
+                  <p class="ques-content">{{ item.sub_sequence }}.{{ item.question }}（{{ item.score }}分）</p>
                   <div
                     v-for="s in item.options"
                     :key="s.index"
@@ -170,7 +170,7 @@
                     v-for="ques in item.info"
                     :key="ques.id"
                   >
-                    <p class="ques-content">{{ ques.sub_sequence }}.（{{ ques.score }}分）</p>
+                    <p class="ques-content">{{ ques.sub_sequence }}.{{ ques.question }}（{{ ques.score }}分）</p>
                     <div
                       v-for="s in ques.options"
                       :key="s.index"
@@ -205,7 +205,7 @@
                     v-for="ques in item.info"
                     :key="ques.id"
                   >
-                    <p class="options">{{ ques.sub_sequence }}.（{{ ques.score }}分）</p>
+                    <p class="options">{{ ques.sub_sequence }}.{{ ques.question }}（{{ ques.score }}分）</p>
                     <div
                       v-for="s in ques.options"
                       :key="s.index"
@@ -231,6 +231,7 @@
                   :key="item.id"
                 >
                   <p class="ques-content">{{ item.sub_sequence }}.{{ item.content }}（{{ item.score }}分）</p>
+                  <p class="ques-content">{{ item.question }}</p>
                   <div
                     v-for="s in item.options"
                     :key="s.index"
@@ -318,6 +319,7 @@
                   :key="item.id"
                 >
                   <p class="ques-content">{{ item.sub_sequence }}.{{ item.content }}（{{ item.score }}分）</p>
+                  <p class="ques-content">{{ item.question }}</p>
                   <p
                     class="answer"
                     v-if="showAnswer"
@@ -413,6 +415,9 @@ export default {
             if (res.data.objects[0].secondary_ques_type == '听句子，判断对错') {
               var listen_sentence_info = {}
               listen_sentence_info = res.data.objects[0]
+              if (listen_sentence_info.question == null || listen_sentence_info.question == undefined || listen_sentence_info.question == '') {
+                listen_sentence_info.question = '/'
+              }
               var obj = JSON.parse(res.data.objects[0].options)
               listen_sentence_info.options = obj
               listen_sentence_info.score = this.questions_detail[i].score
@@ -430,6 +435,9 @@ export default {
             } else if (res.data.objects[0].secondary_ques_type == '听短对话，选择正确答案') {
               var listen_sdialogue_info = {}
               listen_sdialogue_info = res.data.objects[0]
+              if (listen_sdialogue_info.question == null || listen_sdialogue_info.question == undefined || listen_sdialogue_info.question == '') {
+                listen_sdialogue_info.question = '/'
+              }
               var obj = JSON.parse(res.data.objects[0].options)
               listen_sdialogue_info.options = obj
               listen_sdialogue_info.score = this.questions_detail[i].score
@@ -447,6 +455,9 @@ export default {
             } else if (res.data.objects[0].secondary_ques_type == '听长对话，选择正确答案') {
               var listen_ldialogue_info = {}
               listen_ldialogue_info = res.data.objects[0]
+              if (listen_ldialogue_info.question == null || listen_ldialogue_info.question == undefined || listen_ldialogue_info.question == '') {
+                listen_ldialogue_info.question = '/'
+              }
               var obj = JSON.parse(res.data.objects[0].options)
               listen_ldialogue_info.options = obj
               listen_ldialogue_info.score = this.questions_detail[i].score
@@ -464,6 +475,9 @@ export default {
             } else if (res.data.objects[0].secondary_ques_type == '听短文，选择正确答案') {
               var listen_essay_info = {}
               listen_essay_info = res.data.objects[0]
+              if (listen_essay_info.question == null || listen_essay_info.question == undefined || listen_essay_info.question == '') {
+                listen_essay_info.question = '/'
+              }
               var obj = JSON.parse(res.data.objects[0].options)
               listen_essay_info.options = obj
               listen_essay_info.score = this.questions_detail[i].score
@@ -496,6 +510,9 @@ export default {
             } else if (res.data.objects[0].secondary_ques_type == '选择正确的词语填空') {
               var read_word_info = {}
               read_word_info = res.data.objects[0]
+              if (read_word_info.question == null || read_word_info.question == undefined || read_word_info.question == '') {
+                read_word_info.question = '/'
+              }
               var obj = JSON.parse(res.data.objects[0].options)
               read_word_info.options = obj
               read_word_info.score = this.questions_detail[i].score
@@ -528,6 +545,9 @@ export default {
             } else if (res.data.objects[0].secondary_ques_type == '阅读语段，选择与语段意思一致的一项') {
               var read_phrase_info = {}
               read_phrase_info = res.data.objects[0]
+              if (read_phrase_info.question == null || read_phrase_info.question == undefined || read_phrase_info.question == '') {
+                read_phrase_info.question = '/'
+              }
               var obj = JSON.parse(res.data.objects[0].options)
               read_phrase_info.options = obj
               read_phrase_info.score = this.questions_detail[i].score
@@ -545,6 +565,9 @@ export default {
             } else if (res.data.objects[0].secondary_ques_type == '阅读材料，选择正确答案') {
               var read_material_info = {}
               read_material_info = res.data.objects[0]
+              if (read_material_info.question == null || read_material_info.question == undefined || read_material_info.question == '') {
+                read_material_info.question = '/'
+              }
               var obj = JSON.parse(res.data.objects[0].options)
               read_material_info.options = obj
               read_material_info.score = this.questions_detail[i].score
@@ -577,6 +600,9 @@ export default {
             } else if (res.data.objects[0].secondary_ques_type == '阅读短文，选择正确答案') {
               var read_essay_info = {}
               read_essay_info = res.data.objects[0]
+              if (read_essay_info.question == null || read_essay_info.question == undefined || read_essay_info.question == '') {
+                read_essay_info.question = '/'
+              }
               var obj = JSON.parse(res.data.objects[0].options)
               read_essay_info.options = obj
               read_essay_info.score = this.questions_detail[i].score
@@ -609,6 +635,9 @@ export default {
             } else if (res.data.objects[0].secondary_ques_type == '根据一段长对话写门诊病历记录') {
               var write_info = {}
               write_info = res.data.objects[0]
+              if (write_info.question == null || write_info.question == undefined || write_info.question == '') {
+                write_info.question = '/'
+              }
               write_info.score = this.questions_detail[i].score
               write_info.sub_sequence = this.questions_detail[i].sub_sequence
               let queryContentId = new BaaS.Query()

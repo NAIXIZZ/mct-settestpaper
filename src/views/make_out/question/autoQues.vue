@@ -1,8 +1,8 @@
 <template>
   <div class="autoQues">
     <div class="top">
-        <el-button type="success" plain @click="savePaper">保存全部</el-button>
-        <el-button plain @click="back">返回</el-button>
+      <el-button type="success" plain @click="savePaper">保存全部</el-button>
+      <el-button plain @click="back">返回</el-button>
     </div>
     <div class="main_detail">
       <div class="main_left">
@@ -585,8 +585,8 @@
 </template>
 
 <script>
-import Cookie from "js-cookie";
-import Cookies from "js-cookie";
+// import Cookie from "js-cookie";
+// import Cookies from "js-cookie";
 import global from "@/util/global.js";
 import E from "wangeditor";
 var BaaS = require("minapp-sdk");
@@ -1084,7 +1084,7 @@ export default {
         this.questions = JSON.parse(sessionStorage.getItem("questions"));
         this.ques_type = JSON.parse(sessionStorage.getItem("ques_type"));
         this.currentQues = sessionStorage.getItem("currentQues") * 1;
-        this.currentSubQues = sessionStorage.getItem("currentSubQues")*1;
+        this.currentSubQues = sessionStorage.getItem("currentSubQues") * 1;
         this.title = sessionStorage.getItem("title");
         if (sessionStorage.getItem("exam") == "true") {
           this.exam = true;
@@ -1173,7 +1173,7 @@ export default {
                 sub_sequence: num,
                 score: qtemp[k].score,
                 question: qtemp[k].question,
-                options: JSON.parse(qtemp[k].options),
+                options: qtemp[k].options,
                 answer: qtemp[k].answer,
                 analysis: qtemp[k].analysis,
                 level_value: qtemp[k].ques_level,
@@ -1191,19 +1191,83 @@ export default {
                 author_org: "",
                 time_created: "",
               };
-              let t = JSON.parse(qtemp[k].options);
-              if (t != null) {
-                for (let m = 0; m < t.length; m++) {
-                  if (t[m].index == "A") {
-                    sub.A = t[m].content;
-                  } else if (t[m].index == "B") {
-                    sub.B = t[m].content;
-                  } else if (t[m].index == "C") {
-                    sub.C = t[m].content;
-                  } else if (t[m].index == "D") {
-                    sub.D = t[m].content;
-                  }
+              if (qtemp[k].options != null) {
+                let str = qtemp[k].options.replace(/\s*/g, "");
+                let tempa = -1;
+                let tempb = -1;
+                let tempc = -1;
+                let tempd = -1;
+                if (str.indexOf('","index":"A"') != -1) {
+                  tempa = str.indexOf('","index":"A"');
+                } else if (str.indexOf("','index':'A'") != -1) {
+                  tempa = str.indexOf("','index':'A'");
                 }
+                if (str.indexOf('","index":"B"') != -1) {
+                  tempb = str.indexOf('","index":"B"');
+                } else if (str.indexOf("','index':'B'") != -1) {
+                  tempb = str.indexOf("','index':'B'");
+                }
+                if (str.indexOf('","index":"C"') != -1) {
+                  tempc = str.indexOf('","index":"C"');
+                } else if (str.indexOf("','index':'C'") != -1) {
+                  tempc = str.indexOf("','index':'C'");
+                }
+                if (str.indexOf('","index":"D"') != -1) {
+                  tempd = str.indexOf('","index":"D"');
+                } else if (str.indexOf("','index':'D'") != -1) {
+                  tempd = str.indexOf("','index':'D'");
+                }
+                let a = "";
+                let b = "";
+                let c = "";
+                let d = "";
+                if (tempa != -1) {
+                  while (str[tempa - 1] != '"' && str[tempa - 1] != "'") {
+                    a += str[tempa - 1];
+                    tempa--;
+                  }
+                  sub.A = a.split("").reverse().join("");
+                }
+                if (tempb != -1) {
+                  while (str[tempb - 1] != '"' && str[tempb - 1] != "'") {
+                    b += str[tempb - 1];
+                    tempb--;
+                  }
+                  sub.B = b.split("").reverse().join("");
+                }
+                if (tempc != -1) {
+                  while (str[tempc - 1] != '"' && str[tempc - 1] != "'") {
+                    c += str[tempc - 1];
+                    tempc--;
+                  }
+                  sub.C = c.split("").reverse().join("");
+                }
+                if (tempd != -1) {
+                  while (str[tempd - 1] != '"' && str[tempd - 1] != "'") {
+                    d += str[tempd - 1];
+                    tempd--;
+                  }
+                  sub.D = d.split("").reverse().join("");
+                }
+                let o = [
+                  {
+                    content: sub.A,
+                    index: "A",
+                  },
+                  {
+                    content: sub.B,
+                    index: "B",
+                  },
+                  {
+                    content: sub.C,
+                    index: "C",
+                  },
+                  {
+                    content: sub.D,
+                    index: "D",
+                  },
+                ];
+                sub.options = o;
               }
               question.sub_question.push(sub);
               num++;
@@ -1441,8 +1505,10 @@ export default {
       }
     },
     back() {
-      Cookies.set("paperEdit", "");
-      Cookies.set("paperInfo", "");
+      // Cookies.set("paperEdit", "");
+      // Cookies.set("paperInfo", "");
+      sessionStorage.setItem("paperEdit", "");
+      sessionStorage.setItem("paperInfo", "");
       this.$router.go(-1);
     },
     createEdit() {
@@ -4694,7 +4760,8 @@ export default {
           type: "warning",
         });
       }
-      if (Cookie.get("paperEdit") == "true") {
+      // if (Cookie.get("paperEdit") == "true") {
+      if (sessionStorage.getItem("paperEdit") == "true") {
         // let paper = new BaaS.TableObject("test_paper");
         // paper.delete(Cookie.get("paperInfo")).then(
         //   (res) => {
@@ -4711,10 +4778,15 @@ export default {
             let q3 = new BaaS.Query();
             find_paper.compare("paper_title", "=", this.title);
             q2.compare("is_delete", "=", false);
-            q3.compare("paper_title", "!=", Cookie.get("paper_title"));
+            // q3.compare("paper_title", "!=", Cookie.get("paper_title"));
+            q3.compare(
+              "paper_title",
+              "!=",
+              sessionStorage.getItem("paper_title")
+            );
             let andQuery = BaaS.Query.and(find_paper, q2, q3);
             findPaper
-              .setQuery(andQuery)
+              .setQuery(andQuery).limit(1000)
               .find()
               .then((res0) => {
                 if (res0.data.objects.length != 0) {
@@ -4952,9 +5024,13 @@ export default {
                                         let savePaper = new BaaS.TableObject(
                                           "test_paper"
                                         );
+                                        // let save_paper =
+                                        //   savePaper.getWithoutData(
+                                        //     Cookie.get("paper_id")
+                                        //   );
                                         let save_paper =
-                                          savePaper.getWithoutData(
-                                            Cookie.get("paper_id")
+                                          savePaper.limit(1000).getWithoutData(
+                                            sessionStorage.getItem("paper_id")
                                           );
                                         let paper_type;
                                         paper_type = "练习";
@@ -5225,9 +5301,13 @@ export default {
                                         let savePaper = new BaaS.TableObject(
                                           "test_paper"
                                         );
+                                        // let save_paper =
+                                        //   savePaper.getWithoutData(
+                                        //     Cookie.get("paper_id")
+                                        //   );
                                         let save_paper =
-                                          savePaper.getWithoutData(
-                                            Cookie.get("paper_id")
+                                          savePaper.limit(1000).getWithoutData(
+                                            sessionStorage.getItem("paper_id")
                                           );
                                         let paper_type;
                                         paper_type = "练习";
@@ -5250,7 +5330,11 @@ export default {
                                               message: "保存成功",
                                               type: "success",
                                             });
-                                            Cookies.set(
+                                            // Cookies.set(
+                                            //   "paperInfo",
+                                            //   res.data.id
+                                            // );
+                                            sessionStorage.setItem(
                                               "paperInfo",
                                               res.data.id
                                             );
@@ -5289,7 +5373,7 @@ export default {
                         this.questions[i].question_content
                       );
                       findContent
-                        .setQuery(find_content)
+                        .setQuery(find_content).limit(1000)
                         .find()
                         .then(
                           (res1) => {
@@ -5527,7 +5611,7 @@ export default {
                                   time_created
                                 );
                                 findQuestion
-                                  .setQuery(andQuery)
+                                  .setQuery(andQuery).limit(1000)
                                   .find()
                                   .then(
                                     (res2) => {
@@ -5754,9 +5838,15 @@ export default {
                                                   new BaaS.TableObject(
                                                     "test_paper"
                                                   );
+                                                // let save_paper =
+                                                //   savePaper.getWithoutData(
+                                                //     Cookie.get("paper_id")
+                                                //   );
                                                 let save_paper =
-                                                  savePaper.getWithoutData(
-                                                    Cookie.get("paper_id")
+                                                  savePaper.limit(1000).getWithoutData(
+                                                    sessionStorage.getItem(
+                                                      "paper_id"
+                                                    )
                                                   );
                                                 let paper_type;
                                                 paper_type = "练习";
@@ -5781,7 +5871,11 @@ export default {
                                                       message: "保存成功",
                                                       type: "success",
                                                     });
-                                                    Cookies.set(
+                                                    // Cookies.set(
+                                                    //   "paperInfo",
+                                                    //   res.data.id
+                                                    // );
+                                                    sessionStorage.setItem(
                                                       "paperInfo",
                                                       res.data.id
                                                     );
@@ -5816,9 +5910,13 @@ export default {
                                           let savePaper = new BaaS.TableObject(
                                             "test_paper"
                                           );
+                                          // let save_paper =
+                                          //   savePaper.getWithoutData(
+                                          //     Cookie.get("paper_id")
+                                          //   );
                                           let save_paper =
-                                            savePaper.getWithoutData(
-                                              Cookie.get("paper_id")
+                                            savePaper.limit(1000).getWithoutData(
+                                              sessionStorage.getItem("paper_id")
                                             );
                                           let paper_type;
                                           paper_type = "练习";
@@ -5841,7 +5939,11 @@ export default {
                                                 message: "保存成功",
                                                 type: "success",
                                               });
-                                              Cookies.set(
+                                              // Cookies.set(
+                                              //   "paperInfo",
+                                              //   res.data.id
+                                              // );
+                                              sessionStorage.setItem(
                                                 "paperInfo",
                                                 res.data.id
                                               );
@@ -6092,9 +6194,15 @@ export default {
                                                 new BaaS.TableObject(
                                                   "test_paper"
                                                 );
+                                              // let save_paper =
+                                              //   savePaper.getWithoutData(
+                                              //     Cookie.get("paper_id")
+                                              //   );
                                               let save_paper =
-                                                savePaper.getWithoutData(
-                                                  Cookie.get("paper_id")
+                                                savePaper.limit(1000).getWithoutData(
+                                                  sessionStorage.getItem(
+                                                    "paper_id"
+                                                  )
                                                 );
                                               let paper_type;
                                               paper_type = "练习";
@@ -6119,7 +6227,11 @@ export default {
                                                     message: "保存成功",
                                                     type: "success",
                                                   });
-                                                  Cookies.set(
+                                                  // Cookies.set(
+                                                  //   "paperInfo",
+                                                  //   res.data.id
+                                                  // );
+                                                  sessionStorage.setItem(
                                                     "paperInfo",
                                                     res.data.id
                                                   );
@@ -6254,7 +6366,7 @@ export default {
                 let find_paper = new BaaS.Query();
                 find_paper.compare("paper_title", "=", this.title);
                 findPaper
-                  .setQuery(find_paper)
+                  .setQuery(find_paper).limit(1000)
                   .find()
                   .then((res0) => {
                     if (res0.data.objects.length != 0) {
@@ -6501,9 +6613,15 @@ export default {
                                               new BaaS.TableObject(
                                                 "test_paper"
                                               );
+                                            // let save_paper =
+                                            //   savePaper.getWithoutData(
+                                            //     Cookie.get("paper_id")
+                                            //   );
                                             let save_paper =
-                                              savePaper.getWithoutData(
-                                                Cookie.get("paper_id")
+                                              savePaper.limit(1000).getWithoutData(
+                                                sessionStorage.getItem(
+                                                  "paper_id"
+                                                )
                                               );
                                             let paper_type;
                                             paper_type = "练习";
@@ -6526,7 +6644,11 @@ export default {
                                                   message: "保存成功",
                                                   type: "success",
                                                 });
-                                                Cookies.set(
+                                                // Cookies.set(
+                                                //   "paperInfo",
+                                                //   res.data.id
+                                                // );
+                                                sessionStorage.setItem(
                                                   "paperInfo",
                                                   res.data.id
                                                 );
@@ -6789,9 +6911,15 @@ export default {
                                               new BaaS.TableObject(
                                                 "test_paper"
                                               );
+                                            // let save_paper =
+                                            //   savePaper.getWithoutData(
+                                            //     Cookie.get("paper_id")
+                                            //   );
                                             let save_paper =
-                                              savePaper.getWithoutData(
-                                                Cookie.get("paper_id")
+                                              savePaper.limit(1000).getWithoutData(
+                                                sessionStorage.getItem(
+                                                  "paper_id"
+                                                )
                                               );
                                             let paper_type;
                                             paper_type = "练习";
@@ -6814,7 +6942,11 @@ export default {
                                                   message: "保存成功",
                                                   type: "success",
                                                 });
-                                                Cookies.set(
+                                                // Cookies.set(
+                                                //   "paperInfo",
+                                                //   res.data.id
+                                                // );
+                                                sessionStorage.setItem(
                                                   "paperInfo",
                                                   res.data.id
                                                 );
@@ -6853,7 +6985,7 @@ export default {
                             this.questions[i].question_content
                           );
                           findContent
-                            .setQuery(find_content)
+                            .setQuery(find_content).limit(1000)
                             .find()
                             .then(
                               (res1) => {
@@ -7098,7 +7230,7 @@ export default {
                                       time_created
                                     );
                                     findQuestion
-                                      .setQuery(andQuery)
+                                      .setQuery(andQuery).limit(1000)
                                       .find()
                                       .then(
                                         (res2) => {
@@ -7350,9 +7482,15 @@ export default {
                                                       new BaaS.TableObject(
                                                         "test_paper"
                                                       );
+                                                    // let save_paper =
+                                                    //   savePaper.getWithoutData(
+                                                    //     Cookie.get("paper_id")
+                                                    //   );
                                                     let save_paper =
-                                                      savePaper.getWithoutData(
-                                                        Cookie.get("paper_id")
+                                                      savePaper.limit(1000).getWithoutData(
+                                                        sessionStorage.getItem(
+                                                          "paper_id"
+                                                        )
                                                       );
                                                     let paper_type;
                                                     paper_type = "模考";
@@ -7378,7 +7516,11 @@ export default {
                                                           message: "保存成功",
                                                           type: "success",
                                                         });
-                                                        Cookies.set(
+                                                        // Cookies.set(
+                                                        //   "paperInfo",
+                                                        //   res.data.id
+                                                        // );
+                                                        sessionStorage.setItem(
                                                           "paperInfo",
                                                           res.data.id
                                                         );
@@ -7416,9 +7558,15 @@ export default {
                                                 new BaaS.TableObject(
                                                   "test_paper"
                                                 );
+                                              // let save_paper =
+                                              //   savePaper.getWithoutData(
+                                              //     Cookie.get("paper_id")
+                                              //   );
                                               let save_paper =
-                                                savePaper.getWithoutData(
-                                                  Cookie.get("paper_id")
+                                                savePaper.limit(1000).getWithoutData(
+                                                  sessionStorage.getItem(
+                                                    "paper_id"
+                                                  )
                                                 );
                                               let paper_type;
                                               paper_type = "模考";
@@ -7443,7 +7591,11 @@ export default {
                                                     message: "保存成功",
                                                     type: "success",
                                                   });
-                                                  Cookies.set(
+                                                  // Cookies.set(
+                                                  //   "paperInfo",
+                                                  //   res.data.id
+                                                  // );
+                                                  sessionStorage.setItem(
                                                     "paperInfo",
                                                     res.data.id
                                                   );
@@ -7742,9 +7894,15 @@ export default {
                                                     new BaaS.TableObject(
                                                       "test_paper"
                                                     );
+                                                  // let save_paper =
+                                                  //   savePaper.getWithoutData(
+                                                  //     Cookie.get("paper_id")
+                                                  //   );
                                                   let save_paper =
-                                                    savePaper.getWithoutData(
-                                                      Cookie.get("paper_id")
+                                                    savePaper.limit(1000).getWithoutData(
+                                                      sessionStorage.getItem(
+                                                        "paper_id"
+                                                      )
                                                     );
                                                   let paper_type;
                                                   paper_type = "模考";
@@ -7770,7 +7928,11 @@ export default {
                                                         message: "保存成功",
                                                         type: "success",
                                                       });
-                                                      Cookies.set(
+                                                      // Cookies.set(
+                                                      //   "paperInfo",
+                                                      //   res.data.id
+                                                      // );
+                                                      sessionStorage.setItem(
                                                         "paperInfo",
                                                         res.data.id
                                                       );
@@ -7832,7 +7994,7 @@ export default {
             let find_paper = new BaaS.Query();
             find_paper.compare("paper_title", "=", this.title);
             findPaper
-              .setQuery(find_paper)
+              .setQuery(find_paper).limit(1000)
               .find()
               .then((res0) => {
                 if (res0.data.objects.length != 0) {
@@ -8091,7 +8253,11 @@ export default {
                                                 message: "保存成功",
                                                 type: "success",
                                               });
-                                              Cookies.set(
+                                              // Cookies.set(
+                                              //   "paperInfo",
+                                              //   res.data.id
+                                              // );
+                                              sessionStorage.setItem(
                                                 "paperInfo",
                                                 res.data.id
                                               );
@@ -8366,7 +8532,11 @@ export default {
                                                 message: "保存成功",
                                                 type: "success",
                                               });
-                                              Cookies.set(
+                                              // Cookies.set(
+                                              //   "paperInfo",
+                                              //   res.data.id
+                                              // );
+                                              sessionStorage.setItem(
                                                 "paperInfo",
                                                 res.data.id
                                               );
@@ -8405,7 +8575,7 @@ export default {
                         this.questions[i].question_content
                       );
                       findContent
-                        .setQuery(find_content)
+                        .setQuery(find_content).limit(1000)
                         .find()
                         .then(
                           (res1) => {
@@ -8643,7 +8813,7 @@ export default {
                                   time_created
                                 );
                                 findQuestion
-                                  .setQuery(andQuery)
+                                  .setQuery(andQuery).limit(1000)
                                   .find()
                                   .then(
                                     (res2) => {
@@ -8897,7 +9067,11 @@ export default {
                                                         message: "保存成功",
                                                         type: "success",
                                                       });
-                                                      Cookies.set(
+                                                      // Cookies.set(
+                                                      //   "paperInfo",
+                                                      //   res.data.id
+                                                      // );
+                                                      sessionStorage.setItem(
                                                         "paperInfo",
                                                         res.data.id
                                                       );
@@ -8956,7 +9130,11 @@ export default {
                                                   message: "保存成功",
                                                   type: "success",
                                                 });
-                                                Cookies.set(
+                                                // Cookies.set(
+                                                //   "paperInfo",
+                                                //   res.data.id
+                                                // );
+                                                sessionStorage.setItem(
                                                   "paperInfo",
                                                   res.data.id
                                                 );
@@ -9234,7 +9412,11 @@ export default {
                                                       message: "保存成功",
                                                       type: "success",
                                                     });
-                                                    Cookies.set(
+                                                    // Cookies.set(
+                                                    //   "paperInfo",
+                                                    //   res.data.id
+                                                    // );
+                                                    sessionStorage.setItem(
                                                       "paperInfo",
                                                       res.data.id
                                                     );
@@ -9369,7 +9551,7 @@ export default {
                 let find_paper = new BaaS.Query();
                 find_paper.compare("paper_title", "=", this.title);
                 findPaper
-                  .setQuery(find_paper)
+                  .setQuery(find_paper).limit(1000)
                   .find()
                   .then((res0) => {
                     if (res0.data.objects.length != 0) {
@@ -9744,7 +9926,11 @@ export default {
                                                     message: "保存成功",
                                                     type: "success",
                                                   });
-                                                  Cookies.set(
+                                                  // Cookies.set(
+                                                  //   "paperInfo",
+                                                  //   res.data.id
+                                                  // );
+                                                  sessionStorage.setItem(
                                                     "paperInfo",
                                                     res.data.id
                                                   );
@@ -10029,7 +10215,11 @@ export default {
                                                     message: "保存成功",
                                                     type: "success",
                                                   });
-                                                  Cookies.set(
+                                                  // Cookies.set(
+                                                  //   "paperInfo",
+                                                  //   res.data.id
+                                                  // );
+                                                  sessionStorage.setItem(
                                                     "paperInfo",
                                                     res.data.id
                                                   );
@@ -10068,7 +10258,7 @@ export default {
                             this.questions[i].question_content
                           );
                           findContent
-                            .setQuery(find_content)
+                            .setQuery(find_content).limit(1000)
                             .find()
                             .then(
                               (res1) => {
@@ -10313,7 +10503,7 @@ export default {
                                       time_created
                                     );
                                     findQuestion
-                                      .setQuery(andQuery)
+                                      .setQuery(andQuery).limit(1000)
                                       .find()
                                       .then(
                                         (res2) => {
@@ -10593,7 +10783,11 @@ export default {
                                                             message: "保存成功",
                                                             type: "success",
                                                           });
-                                                          Cookies.set(
+                                                          // Cookies.set(
+                                                          //   "paperInfo",
+                                                          //   res.data.id
+                                                          // );
+                                                          sessionStorage.setItem(
                                                             "paperInfo",
                                                             res.data.id
                                                           );
@@ -10658,7 +10852,11 @@ export default {
                                                       message: "保存成功",
                                                       type: "success",
                                                     });
-                                                    Cookies.set(
+                                                    // Cookies.set(
+                                                    //   "paperInfo",
+                                                    //   res.data.id
+                                                    // );
+                                                    sessionStorage.setItem(
                                                       "paperInfo",
                                                       res.data.id
                                                     );
@@ -10984,7 +11182,11 @@ export default {
                                                           message: "保存成功",
                                                           type: "success",
                                                         });
-                                                        Cookies.set(
+                                                        // Cookies.set(
+                                                        //   "paperInfo",
+                                                        //   res.data.id
+                                                        // );
+                                                        sessionStorage.setItem(
                                                           "paperInfo",
                                                           res.data.id
                                                         );

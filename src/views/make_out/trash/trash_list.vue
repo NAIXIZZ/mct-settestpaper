@@ -17,8 +17,8 @@
 </template>
 
 <script>
-import Cookie from "js-cookie";
-import Cookies from "js-cookie";
+// import Cookie from "js-cookie";
+// import Cookies from "js-cookie";
 import contents from "@/views/make_out/trash/contents";
 import questions from "@/views/make_out/trash/questions";
 import paper from "@/views/make_out/trash/paper";
@@ -40,19 +40,24 @@ export default {
   methods: {
     back() {
       this.$router.go(-1);
-      Cookies.set("trash", "");
+      // Cookies.set("trash", "");
+      sessionStorage.setItem("trash", "");
     },
     init() {
-      let current = Cookie.get("trash");
+      // let current = Cookie.get("trash");
+      let current = sessionStorage.getItem("trash");
       if (current == "content") {
         this.active_out = "first";
-        Cookies.set("trash", "");
+        // Cookies.set("trash", "");
+        sessionStorage.setItem("trash", "");
       } else if (current == "questions") {
         this.active_out = "second";
-        Cookies.set("trash", "");
+        // Cookies.set("trash", "");
+        sessionStorage.setItem("trash", "");
       } else if (current == "paper") {
         this.active_out = "third";
-        Cookies.set("trash", "");
+        // Cookies.set("trash", "");
+        sessionStorage.setItem("trash", "");
       }
     },
   },

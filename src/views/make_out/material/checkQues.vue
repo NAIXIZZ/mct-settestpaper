@@ -324,7 +324,7 @@ var BaaS = require("minapp-sdk");
 let clientID = "395062a19e209a770059";
 BaaS.init(clientID);
 import Cookie from "js-cookie";
-import Cookies from "js-cookie";
+// import Cookies from "js-cookie";
 export default {
   name: "",
   components: {},
@@ -545,12 +545,18 @@ export default {
       let query = new BaaS.Query();
       let q2 = new BaaS.Query();
       let q3 = new BaaS.Query();
-      query.compare("question_content_id", "=", Cookie.get("material_id"));
+      // query.compare("question_content_id", "=", Cookie.get("material_id"));
+      query.compare(
+        "question_content_id",
+        "=",
+        sessionStorage.getItem("material_id")
+      );
       q2.compare("created_by", "=", Cookie.get("user_id") * 1);
+      // q2.compare("created_by", "=", sessionStorage.getItem("user_id") * 1);
       q3.compare("is_delete", "=", false);
       let andQuery = BaaS.Query.and(query, q2, q3);
       let Question = new BaaS.TableObject("questions_information");
-      Question.setQuery(andQuery)
+      Question.setQuery(andQuery).limit(1000)
         .find()
         .then(
           (res) => {
@@ -699,7 +705,7 @@ export default {
     },
     delQues(val) {
       let Ques = new BaaS.TableObject("questions_information");
-      let ques = Ques.getWithoutData(val.id);
+      let ques = Ques.limit(1000).getWithoutData(val.id);
       ques.set("is_delete", true);
       ques.update().then(
         (res) => {
@@ -739,7 +745,59 @@ export default {
       var i = 0;
       this.fileNum = Object.keys(zipData.files).length;
       this.sureClick = false;
-      let temp = {};
+      let cata = [];
+      let xlsx = [];
+      for (let key in zipData.files) {
+        if (!zipData.files[key].dir) {
+          if (/\.(xlsx)$/.test(zipData.files[key].name)) {
+            let base = await zip.file(zipData.files[key].name).async("base64"); // 以base64输出文本内容
+            const result = this.dataURLtoFile(base, zipData.files[key].name);
+            if (typeof FileReader === "undefined") {
+              this.$message({
+                type: "info",
+                message: "您的浏览器不支持FileReader接口",
+              });
+              return;
+            }
+            let reader = new FileReader();
+            reader.readAsBinaryString(result);
+            reader.onload = function (e) {
+              try {
+                var data = e.target.result;
+                var workbook = XLSX.read(data, { type: "binary" });
+                var wsname = workbook.SheetNames[0]; // 取第一张表
+                var ws = XLSX.utils.sheet_to_json(workbook.Sheets[wsname]); // 生成json表格内容
+                xlsx = ws;
+                let i = 0;
+                for (i = 0; i < ws.length; i++) {
+                  if (
+                    ws[i].catalog != "" &&
+                    ws[i].catalog != undefined &&
+                    ws[i].catalog != null
+                  ) {
+                    let t = {
+                      catalog: ws[i].catalog,
+                      content: ws[i].question_content,
+                    };
+                    cata.push(t);
+                  }
+                  if (i == ws.length - 1) {
+                    const map = new Map();
+                    const qc_c = cata.filter(
+                      (key) => !map.has(key.content) && map.set(key.content, 1)
+                    );
+                    cata = qc_c;
+                  }
+                }
+              } catch (e) {
+                console.log(e);
+                return false;
+              }
+            }.bind(this);
+            break;
+          }
+        }
+      }
       for (let key in zipData.files) {
         if (!zipData.files[key].dir) {
           if (
@@ -753,30 +811,83 @@ export default {
             // this.fileType = "png";
             let base = await zip.file(zipData.files[key].name).async("base64"); // 以base64输出文本内容
             const result = this.dataURLtoFile(base, zipData.files[key].name);
-            // console.log(result);
             await new Promise((resolve, reject) => {
               let File = new BaaS.File();
               let audio = { fileObj: result };
               File.upload(audio).then(
                 (res) => {
-                  let Content = new BaaS.TableObject("question_content");
-                  let content = Content.create();
-                  content.set("file_url", res.data.file);
-                  content.set("content", null);
-                  content.set("catalog", null);
-                  content
-                    .save()
-                    .then((res2) => {
-                      var a = {
-                        name: res2.data.file_url.name,
-                        id: res2.data.id,
-                      };
-                      this.contentFile.push(a);
-                      resolve(0);
-                    })
-                    .catch((err) => {
-                      console.log(err);
-                    });
+                  if (cata.length != 0) {
+                    let find = false;
+                    for (let i = 0; i < cata.length; i++) {
+                      if (cata[i].content == zipData.files[key].name) {
+                        find = true;
+                        let Content = new BaaS.TableObject("question_content");
+                        let content = Content.create();
+                        content.set("file_url", res.data.file);
+                        content.set("content", null);
+                        content.set("catalog", cata[i].catalog);
+                        content.set("is_delete", false);
+                        content.set("excel", null);
+                        content
+                          .save()
+                          .then((res2) => {
+                            var a = {
+                              name: res2.data.file_url.name,
+                              id: res2.data.id,
+                            };
+                            this.contentFile.push(a);
+                            resolve(0);
+                          })
+                          .catch((err) => {
+                            console.log(err);
+                          });
+                        break;
+                      }
+                    }
+                    if (find == false) {
+                      let Content = new BaaS.TableObject("question_content");
+                      let content = Content.create();
+                      content.set("file_url", res.data.file);
+                      content.set("content", null);
+                      content.set("catalog", null);
+                      content.set("is_delete", false);
+                      content.set("excel", null);
+                      content
+                        .save()
+                        .then((res2) => {
+                          var a = {
+                            name: res2.data.file_url.name,
+                            id: res2.data.id,
+                          };
+                          this.contentFile.push(a);
+                          resolve(0);
+                        })
+                        .catch((err) => {
+                          console.log(err);
+                        });
+                    }
+                  } else {
+                    let Content = new BaaS.TableObject("question_content");
+                    let content = Content.create();
+                    content.set("file_url", res.data.file);
+                    content.set("content", null);
+                    content.set("catalog", null);
+                    content.set("is_delete", false);
+                    content.set("excel", null);
+                    content
+                      .save()
+                      .then((res2) => {
+                        var a = {
+                          name: res2.data.file_url.name,
+                          id: res2.data.id,
+                        };
+                        this.contentFile.push(a);
+                        resolve(0);
+                      })
+                      .catch((err) => {
+                        console.log(err);
+                      });
+                  }
                 },
                 (err) => {
                   console.log(err);
@@ -804,89 +915,79 @@ export default {
                 var wsname = workbook.SheetNames[0]; // 取第一张表
                 var ws = XLSX.utils.sheet_to_json(workbook.Sheets[wsname]); // 生成json表格内容
                 ws.forEach((element) => {
-                  if (element.catalog == undefined || element.catalog == "") {
+                  if (
+                    element.catalog == undefined ||
+                    element.catalog == "" ||
+                    element.catalog == "无"
+                  ) {
                     element.catalog = null;
                   }
                   if (
-                    element.paper_title == undefined ||
-                    element.paper_title == ""
-                  ) {
-                    element.paper_title = null;
-                  }
-                  if (
-                    element.paper_type == undefined ||
-                    element.paper_type == ""
-                  ) {
-                    element.paper_type = null;
-                  }
-                  if (
-                    element.questions_num == undefined ||
-                    element.questions_num == ""
-                  ) {
-                    element.questions_num = null;
-                  }
-                  if (element.points == undefined || element.points == "") {
-                    element.points = null;
-                  }
-                  if (element.sequence == undefined || element.sequence == "") {
-                    element.sequence = null;
-                  }
-                  if (element.score == undefined || element.score == "") {
-                    element.score = null;
-                  }
-                  if (
                     element.primary_ques_type == undefined ||
-                    element.primary_ques_type == ""
+                    element.primary_ques_type == "" ||
+                    element.primary_ques_type == "无"
                   ) {
                     element.primary_ques_type = null;
                   }
                   if (
                     element.secondary_ques_type == undefined ||
-                    element.secondary_ques_type == ""
+                    element.secondary_ques_type == "" ||
+                    element.secondary_ques_type == "无"
                   ) {
                     element.secondary_ques_type = null;
                   }
                   if (
                     element.question_content == undefined ||
-                    element.question_content == ""
+                    element.question_content == "" ||
+                    element.question_content == "无"
                   ) {
                     element.question_content = null;
                   }
-                  if (element.question == undefined || element.question == "") {
+                  if (
+                    element.question == undefined ||
+                    element.question == "" ||
+                    element.question == "无"
+                  ) {
                     element.question = null;
                   }
-                  if (element.options == undefined || element.options == "") {
+                  if (
+                    element.options == undefined ||
+                    element.options == "" ||
+                    element.options == "无"
+                  ) {
                     element.options = null;
                   }
                   if (element.answer == undefined || element.answer == "") {
                     element.answer = null;
                   }
-                  if (element.analysis == undefined || element.analysis == "") {
+                  if (
+                    element.analysis == undefined ||
+                    element.analysis == "" ||
+                    element.analysis == "无"
+                  ) {
                     element.analysis = null;
                   }
                   if (
                     element.department == undefined ||
-                    element.department == ""
+                    element.department == "" ||
+                    element.department == "无" ||
+                    element.department == null
                   ) {
                     element.department = null;
                   } else {
                     element.department = element.department.split("，");
                   }
                   if (
-                    element.ques_level == undefined ||
-                    element.ques_level == ""
-                  ) {
-                    element.ques_level = null;
-                  }
-                  if (
                     element.question_class == undefined ||
-                    element.question_class == ""
+                    element.question_class == "" ||
+                    element.question_class == "无"
                   ) {
                     element.question_class = null;
                   }
                   if (
                     element.question_type_5he == undefined ||
-                    element.question_type_5he == ""
+                    element.question_type_5he == "" ||
+                    element.question_type_5he == "无"
                   ) {
                     element.question_type_5he = null;
                   }
@@ -901,30 +1002,43 @@ export default {
                   }
                   if (
                     element.time_created == undefined ||
-                    element.time_created == ""
+                    element.time_created == "" ||
+                    element.time_created == "无"
                   ) {
                     element.time_created = null;
                   }
                   if (
                     element.grade_standard == undefined ||
-                    element.grade_standard == ""
+                    element.grade_standard == "" ||
+                    element.grade_standard == "无" ||
+                    element.grade_standard == null
                   ) {
                     element.grade_standard = null;
+                  } else {
+                    element.grade_standard = element.grade_standard.split("，");
                   }
-                  if (element.topic == undefined || element.topic == "") {
+                  if (
+                    element.topic == undefined ||
+                    element.topic == "" ||
+                    element.topic == "无" ||
+                    element.topic == null
+                  ) {
                     element.topic = null;
+                  } else {
+                    element.topic = element.topic.split("，");
                   }
-                  if (element.task == undefined || element.task == "") {
+                  if (
+                    element.task == undefined ||
+                    element.task == "" ||
+                    element.task == "无" ||
+                    element.task == null
+                  ) {
                     element.task = null;
+                  } else {
+                    element.task = element.task.split("，");
                   }
                   var a = {
                     catalog: element.catalog,
-                    paper_title: element.paper_title,
-                    paper_type: element.paper_type,
-                    questions_num: element.questions_num,
-                    points: element.points,
-                    sequence: element.sequence,
-                    score: element.score,
                     primary_ques_type: element.primary_ques_type,
                     secondary_ques_type: element.secondary_ques_type,
                     question_content_id: element.question_content,
@@ -943,17 +1057,7 @@ export default {
                     topic_outline: element.topic,
                     task_outline: element.task,
                   };
-                  if (element.paper_title == null) {
-                    this.excelFile.push(a);
-                  } else {
-                    temp = {
-                      catalog: element.catalog,
-                      paper_title: element.paper_title,
-                      paper_type: element.paper_type,
-                      questions_num: element.questions_num,
-                      points: element.points,
-                    };
-                  }
+                  this.excelFile.push(a);
                 });
               } catch (e) {
                 console.log(e);
@@ -963,650 +1067,379 @@ export default {
           }
         }
         i++;
-        let questions_detail = [];
-        let ques_type = [
-          {
-            primary: "听力",
-            secondary: [
-              {
-                type: "听句子，判断对错",
-                start: -1,
-                end: -1,
-                hoverS: false,
-                score: 0,
-                num: 0,
-              },
-              {
-                type: "听短对话，选择正确答案",
-                start: -1,
-                end: -1,
-                hoverS: false,
-                score: 0,
-                num: 0,
-              },
-              {
-                type: "听长对话，选择正确答案",
-                start: -1,
-                end: -1,
-                hoverS: false,
-                score: 0,
-                num: 0,
-              },
-              {
-                type: "听短文，选择正确答案",
-                start: -1,
-                end: -1,
-                hoverS: false,
-                score: 0,
-                num: 0,
-              },
-            ],
-            hoverP: false,
-            total_score: 0,
-            total_num: 0,
-            start: -1,
-          },
-          {
-            primary: "阅读",
-            secondary: [
-              {
-                type: "选择正确的词语填空",
-                start: -1,
-                end: -1,
-                hoverS: false,
-                score: 0,
-                num: 0,
-              },
-              {
-                type: "阅读语段，选择与语段意思一致的一项",
-                start: -1,
-                end: -1,
-                hoverS: false,
-                score: 0,
-                num: 0,
-              },
-              {
-                type: "阅读材料，选择正确答案",
-                start: -1,
-                end: -1,
-                hoverS: false,
-                score: 0,
-                num: 0,
-              },
-              {
-                type: "阅读短文，选择正确答案",
-                start: -1,
-                end: -1,
-                hoverS: false,
-                score: 0,
-                num: 0,
-              },
-            ],
-            hoverP: false,
-            total_score: 0,
-            total_num: 0,
-            start: -1,
-          },
-          {
-            primary: "写作",
-            secondary: [
-              {
-                type: "根据一段长对话写门诊病历记录",
-                start: -1,
-                end: -1,
-                hoverS: false,
-                score: 0,
-                num: 0,
-              },
-            ],
-            hoverP: false,
-            total_score: 0,
-            total_num: 0,
-            start: -1,
-          },
-        ];
+        let num = 0;
+        console.log(i);
         if (i == this.fileNum) {
           var arr = new Array();
-          this.excelFile.forEach((element) => {
-            var findContent = false;
-            this.contentFile.forEach((item) => {
-              if (element.question_content_id == item.name) {
-                element.question_content_id = item.id;
-                findContent = true;
-                let importQ = new BaaS.TableObject("questions_information");
-                let importq = importQ.create();
-                importq
-                  .set(element)
-                  .save()
-                  .then(
-                    (res) => {
-                      let q = {
-                        id: res.data.id,
-                        sub_sequence: element.sequence,
-                        score: element.score,
-                      };
-                      questions_detail.push(q);
-                      if (questions_detail.length == this.excelFile.length) {
-                        let num = 0;
-                        questions_detail.sort(function (a, b) {
-                          return a.sub_sequence - b.sub_sequence;
-                        });
-                        for (let a = 0; a < this.excelFile.length; a++) {
-                          for (let b = 0; b < ques_type.length; b++) {
-                            if (
-                              this.excelFile[a].primary_ques_type ==
-                              ques_type[b].primary
-                            ) {
-                              for (
-                                let c = 0;
-                                c < ques_type[b].secondary.length;
-                                c++
-                              ) {
-                                if (
-                                  this.excelFile[a].secondary_ques_type ==
-                                  ques_type[b].secondary[c].type
-                                ) {
-                                  ques_type[b].secondary[c].num++;
-                                  ques_type[b].secondary[c].score +=
-                                    this.excelFile[a].score;
-                                  ques_type[b].total_num++;
-                                  ques_type[b].total_score +=
-                                    this.excelFile[a].score;
-                                  if (ques_type[b].secondary[c].start == -1) {
-                                    ques_type[b].secondary[c].start =
-                                      this.excelFile[a].sequence - 1 - num;
-                                    ques_type[b].secondary[c].end =
-                                      this.excelFile[a].sequence - 1 - num;
-                                    ques_type[b].start =
-                                      this.excelFile[a].sequence - 1 - num;
-                                  } else if (
-                                    this.excelFile[a].question_content_id !=
-                                    this.excelFile[a - 1].question_content_id
-                                  ) {
-                                    ques_type[b].secondary[c].end++;
-                                  } else {
-                                    num++;
-                                  }
-                                }
-                              }
-                            }
+          setTimeout(() => {
+            this.excelFile.forEach((element) => {
+              var findContent = false;
+              if (this.contentFile.length != 0) {
+                this.contentFile.forEach((item) => {
+                  if (element.question_content_id == item.name) {
+                    element.question_content_id = item.id;
+                    findContent = true;
+                    let importQ = new BaaS.TableObject("questions_information");
+                    let importq = importQ.create();
+                    importq
+                      .set(element)
+                      .save()
+                      .then(
+                        (res) => {
+                          // console.log(res);
+                          num++;
+                          if (num == this.excelFile.length) {
+                            loading.close();
+                            this.$message({
+                              message: "导入成功",
+                              type: "success",
+                            });
+                            this.init();
+                            this.importFile = false;
+                            this.excelFile = [];
+                            this.contentFile = [];
                           }
-                        }
-                        for (let a = 0; a < ques_type.length; a++) {
-                          ques_type[a].secondary.sort(function (c, d) {
-                            return c.start - d.start;
+                        },
+                        (err) => {
+                          loading.close();
+                          this.$message({
+                            message: "导入失败",
+                            type: "warning",
                           });
+                          this.init();
+                          this.importFile = false;
+                          this.excelFile = [];
+                          this.contentFile = [];
+                          console.log(err);
                         }
-                        ques_type.sort(function (c, d) {
-                          return c.start - d.start;
-                        });
-                        for (let a = 0; a < ques_type.length; a++) {
-                          if (ques_type[a].start != -1) {
-                            ques_type.splice(0, a);
-                            break;
-                          }
-                        }
-                        for (let a = 0; a < ques_type.length; a++) {
-                          for (
-                            let b = 0;
-                            b < ques_type[a].secondary.length;
-                            b++
-                          ) {
-                            if (ques_type[a].secondary[b].start != -1) {
-                              ques_type[a].secondary.splice(0, b);
-                              break;
-                            }
-                          }
-                        }
-                        let saveP = new BaaS.TableObject("test_paper");
-                        let savep = saveP.create();
-                        let s = {
-                          paper_title: temp.paper_title,
-                          paper_type: temp.paper_type,
-                          questions_num: temp.questions_num,
-                          points: temp.points,
-                          is_delete: false,
-                          catalog: temp.catalog,
-                          questions_detail: JSON.stringify(questions_detail),
-                          ques_type: JSON.stringify(ques_type),
-                        };
-                        savep
-                          .set(s)
-                          .save()
-                          .then(
-                            (res) => {
-                              // console.log(res)
-                              this.$message({
-                                message: "导入成功",
-                                type: "success",
-                              });
-                              loading.close();
-                              this.importFile = false;
-                              this.init();
-                            },
-                            (err) => {
-                              console.log(err);
-                            }
-                          );
-                      }
-                    },
-                    (err) => {
-                      console.log(err);
-                    }
-                  );
-                return;
+                      );
+                    return;
+                  }
+                });
+              }
+              if (findContent == false) {
+                var a = {
+                  content: element.question_content_id,
+                  id: null,
+                };
+                arr.push(a);
               }
             });
-            if (findContent == false) {
-              var a = {
-                content: element.question_content_id,
-                id: null,
-              };
-              arr.push(a);
-            }
-          });
-          if (arr.length != 0) {
-            const map = new Map();
-            const qc = arr.filter(
-              (key) => !map.has(key.content) && map.set(key.content, 1)
-            );
-            var k = 0;
-            qc.forEach((element) => {
-              // console.log(element)
-              let Content = new BaaS.TableObject("question_content");
-              let content = new BaaS.Query();
-              content.compare("content", "=", element.content);
-              Content.setQuery(content)
-                .find()
-                .then(
-                  (res) => {
-                    if (res.data.objects.length == 1) {
-                      element.id = res.data.objects[0].id;
-                      k++;
-                      if (k == qc.length) {
-                        this.excelFile.forEach((element) => {
-                          var a = qc.findIndex(
-                            (item) =>
-                              item.content === element.question_content_id
-                          );
-                          if (a != -1) {
-                            element.question_content_id = qc[a].id;
-                            let importQ = new BaaS.TableObject(
-                              "questions_information"
+            if (arr.length != 0) {
+              const map = new Map();
+              const qc = arr.filter(
+                (key) => !map.has(key.content) && map.set(key.content, 1)
+              );
+              var k = 0;
+              qc.forEach((element) => {
+                let Content = new BaaS.TableObject("question_content");
+                let content = new BaaS.Query();
+                let q = new BaaS.Query();
+                q.compare("created_by", "=", Cookie.get("user_id") * 1);
+                content.compare("content", "=", element.content);
+                let andQuery = BaaS.Query.and(content, q);
+                Content.setQuery(andQuery).limit(1000)
+                  .find()
+                  .then(
+                    (res) => {
+                      if (res.data.objects.length != 0) {
+                        element.id = res.data.objects[0].id;
+                        k++;
+                        if (k == qc.length) {
+                          this.excelFile.forEach((element) => {
+                            var a = qc.findIndex(
+                              (item) =>
+                                item.content === element.question_content_id
                             );
-                            let importq = importQ.create();
-                            importq
-                              .set(element)
-                              .save()
-                              .then(
-                                (res) => {
-                                  let q = {
-                                    id: res.data.id,
-                                    sub_sequence: element.sequence,
-                                    score: element.score,
-                                  };
-                                  questions_detail.push(q);
-                                  if (
-                                    questions_detail.length ==
-                                    this.excelFile.length
-                                  ) {
-                                    let num = 0;
-                                    questions_detail.sort(function (a, b) {
-                                      return a.sub_sequence - b.sub_sequence;
-                                    });
-
-                                    for (
-                                      let a = 0;
-                                      a < this.excelFile.length;
-                                      a++
-                                    ) {
-                                      for (
-                                        let b = 0;
-                                        b < ques_type.length;
-                                        b++
-                                      ) {
-                                        if (
-                                          this.excelFile[a].primary_ques_type ==
-                                          ques_type[b].primary
-                                        ) {
-                                          for (
-                                            let c = 0;
-                                            c < ques_type[b].secondary.length;
-                                            c++
-                                          ) {
-                                            if (
-                                              this.excelFile[a]
-                                                .secondary_ques_type ==
-                                              ques_type[b].secondary[c].type
-                                            ) {
-                                              ques_type[b].secondary[c].num++;
-                                              ques_type[b].secondary[c].score +=
-                                                this.excelFile[a].score;
-                                              ques_type[b].total_num++;
-                                              ques_type[b].total_score +=
-                                                this.excelFile[a].score;
-                                              if (
-                                                ques_type[b].secondary[c]
-                                                  .start == -1
-                                              ) {
-                                                ques_type[b].secondary[
-                                                  c
-                                                ].start =
-                                                  this.excelFile[a].sequence -
-                                                  1 -
-                                                  num;
-                                                ques_type[b].secondary[c].end =
-                                                  this.excelFile[a].sequence -
-                                                  1 -
-                                                  num;
-                                                ques_type[b].start =
-                                                  this.excelFile[a].sequence -
-                                                  1 -
-                                                  num;
-                                              } else if (
-                                                this.excelFile[a]
-                                                  .question_content_id !=
-                                                this.excelFile[a - 1]
-                                                  .question_content_id
-                                              ) {
-                                                ques_type[b].secondary[c].end++;
-                                              } else {
-                                                num++;
-                                              }
-                                            }
-                                          }
-                                        }
-                                      }
-                                    }
-                                    for (let a = 0; a < ques_type.length; a++) {
-                                      ques_type[a].secondary.sort(function (
-                                        c,
-                                        d
-                                      ) {
-                                        return c.start - d.start;
+                            if (a != -1) {
+                              element.question_content_id = qc[a].id;
+                              let importQ = new BaaS.TableObject(
+                                "questions_information"
+                              );
+                              let importq = importQ.create();
+                              importq
+                                .set(element)
+                                .save()
+                                .then(
+                                  (res) => {
+                                    // console.log(res);
+                                    num++;
+                                    if (num == this.excelFile.length) {
+                                      loading.close();
+                                      this.$message({
+                                        message: "导入成功",
+                                        type: "success",
                                       });
+                                      this.init();
+                                      this.importFile = false;
+                                      this.excelFile = [];
+                                      this.contentFile = [];
                                     }
-                                    ques_type.sort(function (c, d) {
-                                      return c.start - d.start;
+                                  },
+                                  (err) => {
+                                    loading.close();
+                                    this.$message({
+                                      message: "导入失败",
+                                      type: "warning",
                                     });
-                                    for (let a = 0; a < ques_type.length; a++) {
-                                      if (ques_type[a].start != -1) {
-                                        ques_type.splice(0, a);
-                                        break;
-                                      }
-                                    }
-                                    for (let a = 0; a < ques_type.length; a++) {
-                                      for (
-                                        let b = 0;
-                                        b < ques_type[a].secondary.length;
-                                        b++
-                                      ) {
-                                        if (
-                                          ques_type[a].secondary[b].start != -1
-                                        ) {
-                                          ques_type[a].secondary.splice(0, b);
-                                          break;
-                                        }
-                                      }
-                                    }
-                                    let saveP = new BaaS.TableObject(
-                                      "test_paper"
-                                    );
-                                    let savep = saveP.create();
-                                    let s = {
-                                      paper_title: temp.paper_title,
-                                      paper_type: temp.paper_type,
-                                      questions_num: temp.questions_num,
-                                      points: temp.points,
-                                      is_delete: false,
-                                      catalog: temp.catalog,
-                                      questions_detail:
-                                        JSON.stringify(questions_detail),
-                                      ques_type: JSON.stringify(ques_type),
-                                    };
-                                    savep
-                                      .set(s)
-                                      .save()
-                                      .then(
-                                        (res) => {
-                                          this.$message({
-                                            message: "导入成功",
-                                            type: "success",
-                                          });
-                                          loading.close();
-                                          this.importFile = false;
-                                          this.init();
-                                        },
-                                        (err) => {
-                                          console.log(err);
-                                        }
-                                      );
+                                    this.init();
+                                    this.importFile = false;
+                                    this.excelFile = [];
+                                    this.contentFile = [];
+                                    console.log(err);
                                   }
-                                },
-                                (err) => {
-                                  console.log(err);
-                                }
-                              );
-                          }
-                        });
-                      }
-                    } else if (res.data.objects.length == 0) {
-                      let addContent = new BaaS.TableObject("question_content");
-                      let add = addContent.create();
-                      add.set("content", element.content);
-                      add.save().then(
-                        (res) => {
-                          element.id = res.data.id;
-                          k++;
-                          if (k == qc.length) {
-                            this.excelFile.forEach((element) => {
-                              var a = qc.findIndex(
-                                (item) =>
-                                  item.content === element.question_content_id
-                              );
-                              if (a != -1) {
-                                element.question_content_id = qc[a].id;
-                                let importQ = new BaaS.TableObject(
-                                  "questions_information"
                                 );
-                                let importq = importQ.create();
-                                importq
-                                  .set(element)
-                                  .save()
-                                  .then(
-                                    (res) => {
-                                      let q = {
-                                        id: res.data.id,
-                                        sub_sequence: element.sequence,
-                                        score: element.score,
-                                      };
-                                      questions_detail.push(q);
-                                      if (
-                                        questions_detail.length ==
-                                        this.excelFile.length
-                                      ) {
-                                        let num = 0;
-                                        questions_detail.sort(function (a, b) {
-                                          return (
-                                            a.sub_sequence - b.sub_sequence
-                                          );
-                                        });
-
-                                        for (
-                                          let a = 0;
-                                          a < this.excelFile.length;
-                                          a++
-                                        ) {
-                                          for (
-                                            let b = 0;
-                                            b < ques_type.length;
-                                            b++
-                                          ) {
-                                            if (
-                                              this.excelFile[a]
-                                                .primary_ques_type ==
-                                              ques_type[b].primary
-                                            ) {
-                                              for (
-                                                let c = 0;
-                                                c <
-                                                ques_type[b].secondary.length;
-                                                c++
-                                              ) {
-                                                if (
-                                                  this.excelFile[a]
-                                                    .secondary_ques_type ==
-                                                  ques_type[b].secondary[c].type
-                                                ) {
-                                                  ques_type[b].secondary[c]
-                                                    .num++;
-                                                  ques_type[b].secondary[
-                                                    c
-                                                  ].score +=
-                                                    this.excelFile[a].score;
-                                                  ques_type[b].total_num++;
-                                                  ques_type[b].total_score +=
-                                                    this.excelFile[a].score;
-                                                  if (
-                                                    ques_type[b].secondary[c]
-                                                      .start == -1
-                                                  ) {
-                                                    ques_type[b].secondary[
-                                                      c
-                                                    ].start =
-                                                      this.excelFile[a]
-                                                        .sequence -
-                                                      1 -
-                                                      num;
-                                                    ques_type[b].secondary[
-                                                      c
-                                                    ].end =
-                                                      this.excelFile[a]
-                                                        .sequence -
-                                                      1 -
-                                                      num;
-                                                    ques_type[b].start =
-                                                      this.excelFile[a]
-                                                        .sequence -
-                                                      1 -
-                                                      num;
-                                                  } else if (
-                                                    this.excelFile[a]
-                                                      .question_content_id !=
-                                                    this.excelFile[a - 1]
-                                                      .question_content_id
-                                                  ) {
-                                                    ques_type[b].secondary[c]
-                                                      .end++;
-                                                  } else {
-                                                    num++;
-                                                  }
-                                                }
-                                              }
-                                            }
-                                          }
-                                        }
-                                        for (
-                                          let a = 0;
-                                          a < ques_type.length;
-                                          a++
-                                        ) {
-                                          ques_type[a].secondary.sort(function (
-                                            c,
-                                            d
-                                          ) {
-                                            return c.start - d.start;
-                                          });
-                                        }
-                                        ques_type.sort(function (c, d) {
-                                          return c.start - d.start;
-                                        });
-                                        for (
-                                          let a = 0;
-                                          a < ques_type.length;
-                                          a++
-                                        ) {
-                                          if (ques_type[a].start != -1) {
-                                            ques_type.splice(0, a);
-                                            break;
-                                          }
-                                        }
-                                        for (
-                                          let a = 0;
-                                          a < ques_type.length;
-                                          a++
-                                        ) {
-                                          for (
-                                            let b = 0;
-                                            b < ques_type[a].secondary.length;
-                                            b++
-                                          ) {
-                                            if (
-                                              ques_type[a].secondary[b].start !=
-                                              -1
-                                            ) {
-                                              ques_type[a].secondary.splice(
-                                                0,
-                                                b
-                                              );
-                                              break;
-                                            }
-                                          }
-                                        }
-                                        let saveP = new BaaS.TableObject(
-                                          "test_paper"
+                            }
+                          });
+                        }
+                      } else if (res.data.objects.length == 0) {
+                        if (cata.length != 0) {
+                          let find = false;
+                          for (let i = 0; i < cata.length; i++) {
+                            find = true;
+                            if (cata[i].content == element.content) {
+                              let addContent = new BaaS.TableObject(
+                                "question_content"
+                              );
+                              let add = addContent.create();
+                              add.set("content", element.content);
+                              add.set("catalog", cata[i].catalog);
+                              add.save().then(
+                                (res) => {
+                                  element.id = res.data.id;
+                                  k++;
+                                  if (k == qc.length) {
+                                    this.excelFile.forEach((element) => {
+                                      var a = qc.findIndex(
+                                        (item) =>
+                                          item.content ===
+                                          element.question_content_id
+                                      );
+                                      if (a != -1) {
+                                        element.question_content_id = qc[a].id;
+                                        let importQ = new BaaS.TableObject(
+                                          "questions_information"
                                         );
-                                        let savep = saveP.create();
-                                        let s = {
-                                          paper_title: temp.paper_title,
-                                          paper_type: temp.paper_type,
-                                          questions_num: temp.questions_num,
-                                          points: temp.points,
-                                          is_delete: false,
-                                          catalog: temp.catalog,
-                                          questions_detail:
-                                            JSON.stringify(questions_detail),
-                                          ques_type: JSON.stringify(ques_type),
-                                        };
-                                        savep
-                                          .set(s)
+                                        let importq = importQ.create();
+                                        importq
+                                          .set(element)
                                           .save()
                                           .then(
                                             (res) => {
-                                              this.$message({
-                                                message: "导入成功",
-                                                type: "success",
-                                              });
-                                              loading.close();
-                                              this.importFile = false;
-                                              this.init();
+                                              // console.log(res);
+                                              num++;
+                                              if (
+                                                num == this.excelFile.length
+                                              ) {
+                                                loading.close();
+                                                this.$message({
+                                                  message: "导入成功",
+                                                  type: "success",
+                                                });
+                                                this.init();
+                                                this.importFile = false;
+                                                this.excelFile = [];
+                                                this.contentFile = [];
+                                              }
                                             },
                                             (err) => {
+                                              loading.close();
+                                              this.$message({
+                                                message: "导入失败",
+                                                type: "warning",
+                                              });
+                                              this.init();
+                                              this.importFile = false;
+                                              this.excelFile = [];
+                                              this.contentFile = [];
                                               console.log(err);
                                             }
                                           );
                                       }
-                                    },
-                                    (err) => {
-                                      console.log(err);
-                                    }
-                                  );
-                              }
-                            });
+                                    });
+                                  }
+                                },
+                                (err) => {
+                                  loading.close();
+                                  this.$message({
+                                    message: "导入失败",
+                                    type: "warning",
+                                  });
+                                  this.init();
+                                  this.importFile = false;
+                                  this.excelFile = [];
+                                  this.contentFile = [];
+                                  console.log(err);
+                                }
+                              );
+                            }
                           }
-                        },
-                        (err) => {
-                          console.log(err);
+                          if (find == false) {
+                            let addContent = new BaaS.TableObject(
+                              "question_content"
+                            );
+                            let add = addContent.create();
+                            add.set("content", element.content);
+                            add.set("catalog", null);
+                            add.save().then(
+                              (res) => {
+                                element.id = res.data.id;
+                                k++;
+                                if (k == qc.length) {
+                                  this.excelFile.forEach((element) => {
+                                    var a = qc.findIndex(
+                                      (item) =>
+                                        item.content ===
+                                        element.question_content_id
+                                    );
+                                    if (a != -1) {
+                                      element.question_content_id = qc[a].id;
+                                      let importQ = new BaaS.TableObject(
+                                        "questions_information"
+                                      );
+                                      let importq = importQ.create();
+                                      importq
+                                        .set(element)
+                                        .save()
+                                        .then(
+                                          (res) => {
+                                            // console.log(res);
+                                            num++;
+                                            if (num == this.excelFile.length) {
+                                              loading.close();
+                                              this.$message({
+                                                message: "导入成功",
+                                                type: "success",
+                                              });
+                                              this.init();
+                                              this.importFile = false;
+                                              this.excelFile = [];
+                                              this.contentFile = [];
+                                            }
+                                          },
+                                          (err) => {
+                                            loading.close();
+                                            this.$message({
+                                              message: "导入失败",
+                                              type: "warning",
+                                            });
+                                            this.init();
+                                            this.importFile = false;
+                                            this.excelFile = [];
+                                            this.contentFile = [];
+                                            console.log(err);
+                                          }
+                                        );
+                                    }
+                                  });
+                                }
+                              },
+                              (err) => {
+                                loading.close();
+                                this.$message({
+                                  message: "导入失败",
+                                  type: "warning",
+                                });
+                                this.init();
+                                this.importFile = false;
+                                this.excelFile = [];
+                                this.contentFile = [];
+                                console.log(err);
+                              }
+                            );
+                          }
+                        } else {
+                          let addContent = new BaaS.TableObject(
+                            "question_content"
+                          );
+                          let add = addContent.create();
+                          add.set("content", element.content);
+                          add.set("catalog", null);
+                          add.save().then(
+                            (res) => {
+                              element.id = res.data.id;
+                              k++;
+                              if (k == qc.length) {
+                                this.excelFile.forEach((element) => {
+                                  var a = qc.findIndex(
+                                    (item) =>
+                                      item.content ===
+                                      element.question_content_id
+                                  );
+                                  if (a != -1) {
+                                    element.question_content_id = qc[a].id;
+                                    let importQ = new BaaS.TableObject(
+                                      "questions_information"
+                                    );
+                                    let importq = importQ.create();
+                                    importq
+                                      .set(element)
+                                      .save()
+                                      .then(
+                                        (res) => {
+                                          // console.log(res);
+                                          num++;
+                                          if (num == this.excelFile.length) {
+                                            loading.close();
+                                            this.$message({
+                                              message: "导入成功",
+                                              type: "success",
+                                            });
+                                            this.init();
+                                            this.importFile = false;
+                                            this.excelFile = [];
+                                            this.contentFile = [];
+                                          }
+                                        },
+                                        (err) => {
+                                          loading.close();
+                                          this.$message({
+                                            message: "导入失败",
+                                            type: "warning",
+                                          });
+                                          this.init();
+                                          this.importFile = false;
+                                          this.excelFile = [];
+                                          this.contentFile = [];
+                                          console.log(err);
+                                        }
+                                      );
+                                  }
+                                });
+                              }
+                            },
+                            (err) => {
+                              loading.close();
+                              this.$message({
+                                message: "导入失败",
+                                type: "warning",
+                              });
+                              this.init();
+                              this.importFile = false;
+                              this.excelFile = [];
+                              this.contentFile = [];
+                              console.log(err);
+                            }
+                          );
                         }
-                      );
+                      }
+                    },
+                    (err) => {
+                      loading.close();
+                      this.$message({
+                        message: "导入失败",
+                        type: "warning",
+                      });
+                      this.init();
+                      this.importFile = false;
+                      this.excelFile = [];
+                      this.contentFile = [];
+                      console.log(err);
                     }
-                  },
-                  (err) => {
-                    console.log(err);
-                  }
-                );
-            });
-          }
+                  );
+              });
+            }
+          }, 50 * this.fileNum);
         }
       }
       // 清空文件列表
@@ -1648,7 +1481,7 @@ export default {
     },
     downloadTemplate() {
       let Template = new BaaS.File();
-      Template.get("62496310685599564c86a5c9").then(
+      Template.get("637b78dd973f017405db03ef").then(
         (res) => {
           // console.log(res);
           let viewUrl = res.data.path;
@@ -1720,7 +1553,8 @@ export default {
       );
     },
     trash() {
-      Cookies.set("trash", "questions");
+      // Cookies.set("trash", "questions");
+      sessionStorage.setItem("trash", "questions");
       this.$router.push("/trash_list");
     },
     handleSelectionChange(val) {
@@ -1730,7 +1564,8 @@ export default {
       return index + 1;
     },
     handleSet() {
-      let content = Cookie.get("question_content");
+      let content = sessionStorage.getItem("question_content");
+      // let content = Cookie.get("question_content");
       this.form.ques_con = content;
       if (
         content.search(".mp3") != -1 ||
@@ -1805,7 +1640,8 @@ export default {
                 // }
 
                 this.autoClose();
-                Cookies.set("make_out", "third");
+                // Cookies.set("make_out", "third");
+                sessionStorage.setItem("make_out", "third");
                 this.$router.push("/mcreatePaper");
               },
               (err) => {
@@ -1842,7 +1678,8 @@ export default {
       this.currentPage = val;
     },
     check_edit(val) {
-      Cookies.set("ques_checkEdit", val);
+      // Cookies.set("ques_checkEdit", val);
+      sessionStorage.setItem("ques_checkEdit", val);
       this.$router.push("/ques_checkEdit");
     },
     exp() {
@@ -1865,7 +1702,9 @@ export default {
       });
       let final = [];
       for (let i = 0; i < this.der.length; i++) {
-        this.der[i].question_content_id = Cookie.get("question_content");
+        // this.der[i].question_content_id = Cookie.get("question_content");
+        this.der[i].question_content_id =
+          sessionStorage.getItem("question_content");
         if (this.deri == 0) {
           if (this.der[i].options != null) {
             let temp = await JSON.parse(this.der[i].options);

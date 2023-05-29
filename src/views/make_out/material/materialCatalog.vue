@@ -314,8 +314,9 @@
 </template>
 
 <script>
-import { Read4 } from "@/api/api.js";
-import Cookies from "js-cookie";
+import global from "@/util/global.js";
+import { Read1,Read4 } from "@/api/api.js";
+// import Cookies from "js-cookie";
 import Cookie from "js-cookie";
 var BaaS = require("minapp-sdk");
 let clientID = "395062a19e209a770059";
@@ -344,15 +345,11 @@ export default {
             ques_type: "",
             ques_num_yixue: 1,
             ques_num_zonghe: 1,
-            grade: "不限等级",
+            grade: "一级",
           },
         ],
       },
       grade: [
-        {
-          value: "不限等级",
-          label: "不限等级",
-        },
         {
           value: "一级",
           label: "一级",
@@ -523,8 +520,10 @@ export default {
   computed: {},
   methods: {
     init() {
-      this.catalog = Cookie.get("catalog");
-      this.catalogall = JSON.parse(Cookie.get("catalogall"));
+      // this.catalog = Cookie.get("catalog");
+      // this.catalogall = JSON.parse(Cookie.get("catalogall"));
+      this.catalog = sessionStorage.getItem("catalog");
+      this.catalogall = JSON.parse(sessionStorage.getItem("catalogall"));
       for (let i = 0; i < this.catalogall.length; i++) {
         if (this.catalogall[i].catalog == this.catalog) {
           this.catalogall.splice(i, 1);
@@ -533,6 +532,7 @@ export default {
       }
       let query = new BaaS.Query();
       query.compare("created_by", "=", Cookie.get("user_id") * 1);
+      // query.compare("created_by", "=", sessionStorage.getItem("user_id") * 1);
       let query2 = new BaaS.Query();
       query2.compare("catalog", "=", this.catalog);
       let query3 = new BaaS.Query();
@@ -627,7 +627,7 @@ export default {
     },
     delContent(row) {
       let Catalog = new BaaS.TableObject("question_content");
-      let cata = Catalog.getWithoutData(row.id);
+      let cata = Catalog.limit(1000).getWithoutData(row.id);
       cata.set("is_delete", true);
       cata.update().then(
         (res) => {
@@ -658,7 +658,7 @@ export default {
     to(val) {
       for (let i = 0; i < this.preMove.length; i++) {
         let Catalog = new BaaS.TableObject("question_content");
-        let cata = Catalog.getWithoutData(this.preMove[i]);
+        let cata = Catalog.limit(1000).getWithoutData(this.preMove[i]);
         if (val == "out") {
           cata.set("catalog", null);
           cata.update().then(
@@ -709,16 +709,19 @@ export default {
       }
     },
     checkQuesP(id) {
-      Cookies.set("material_id", id);
+      // Cookies.set("material_id", id);
+      sessionStorage.setItem("material_id", id);
       this.$router.push("checkQuesP");
     },
     trash() {
-      Cookies.set("trash", "content");
+      // Cookies.set("trash", "content");
+      sessionStorage.setItem("trash", "content");
       this.$router.push("/trash_list");
     },
     handleSet(val) {
       console.log(val);
-      Cookies.set("material_id", val.id);
+      // Cookies.set("material_id", val.id);
+      sessionStorage.setItem("material_id", val.id);
       this.form.ques_con = val.content;
       if (val.file_url != "" && val.file_url != null) {
         this.form.ques_file = val.file_url.path;
@@ -735,7 +738,7 @@ export default {
             ques_num: 1,
             ques_num_yixue: 1,
             ques_num_zonghe: 1,
-            grade: "不限等级",
+            grade: "一级",
           },
         ],
       };
@@ -761,16 +764,55 @@ export default {
           spinner: "el-icon-loading",
           background: "rgba(0, 0, 0, 0.7)",
         });
+        let finish = 0;
+        let success = 0;
         for (let i = 0; i < this.form.type.length; i++) {
-          if (this.form.type[i].ques_type[1] == "阅读短文，选择正确答案") {
-            Read4(
-              this.form.ques_con,
-              this.form.type[i].ques_num_yixue,
-              this.form.type[i].ques_num_zonghe
-            ).then(
+          if (this.form.type[i].ques_type[1] == "选择正确词语填空") {
+            let grade = 1;
+            if (this.form.type[i].grade == "一级") {
+              grade = 1;
+            } else if (this.form.type[i].grade == "二级") {
+              grade = 2;
+            } else if (this.form.type[i].grade == "三级") {
+              grade = 3;
+            }
+            Read1(this.form.ques_con, grade, this.form.type[i].ques_num).then(
               (res) => {
-                loading.close();
                 console.log(res);
+                if(typeof(res)=="string") {
+                  this.$message({
+                    message: res,
+                    type: "warning",
+                  });
+                }else if (res.medical_data.length != 0) {
+                  for (let j = 0; j < res.medical_data.length; j++) {
+                    global.auto.push(res.medical_data[j]);
+                  }
+                  success++;
+                }else if(res.medical_data.length == 0){
+                  this.$message({
+                    message: "无可出题目",
+                    type: "warning",
+                  });
+                }
+                finish++;
+                setTimeout(() => {
+                    if (finish == this.editableTabs[i].content.type.length) {
+                      loading.close();
+                      this.autoClose();
+                      if (success > 0) {
+                        sessionStorage.setItem("autoQues", "true");
+                        sessionStorage.setItem("make_out", "third");
+                        this.$router.push("/mcreatePaper");
+                      }
+                    }
+                  }, 1000);
+                // if (res.synthesis_data.length != 0) {
+                //   for (let j = 0; j < res.synthesis_data.length; j++) {
+                //     global.auto.push(res.synthesis_data[j]);
+                //   }
+                // }
+
                 // let questions = []
                 // let content = []
                 // for(let i=0;i<this.form.type.length;i++){
@@ -785,9 +827,67 @@ export default {
                 // }
                 // }
 
-                this.autoClose();
-                Cookies.set("make_out", "third");
-                this.$router.push("/mcreatePaper");
+                // Cookies.set("autoQues","true")
+                // Cookies.set("make_out", "third");
+                // sessionStorage.setItem("autoQues", "true");
+                // sessionStorage.setItem("make_out", "third");
+                // this.$router.push("/mcreatePaper");
+              },
+              (err) => {
+                this.$message.error("出题失败");
+                loading.close();
+                console.log(err);
+              }
+            );
+          }
+          if (this.form.type[i].ques_type[1] == "阅读短文，选择正确答案") {
+            Read4(
+              this.form.ques_con,
+              this.form.type[i].ques_num_yixue,
+              this.form.type[i].ques_num_zonghe,
+              this.form.type[i].grade
+            ).then(
+              (res) => {
+                console.log(res);
+                if (res.medical_data.length != 0) {
+                  for (let j = 0; j < res.medical_data.length; j++) {
+                    global.auto.push(res.medical_data[j]);
+                  }
+                  success++;
+                }
+                if (res.synthesis_data.length != 0) {
+                  for (let j = 0; j < res.synthesis_data.length; j++) {
+                    global.auto.push(res.synthesis_data[j]);
+                  }
+                }
+                finish++;
+                setTimeout(() => {
+                    if (finish == this.editableTabs[i].content.type.length) {
+                      loading.close();
+                      this.autoClose();
+                      if (success > 0) {
+                        sessionStorage.setItem("autoQues", "true");
+                        sessionStorage.setItem("make_out", "third");
+                        this.$router.push("/mcreatePaper");
+                      }
+                    }
+                  }, 1000);
+                // let questions = []
+                // let content = []
+                // for(let i=0;i<this.form.type.length;i++){
+                //   let s = {
+                //     temp: this.form.ques_con
+                //   }
+                // }
+                // for(let i=0;i<res.medical_data.length;i++){
+                //   let t = {
+                //   question_content: this.form.ques_con,
+
+                // }
+                // }
+
+                // Cookies.set("autoQues","true")
+                // Cookies.set("make_out", "third");
               },
               (err) => {
                 this.$message.error("出题失败");
@@ -805,7 +905,7 @@ export default {
         ques_num: 1,
         ques_num_yixue: 1,
         ques_num_zonghe: 1,
-        grade: "不限等级",
+        grade: "一级",
       };
       this.form.type.push(t);
     },
@@ -814,7 +914,8 @@ export default {
       this.form.type.splice(val, 1);
     },
     checkMaterial(id) {
-      Cookies.set("material_id", id);
+      // Cookies.set("material_id", id);
+      sessionStorage.setItem("material_id", id);
       this.$router.push("checkMaterial");
     },
     handleSizeChange(val) {
@@ -833,8 +934,10 @@ export default {
       return index + 1;
     },
     back() {
-      Cookies.set("catalog", "");
-      Cookies.set("catalogall", "");
+      // Cookies.set("catalog", "");
+      // Cookies.set("catalogall", "");
+      sessionStorage.setItem("catalog", "");
+      sessionStorage.setItem("catalogall", "");
       this.$router.go(-1);
     },
   },
